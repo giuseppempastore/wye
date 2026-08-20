@@ -1,0 +1,306 @@
+Perfetto. La tua direzione è corretta: il prodotto base deve essere semplice, gratuito, senza login, e fatto solo per valutare la salubrità del prodotto in modo rapido e comprensibile. La parte “profilo fisico + allergie + personalizzazione” va messa come premium, e non deve essere un requisito minimo per usare l’app.
+
+Questa è la logica giusta.
+
+Product base: gratuito, semplice, no login
+L’app di base deve fare solo questo:
+scansionare un codice a barre
+oppure fare foto della lista ingredienti
+oppure inserire manualmente il prodotto
+mostrare:
+score di salubrità complessivo da 0 a 100
+rischio nutrizionale
+ingredienti critici
+eventuali allergeni rilevati
+spiegazione semplice e leggibile
+senza pubblicità
+senza account obbligatorio
+opzionale accesso con Google, ma non necessario
+nessun profilo utente richiesto
+nessuna personalizzazione per il cliente base
+In pratica: l’utente apre l’app, scansione, vede il risultato, e basta.
+
+Cosa valuta la base gratuita
+La versione base deve basarsi su regole di salute pubblica e standard nutrizionali, e non sulla personalizzazione.
+Dovrebbe controllare:
+
+zuccheri semplici
+zuccheri totali
+grassi saturi
+grassi trans
+sodio
+calorie per porzione
+fibra
+proteine
+additivi potenzialmente critici
+ingredienti considerati “non positivi” per la salute
+presenza di ingredienti a rischio o poco trasparenti
+presenza di allergeni
+Queste voci devono essere confrontate con soglie riconosciute, ad esempio:
+
+WHO
+EFSA
+FDA
+OMS
+linee guida nutrizionali pubbliche
+tabelle nutrizionali standard
+Non deve essere “rischio assoluto”, ma “rischio relativo rispetto alla categoria e alla dose”.
+
+Come calcolare il score base
+La base gratuita può usare una formula semplice e spiegabile:
+40% nutrizione
+zuccheri
+grassi saturi
+sodio
+calorie
+fibra
+35% ingredienti critici
+conservanti
+dolcificanti
+additivi con allerta
+ingredienti ultra-processati
+15% trasparenza / composizione
+ingredient list completa
+ingredienti riconosciuti
+presenza di ingredienti anonimi o poco chiari
+10% categoria del prodotto
+bevande zuccherate
+snack
+prodotti da forno
+surimi / prodotti ultra-processati
+Il risultato finale:
+
+0–39: scarso
+40–59: medio
+60–79: discreto
+80–100: buono
+Questa formula va utilizzata anche per la base e per premium, ma premium ha aggiunte personali.
+
+Allergeni: la regola corretta
+Qui devi mettere un meccanismo molto chiaro e robusto.
+L’allergene deve essere valorizzato in base a una severa distinzione:
+
+contains: presente in modo dichiarato
+may contain: possibile contaminazione o tracce
+not declared: non dichiarato ma potenzialmente rilevabile
+unknown: ingrediente non mappato
+Esempi di allergeni da monitorare:
+
+glutine
+latte
+uova
+arachidi
+noci
+soia
+sesamo
+sedano
+senape
+crostacei
+molluschi
+pesce
+lattosio
+sulfiti
+frutta a guscio
+kiwi
+ecc.
+Regola:
+
+se il prodotto contiene uno di questi ingredienti in modo esplicito, viene mostrata un’icona allergene
+se ci sono tracce o “may contain”, viene mostrata una icona di warning e un’etichetta “potenziale contaminazione”
+se l’allergene è sconosciuto ma il sistema lo rileva tramite alias, lo marca come “allergene sospetto”
+l’icona non deve essere solo un simbolo: deve mostrare anche il nome dell’allergene
+Esempio:
+
+“Latte” → icona latte + label “contiene latte”
+“Arachidi” → icona arachidi + label “contiene arachidi”
+“Possibile contaminazione da soia” → icona warning + label “may contain soy”
+Questo è fondamentale perché è molto più utile dell’unico score.
+
+Criticità nutrizionali: come mostrarle
+La base gratuita deve indicare in modo semplice:
+troppo zucchero
+troppo sale
+troppo grassi saturi
+troppe calorie rispetto alla porzione
+troppo poco fibre
+ingredienti “noci” o “concern”
+possibile additivo a rischio
+L’UX deve mostrare:
+
+“Zuccheri: elevati”
+“Sale: elevato”
+“Grassi saturi: sopra soglia”
+“Fibra: bassa”
+“Ingredienti a rischio: 3”
+“Allergeni rilevati: 2”
+“Valutazione complessiva: bassa”
+Non è necessario farlo in modo tecnico. Deve essere leggibile da un utente qualsiasi.
+
+Premium: la parte personalizzata
+La parte premium va attivata solo se l’utente vuole un risultato “personalizzato per la sua situazione”.
+Premium include:
+
+altezza
+peso
+età
+BMI
+allergie
+patologie
+obiettivo nutrizionale
+livello di attività
+restrizioni dietetiche
+preferenze alimentari
+Questi parametri non devono essere richiesti ai clienti base.
+Per i premium:
+
+l’app calcola una valutazione “mirata a te”
+il risultato può cambiare in base a:
+diabete
+ipertensione
+sovrappeso
+obesità
+allergie
+gravidanza
+sport
+restrizioni come senza glutine, senza lattosio, vegano, ecc.
+Esempio:
+
+stesso prodotto può essere “medio” per una persona sana
+ma “scarso” per una persona con diabete o ipertensione
+o “buono” per una persona con esigenze dietetiche specifiche
+o “70/100” per un adulto ma “40/100” per un bambino
+Questo è il valore premium.
+
+Premium: funzionalità extra
+Quello che va dietro al profilo premium:
+score personalizzato
+consigli personalizzati
+alert per allergeni del profilo
+propensione al rischio per patologie
+confronto tra prodotti in base al tuo profilo
+storico personale
+preferiti
+raccomandazioni invece di solo punteggio
+benchmark del profilo
+più dettagli tecnici / spiegazioni scientifiche
+report completo su ingredienti e rischi
+In altri termini:
+
+base = check rapido
+premium = check personalizzato e approfondito
+Come gestire le varianti di prodotto
+Ogni prodotto va valutato in relazione alla categoria:
+bevande sportive
+bevande dolci
+snack salati
+dolciumi
+yogurt
+surimi
+condimenti
+cereali
+prodotti da forno
+Questo è molto importante perché:
+
+un prodotto con 10 g di zucchero può essere “buono” in una categoria e “elevato” in un’altra
+un prodotto con 0,5 g di sale può essere “buono” in un caso e “critico” in un altro
+quindi la soglia va calibrata per categoria
+Come gestire l’autenticità scientifica
+Per crederci davvero, il sistema non deve dichiarare:
+“questo alimento è cancerogeno”
+“questo è molto dannoso”
+“questo è totalmente sicuro”
+Deve dire:
+
+“rischio nutrizionale elevato”
+“grassi saturi sopra soglia”
+“sale elevato”
+“zuccheri al di sopra della media”
+“ingredienti con evidenze moderate di rischio”
+“allergene rilevato”
+“dati insufficienti per una valutazione completa”
+Quindi:
+
+la base usa regole generali
+il premium usa il profilo personale
+le evidenze devono essere sempre collegate a fonti ufficiali
+La UX corretta per il cliente base
+App base:
+schermata home semplice
+bottone “scannerizza”
+bottone “inserisci ingredienti”
+risultato come carta con:
+score grande
+rischio
+3-5 metriche decisive
+allergeni
+avvertimenti
+fonte scientifica
+nessuna spinta a registrarsi
+nessun upsell invasivo
+L’utente deve vedere subito:
+
+“forte rischio di zuccheri”
+“sale elevato”
+“2 allergeni rilevati”
+“score finale 42/100”
+Questo crea un valore immediato.
+
+La UX premium
+Premium sarà molto più “personalizzata”:
+setup iniziale del profilo
+riassunto personale
+suggerimenti
+cronologia
+salvataggio prodotti
+opinioni per tua situazione
+confronto tra prodotti
+Questa parte va però nascosta come funzionalità avanzata, non come forza su tutti.
+
+La strategia giusta di business
+Questa divisione è molto forte:
+base gratis
+senza pubblicità
+senza login obbligatorio
+focus solo su salubrità/score
+premium = profilazione e personalizzazione
+Questa struttura:
+
+riduce frizione
+massimizza adozione
+evita di far sembrare l’app “un’app da medici”
+crea valore premium chiaro e concreto
+Se vuoi fare un’idea in una frase:
+
+la base è un “check rapido della qualità del prodotto”
+il premium è un “consulente nutrizionale personalizzato”
+Decisione finale sulla struttura
+Io la vedrei così:
+Base:
+
+score di salubrità
+controllo zuccheri / sale / grassi / calorie
+listing allergeni
+icone allergeni
+ingredienti a rischio
+nessun login
+Google opzionale
+no ads
+no account required
+Premium:
+
+altezza, peso, BMI, allergie, patologie
+score personalizzato
+raccomandazioni su misura
+storico e salvataggio
+profilo completo
+analisi avanzata
+Questo è un modello molto pulito, semplice e credibile.
+
+Se vuoi, nel prossimo messaggio ti preparo una versione ancora più concreta con:
+
+la struttura esatta del database per free vs premium
+il schema delle metriche nutrizionali
+la regola per il calcolo del punteggio
+i campi da trattare in base all’allergene
+e l’UX del flusso “scan → risultato → premium upsell” in modo molto pratico.
+MAI-Code-1.1-Flash • 1x

@@ -1,0 +1,299 @@
+
+Esatto: hai appena corretto il punto più importante della logica.
+
+La separazione è questa:
+
+Alimenti:
+score ingredienti
+score nutrizionale
+score finale = combinazione dei due
+Cosmetici:
+score solo sugli ingredienti
+nessun score nutrizionale, perché non ha senso in quella categoria
+Questa è la struttura giusta.
+
+Il modello correttivo
+Per gli alimenti, il prodotto va valutato su due livelli separati:
+Ingredient score
+
+guarda la composizione
+valuta se gli ingredienti sono “buoni / medi / critici”
+tiene conto di:
+additivi
+conservanti
+dolcificanti
+oli trasformati
+coloranti
+ecc.
+non riguarda calorie e macro
+Nutrition score
+
+guarda la tabella nutrizionale del produttore
+valuta:
+zuccheri
+grassi saturi
+sale
+calorie
+fibre
+proteine
+grassi totali
+porzione
+è una valutazione quantitativa
+Final food score
+
+ingredient score + nutrition score
+in formula semplice:
+60% ingredient score
+40% nutrition score
+oppure 55/45, dipende dal modello
+Per i cosmetici:
+
+Ingredient score only
+Nessuna tabella nutrizionale
+Valutazione fatta sulla miscela/composizione
+Questo evita il grosso errore di applicare una logica nutrizionale a un prodotto che non ha senso nutrizionale.
+
+Barcode come chiave primaria
+Hai ragione: per il caso alimento, il barcode è la chiave giusta.
+Il database non deve essere “ingredienti generici”, ma deve diventare un catalogo di prodotti reali:
+
+barcode
+brand
+product name
+product type
+category
+country
+package language
+ingredient list raw
+nutrition facts raw
+ingredient mapping
+nutrition mapping
+validation status
+last verified date
+In pratica:
+
+il barcode identifica il prodotto
+da lì si recuperano:
+ingredienti
+nutrizione
+evidenze
+score
+il database cresce con centinaia di migliaia di prodotti
+Questo è molto più robusto di “mettere a mano ingredienti ogni volta”.
+
+Struttura data model corretta
+Io la vedrei così:
+products
+
+id
+barcode
+gtin
+brand_name
+product_name
+category
+product_type
+source
+verified
+version
+created_at
+product_ingredients
+
+id
+product_id
+ingredient_id
+raw_name
+canonical_name
+position
+confidence
+allergen_flag
+risky_flag
+ingredients
+
+id
+canonical_name
+cas_number
+category
+ingredient_group
+risk_level
+evidence_level
+allergen_flag
+ingredient_aliases
+
+id
+ingredient_id
+alias_name
+language
+type
+nutrition_facts
+
+id
+product_id
+serving_size
+energy_kcal
+protein
+carbs
+sugar
+fat
+saturated_fat
+sodium
+fiber
+source
+declared_by_manufacturer
+verified
+product_scores
+
+id
+product_id
+ingredient_score
+nutrition_score
+final_score
+score_band
+created_at
+cosmetics_products
+
+id
+barcode
+brand
+product_name
+ingredient_list_raw
+ingredient_score
+final_score
+verified
+cosmetic_ingredient_assessment
+
+id
+cosmetic_product_id
+ingredient_id
+risk_level
+reason
+Questa separazione è fondamentale:
+
+alimenti hanno nutrizione
+cosmetici no
+ingredienti sono comuni
+Il fatto importante: l’utente base non deve fare digito
+Per la base:
+usare solo barcode
+se il prodotto esiste nel catalogo, lo usa
+se non esiste, l’utente può:
+avere un “prodotto non trovato”
+oppure richiedere una valutazione premium
+Quindi:
+
+base: barcode only
+premium: barcode + ingredienti a mano + tabella nutrizionale manuale + foto
+Questo rende l’idea molto pulita.
+
+Premium: manual input
+Premium può avere:
+foto della lista ingredienti
+foto della tabella nutrizionale
+inserimento manuale
+modifica del testo riconosciuto
+validazione dell’ingredient list
+validazione della tabella nutrizionale
+Quindi:
+
+la base è veloce e semplice
+premium è utile per prodotti non presenti o incompleti
+Barcode-first = ottimizzazione reale
+Questo è il punto strategico:
+non partire da “ocr frutto di AI”
+partire da “catalogo prodotti + barcode”
+Perché:
+
+è più veloce
+più preciso
+più affidabile
+più scalabile
+mappa molto bene all’ecosistema dei retail
+Il sistema dovrebbe funzionare così:
+
+utente scansione barcode
+backend cerca product_id per barcode
+se trovato:
+carica ingredient list
+carica nutrition facts
+calcola score
+mostra risultato in <1 sec
+se non trovato e utente è premium:
+accetta ingredienti e nutrizione manuale
+salva come prodotto nuovo
+lo aggiunge al catalogo in review
+se non trovato e utente base:
+mostra “prodotto non ancora presente nel database”
+invita a usare il barcode di un altro prodotto o ad approfittare della versione premium
+Questo rende la base semplice e la premium davvero utile.
+
+Il check degli allergeni
+La logica corretta è:
+gli allergeni vanno valutati come parte degli ingredienti
+non come nutrizione
+se il prodotto contiene un allergene noto:
+icona allergene
+label “contiene”
+label “potenziale contaminazione”
+colore differenziato
+Quindi l’allergene è un tag dell’ingredient score, non una categoria nutrizionale.
+
+Formula di score consigliata
+Per alimenti:
+ingredient_score: 0-100
+qualità ingredienti
+rischi additivi
+ingredienti critici
+allergeni
+nutrition_score: 0-100
+zuccheri
+sale
+grassi saturi
+calorie
+fibra
+proteine
+final_score = weighted average
+Per cosmetici:
+
+final_cosmetic_score = ingredient_score only
+Questa modularità è la chiave.
+
+La scelta aziendale che ti fa vincere
+La tua idea più forte è questa:
+free base:
+
+barcode-only
+velocissimo
+semplice
+senza pubblicità
+senza login obbligatorio
+usa solo catalogo già esistente
+premium:
+
+ingredienti a mano
+foto dei valori nutrizionali
+profilo personale
+allergie
+BMI
+salute
+personalizzazione
+Questa stratificazione funziona molto bene:
+
+bassa frizione
+alta adozione
+chiaro valore premium
+no app “troppo complessa” per il free
+La decisione finale
+Se dovessi mettere il concetto in una frase:
+“Per gli alimenti il sistema valuta ingredienti e nutrizione; per i cosmetici valuta solo gli ingredienti; e la base usa solo barcode, mentre il premium aggiunge input manuale e personalizzazione.”
+Questo è il modello giusto.
+
+Se vuoi, nel prossimo messaggio ti preparo subito:
+
+lo schema SQL aggiornato per alimenti + cosmetici
+le tabelle precise per:
+products
+nutrition_facts
+cosmetic_products
+ingredient_assessment
+allergens
+product_allergens
+e la logica di score separata per food e cosmetics.

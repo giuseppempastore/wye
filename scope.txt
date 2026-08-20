@@ -1,0 +1,35 @@
+Voglio generare un'app come questa:
+https://yuka.io/it/app/
+
+ma quello che deve fare è diverso, ossia, innanzitutto deve funzionare in tutte le lingue.
+Idealmente dal codice a barre risale a tutti gli ingredienti
+e vede se quegli ingredienti o componenti sono da considerarsi non sicuri in base a studi scientifici
+ottenibili da risorse autorevoli (dimmi tu quali possono essere).
+
+Può esserci la possibilià di farla funzionare anche senza codice a barre ma inquadrando solo la lista 
+di ingredienti, e soprattutto si può impostare la lingua dell'app.
+
+tramite scansione degli ingredienti verranno richiamate le API di qualche AI che faranno in qualche modo
+la traduzione degli ingredienti stessi nella lingua di riferimento standard (inglese) e cercheranno questi ingredienti
+tra la lista di quelli considerati dannosi.
+
+dovrà esserci una parte "server" dove questa lista di ingredienti e la loro potenziale tossicità 
+o pericolosità dovrà essere in qualche modo valutata e messa in "scala", così da non dovere ogni volta
+richiamare API di AI solo per provare a fare un retrieve su tutti i motori di ricerca scientifici 
+della validità degli ingredienti.
+
+Quindi: catalogazione degli ingredienti, valuazione del profilo nutrizionale, valutazione delle quantità
+"raccomandabili" evetualmente in base a parametri di base introdotti dalla persona (come alezza, peso e BMI)
+salinità, alimento troppo grasso, troppo calorico (suggerisci altro).
+
+Poi dal server sul quale ci dovremo appoggiare dovrà essere fatta questa query per capire che tipo di 
+rischio hanno questi composti o ingredienti (rischio alto, moderato, basso, nullo)
+e in base a questo stilare una percentuale di "salubrità" del prodotto.
+
+L'idea è di pubblicizzare questa app poi come punto di riferimento per far sì che anche brand importanti
+un giorno possano in qualche modo fare vanto di avere un ottimo punteggio, un ottimo score, su ques'app stessa.
+
+Mi devi fare un prospetto generale di questa idea, capire come deve essere sviluppata, quale linguaggio
+di programmazione è meglio usare, quali softwre, quali server, tutto nei minimi dettagli.
+
+Fammi una lista di step-by-step molto dettagliata su quello che dovrei e potrei fare
