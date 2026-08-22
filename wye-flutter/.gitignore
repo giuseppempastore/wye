@@ -1,0 +1,49 @@
+/.dart_tool/
+/build/
+/ios/Flutter/Flutter.podspec
+/ios/Flutter/Flutter.framework
+/ios/Flutter/GeneratedPluginRegistrant.swift
+/ios/Flutter/ephemeral/
+
+# Web-related
+web/
+
+# Dependencies
+pubspec.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Generated
+lib/generated/
+
+# Android
+android/app/debug/
+android/app/profile/
+android/app/release/
+.gradle/
+gradle-wrapper.jar
+local.properties
+
+# iOS
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vscode/*
+**/ios/**/Flutter/Flutter.framework
+**/ios/**/Flutter/Flutter.podspec
+
+# Platform-specific files
+run_tests.sh
+test_stub.dart

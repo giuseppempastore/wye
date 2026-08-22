@@ -1,0 +1,45 @@
+# permetti l'esecuzione degli activation script solo per questa sessione (
+# è una misura di protezione di PowerShell che limita l’esecuzione di script per prevenire esecuzione involontaria di codice remoto/maligno.
+# )
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
+# verificare il python del venv
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -V
+
+
+# aggiornare pip / setuptools / wheel e installare i requisiti
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -m pip install --upgrade pip setuptools wheel
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -m pip install -r C:\Projects\wye\backend\requirements.txt
+
+# se hai errori di compilazione con psycopg2, reinstallare la ruota binaria
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -m pip uninstall -y psycopg2 psycopg2-binary
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -m pip install psycopg2-binary
+# verifica
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -m pip show psycopg2-binary
+
+# eseguire il seed del DB
+& 'C:\Projects\wye\.venv\Scripts\python.exe' C:\Projects\wye\backend\scripts\seed_db.py
+
+# avviare il server (foreground, mostra i log nella stessa finestra)
+& 'C:\Projects\wye\.venv\Scripts\python.exe' -m uvicorn app.main:app --app-dir 'C:\Projects\wye\backend' --reload --host 127.0.0.1 --port 8000
+
+# aprire una nuova finestra PowerShell che rimane aperta (se vuoi non chiuderla)
+Start-Process -FilePath powershell -ArgumentList -NoExit, '-Command', "& 'C:\Projects\wye\.venv\Scripts\python.exe' -m uvicorn app.main:app --app-dir 'C:\Projects\wye\backend' --reload --host 127.0.0.1 --port 8000" -WorkingDirectory 'C:\Projects\wye\backend'
+
+# avviare in background e reindirizzare output/errore su file
+Start-Process -FilePath 'C:\Projects\wye\.venv\Scripts\python.exe' `
+  -ArgumentList '-m','uvicorn','app.main:app','--app-dir','C:\Projects\wye\backend','--reload','--host','127.0.0.1','--port','8000' `
+  -WorkingDirectory 'C:\Projects\wye\backend' `
+  -RedirectStandardOutput 'C:\Projects\wye\backend\uvicorn.out.txt' `
+  -RedirectStandardError  'C:\Projects\wye\backend\uvicorn.err.txt'
+
+# testare rapidamente gli endpoint (dopo l’avvio)
+Invoke-RestMethod 'http://127.0.0.1:8000/health'
+Invoke-RestMethod 'http://127.0.0.1:8000/product/9876543210987' | ConvertTo-Json -Depth 5
+
+# entra nella cartella del progetto e attiva il virtualenv
+cd C:\Projects\wye
+& .\.venv\Scripts\Activate.ps1
+
+# avvia uvicorn (lavorando nella cartella backend)
+*** End Patch
