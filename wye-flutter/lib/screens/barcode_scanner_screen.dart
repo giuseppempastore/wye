@@ -84,6 +84,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       appBar: AppBar(
         title: const Text('Scansiona Barcode'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.home_rounded),
+          tooltip: 'Torna alla home',
+          onPressed: () => context.go('/'),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -260,6 +265,36 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Storico',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Impostazioni',
+          ),
+        ],
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              context.go('/');
+              break;
+            case 1:
+              context.go('/history');
+              break;
+            case 2:
+              context.go('/settings');
+              break;
+          }
+        },
       ),
     );
   }

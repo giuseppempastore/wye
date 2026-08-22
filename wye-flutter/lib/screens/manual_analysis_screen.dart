@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
@@ -83,6 +84,11 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
       appBar: AppBar(
         title: const Text('Analisi Manuale'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.home_rounded),
+          tooltip: 'Torna alla home',
+          onPressed: () => context.go('/'),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -318,6 +324,36 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history),
+            label: 'Storico',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Impostazioni',
+          ),
+        ],
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              context.go('/');
+              break;
+            case 1:
+              context.go('/history');
+              break;
+            case 2:
+              context.go('/settings');
+              break;
+          }
+        },
       ),
     );
   }

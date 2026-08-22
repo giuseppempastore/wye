@@ -63,13 +63,15 @@ class ApiClient {
         try {
           final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
 
+          // Caso backend: prodotto non trovato nel DB
+          if (jsonData['error'] == 'not_found') {
+            throw ProductNotFoundException(
+              'Prodotto non trovato nel database. Prova a inserirlo manualmente nella sezione Premium.',
+            );
+          }
+
           // Caso backend DB: { product, score, ingredients }
           if (jsonData.containsKey('product')) {
-            if (jsonData['error'] == 'not_found') {
-              throw ProductNotFoundException(
-                'Prodotto non trovato nel database. Prova a inserirlo manualmente nella sezione Premium.',
-              );
-            }
             final product = _mapDbProductResponse(jsonData, barcode);
             _logger.i('✅ Product found: ${product.productName}');
             return product;
@@ -79,6 +81,8 @@ class ApiClient {
           final product = Product.fromJson(jsonData);
           _logger.i('✅ Product found: ${product.productName}');
           return product;
+        } on ProductNotFoundException {
+          rethrow;
         } catch (e) {
           _logger.e('❌ JSON parse error: $e');
           throw ApiException('Errore nel parsing della risposta del server');
@@ -95,6 +99,8 @@ class ApiClient {
         throw ApiException(
             'Errore nel recupero del prodotto (${response.statusCode})');
       }
+    } on ProductNotFoundException {
+      rethrow;
     } on SocketException {
       _logger.e('❌ Network error - impossible to reach backend');
       throw NetworkException(
