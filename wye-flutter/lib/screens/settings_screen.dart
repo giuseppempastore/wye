@@ -114,6 +114,74 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
+              // Premium country + fact-check section
+              Text(
+                'Premium e sicurezza',
+                style: AppTypography.headline3,
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Consumer<UserPreferencesProvider>(
+                    builder: (context, userPref, _) {
+                      final countries = {
+                        'IT': 'Italia',
+                        'DE': 'Germania',
+                        'FR': 'Francia',
+                        'ES': 'Spagna',
+                        'UK': 'Regno Unito',
+                        'US': 'Stati Uniti',
+                      };
+
+                      final countryValue = countries.keys.contains(userPref.country)
+                          ? userPref.country
+                          : 'IT';
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Paese di residenza',
+                            style: AppTypography.bodyLarge,
+                          ),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: countryValue,
+                            decoration: const InputDecoration(
+                              prefixIcon: Icon(Icons.location_on_outlined),
+                            ),
+                            items: countries.entries
+                                .map(
+                                  (entry) => DropdownMenuItem<String>(
+                                    value: entry.key,
+                                    child: Text(entry.value),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: userPref.isPremium
+                                ? (value) {
+                                    if (value != null) {
+                                      userPref.setCountry(value);
+                                    }
+                                  }
+                                : null,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            userPref.isPremium
+                                ? 'Il paese selezionato sarà usato come riferimento nel flusso di scansione.'
+                                : 'Questa sezione è disponibile solo per utenti premium.',
+                            style: AppTypography.bodySmall,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // Allergens Section
               Text(
                 'Mie Allergie',

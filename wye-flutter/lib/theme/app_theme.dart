@@ -8,17 +8,17 @@ class AppColors {
   static const Color riskLow = Color(0xFF7CB342); // Verde chiaro
   static const Color riskExcellent = Color(0xFF388E3C); // Verde scuro
 
-  // Brand Colors
-  static const Color primary = Color(0xFF2E7D32); // Verde principale
-  static const Color secondary = Color(0xFF43A047); // Verde secondario
-  static const Color accent = Color(0xFFFFC107); // Giallo accent
+  // Brand Colors - white + sky blue palette inspired by the new hero artwork
+  static const Color primary = Color(0xFF4AA9E8); // Azzurro principale
+  static const Color secondary = Color(0xFFBEE6FF); // Azzurro chiaro secondario
+  static const Color accent = Color(0xFF8ED7FF); // Azzurro accent
 
   // Neutral
   static const Color white = Color(0xFFFFFFFF);
   static const Color darkGrey = Color(0xFF212121);
   static const Color mediumGrey = Color(0xFF757575);
-  static const Color lightGrey = Color(0xFFF5F5F5);
-  static const Color borderGrey = Color(0xFFE0E0E0);
+  static const Color lightGrey = Color(0xFFF5FBFF);
+  static const Color borderGrey = Color(0xFFDDEEFF);
 
   // Semantic
   static const Color success = Color(0xFF388E3C);

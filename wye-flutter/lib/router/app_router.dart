@@ -4,6 +4,7 @@ import '../screens/home_screen.dart';
 import '../screens/barcode_scanner_screen.dart';
 import '../screens/product_detail_screen.dart';
 import '../screens/manual_analysis_screen.dart';
+import '../screens/add_product_screen.dart';
 import '../screens/history_screen.dart';
 import '../screens/settings_screen.dart';
 
@@ -33,6 +34,11 @@ class AppRouter {
         path: '/manual-analysis',
         name: 'manual_analysis',
         builder: (context, state) => const ManualAnalysisScreen(),
+      ),
+      GoRoute(
+        path: '/add-product',
+        name: 'add_product',
+        builder: (context, state) => const AddProductScreen(),
       ),
       GoRoute(
         path: '/history',

@@ -118,6 +118,66 @@ class ApiClient {
     }
   }
 
+  Future<Product> createProduct({
+    required String barcode,
+    required String brandName,
+    required String productName,
+    required String category,
+    required String productType,
+    required String ingredients,
+    Map<String, dynamic>? nutritionFacts,
+    String source = 'photo_submission',
+  }) async {
+    try {
+      final payload = {
+        'barcode': barcode.trim(),
+        'brand_name': brandName.trim(),
+        'product_name': productName.trim(),
+        'category': category.trim(),
+        'product_type': productType.trim(),
+        'ingredients': ingredients,
+        'nutrition': nutritionFacts ?? {},
+        'source': source,
+      };
+
+      final response = await _client
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/products'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode(payload),
+          )
+          .timeout(ApiConfig.connectionTimeout, onTimeout: () {
+            throw TimeoutException('Creazione prodotto timeout - riprova');
+          });
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        final productData = jsonData['product'] as Map<String, dynamic>? ?? {};
+
+        if (productData.isEmpty) {
+          throw ApiException('Risposta del server vuota durante la creazione prodotto');
+        }
+
+        final product = Product.fromJson(productData);
+        _logger.i('✅ Product created: ${product.productName}');
+        return product;
+      }
+
+      throw ApiException(
+          'Errore nella creazione prodotto (${response.statusCode}): ${response.body}');
+    } on SocketException {
+      _logger.e('❌ Network error while creating product');
+      throw NetworkException(
+          'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
+    } on TimeoutException catch (e) {
+      _logger.e('❌ Timeout while creating product: $e');
+      throw NetworkException(e.message ?? 'Timeout della creazione prodotto');
+    } catch (e) {
+      _logger.e('❌ Exception creating product: $e');
+      rethrow;
+    }
+  }
+
   /// Analizza ingredienti manuali (premium feature)
   Future<Product> analyzeIngredients({
     required String productName,
@@ -186,6 +246,40 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> normalizePhotoText({
+    required String rawText,
+  }) async {
+    try {
+      final response = await _client
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/normalize-photo'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'raw_text': rawText}),
+          )
+          .timeout(ApiConfig.connectionTimeout, onTimeout: () {
+            throw TimeoutException('Normalizzazione OCR timeout - riprova');
+          });
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        return {
+          'ingredients': jsonData['ingredients'] ?? const [],
+          'nutrition': jsonData['nutrition'] ?? const {},
+        };
+      }
+
+      throw ApiException(
+          'Errore nella normalizzazione foto (${response.statusCode}): ${response.body}');
+    } on SocketException {
+      throw NetworkException(
+          'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
+    } on TimeoutException catch (e) {
+      throw NetworkException(e.message ?? 'Timeout della normalizzazione foto');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Health check del backend
   Future<bool> healthCheck() async {
     try {
@@ -228,6 +322,13 @@ Product _mapDbProductResponse(Map<String, dynamic> jsonData, String fallbackBarc
       .toSet()
       .toList();
 
+  final dangerousSubstances = ingredientsData
+      .where((e) => (e as Map<String, dynamic>)['risky_flag'] == true ||
+          (e['risk_level'] != null && ['high','critical'].contains(e['risk_level'].toString().toLowerCase())))
+      .map((e) => (e as Map<String, dynamic>)['canonical_name']?.toString() ?? e['raw_name']?.toString() ?? 'sostanza pericolosa')
+      .toSet()
+      .toList();
+
   final ingredientScore =
       (scoreData['ingredient_score'] as num?)?.toDouble() ?? 0.0;
   final nutritionScore = (scoreData['nutrition_score'] as num?)?.toDouble();
@@ -244,6 +345,7 @@ Product _mapDbProductResponse(Map<String, dynamic> jsonData, String fallbackBarc
     riskLevel: scoreData['score_band']?.toString() ?? _riskLevelFromScore(finalScore),
     ingredients: ingredients,
     allergens: allergens,
+    dangerousSubstances: dangerousSubstances,
   );
 }
 

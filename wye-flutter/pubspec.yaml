@@ -32,6 +32,8 @@ dependencies:
   # Camera & Barcode Scanning
   mobile_scanner: ^7.4.0
   permission_handler: ^13.0.1
+  image_picker: ^1.0.0
+  google_mlkit_text_recognition: ^0.15.0
 
   # UI Components
   flutter_svg: ^2.0.7
@@ -55,3 +57,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - img/What_you_eatin_theme.jpg
+    - img/What_you_eatin_theme_upd_1.jpg

@@ -15,7 +15,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('WYE'),
+        title: const Text(''),
         elevation: 0,
       ),
       body: SafeArea(
@@ -25,36 +25,59 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.primary.withOpacity(0.1),
-                        AppColors.secondary.withOpacity(0.05),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppColors.primary.withOpacity(0.2),
+                Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    'WYE',
+                    style: AppTypography.headline2.copyWith(
+                      color: AppColors.primary,
+                      letterSpacing: 1.5,
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Benvenuto su WYE',
-                        style: AppTypography.headline2,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Scopri la salubrità dei prodotti che consumi.',
-                        style: AppTypography.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                // Header
+                Container(
+                  height: 180,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
                       ),
                     ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Image.asset(
+                            'img/What_you_eatin_theme_upd_1.jpg',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withOpacity(0.6),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: Container(),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -87,42 +110,58 @@ class _HomeScreenState extends State<HomeScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),
+                const SizedBox(height: 12),
+
+                // Button: Add product from photo / extracted data
+                OutlinedButton.icon(
+                  onPressed: () => context.go('/add-product'),
+                  icon: const Icon(Icons.add_photo_alternate_rounded),
+                  label: const Text('Aggiungi Prodotto da Foto'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
                 const SizedBox(height: 32),
 
                 // Info Cards
-                Text(
-                  'Come funziona',
-                  style: AppTypography.headline3,
-                ),
-                const SizedBox(height: 16),
-
-                // Info Card 1
-                InfoSection(
-                  icon: Icons.explore,
-                  title: 'Valutazione trasparente',
-                  description:
-                      'Scopri la salubrità di ogni prodotto basato su ingredienti e nutrizione.',
-                  iconColor: AppColors.primary,
-                ),
-                const SizedBox(height: 12),
-
-                // Info Card 2
-                InfoSection(
-                  icon: Icons.warning,
-                  title: 'Allergeni e rischi',
-                  description:
-                      'Identifichiamo ingredienti critici e allergeni potenziali.',
-                  iconColor: AppColors.riskHigh,
-                ),
-                const SizedBox(height: 12),
-
-                // Info Card 3
-                InfoSection(
-                  icon: Icons.trending_up,
-                  title: 'Scoring dettagliato',
-                  description:
-                      'Vedi come ingredienti e nutrizione influenzano il punteggio finale.',
-                  iconColor: AppColors.secondary,
+                Theme(
+                  data: Theme.of(context).copyWith(
+                    dividerColor: Colors.transparent,
+                  ),
+                  child: ExpansionTile(
+                    initiallyExpanded: false,
+                    title: Text(
+                      'Come funziona',
+                      style: AppTypography.headline3,
+                    ),
+                    tilePadding: EdgeInsets.zero,
+                    childrenPadding: const EdgeInsets.only(top: 8),
+                    children: [
+                      InfoSection(
+                        icon: Icons.explore,
+                        title: 'Valutazione trasparente',
+                        description:
+                            'Scopri la salubrità di ogni prodotto basato su ingredienti e nutrizione.',
+                        iconColor: AppColors.primary,
+                      ),
+                      const SizedBox(height: 12),
+                      InfoSection(
+                        icon: Icons.warning,
+                        title: 'Allergeni e rischi',
+                        description:
+                            'Identifichiamo ingredienti critici e allergeni potenziali.',
+                        iconColor: AppColors.riskHigh,
+                      ),
+                      const SizedBox(height: 12),
+                      InfoSection(
+                        icon: Icons.trending_up,
+                        title: 'Scoring dettagliato',
+                        description:
+                            'Vedi come ingredienti e nutrizione influenzano il punteggio finale.',
+                        iconColor: AppColors.secondary,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 32),
 

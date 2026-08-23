@@ -44,6 +44,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     final provider = context.read<BarcodeScannerProvider>();
     await provider.scanBarcode(barcode);
 
+    if (mounted) {
+      context.read<UserPreferencesProvider>().resetPremiumFactCheckConsent();
+    }
+
     if (provider.currentProduct != null) {
       if (mounted) {
         context.go('/product/${provider.currentProduct!.barcode}');
@@ -234,6 +238,89 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+
+              Consumer<UserPreferencesProvider>(
+                builder: (context, userPref, _) {
+                  final countries = {
+                    'IT': 'Italia',
+                    'DE': 'Germania',
+                    'FR': 'Francia',
+                    'ES': 'Spagna',
+                    'UK': 'Regno Unito',
+                    'US': 'Stati Uniti',
+                  };
+                  final countryValue = countries.keys.contains(userPref.country)
+                      ? userPref.country
+                      : 'IT';
+                  final countryLabel = countries[countryValue] ?? countryValue;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Paese di riferimento per il fact checking',
+                        style: AppTypography.label,
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        value: countryValue,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          prefixIcon: Icon(Icons.location_on_outlined),
+                        ),
+                        items: countries.entries
+                            .map(
+                              (entry) => DropdownMenuItem<String>(
+                                value: entry.key,
+                                child: Text(entry.value),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            userPref.setCountry(value);
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      CheckboxListTile(
+                        value: userPref.isPremium
+                            ? userPref.premiumFactCheckConsent
+                            : false,
+                        onChanged: userPref.isPremium
+                            ? (value) async {
+                                if (value == true) {
+                                  userPref.setPremiumFactCheckConsent(true);
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          'Fact checking AI pronto per $countryLabel: esegui la scansione del prodotto per attivarlo.',
+                                        ),
+                                        backgroundColor: AppColors.accent,
+                                      ),
+                                    );
+                                  }
+                                  return;
+                                }
+
+                                userPref.setPremiumFactCheckConsent(false);
+                              }
+                            : null,
+                        enabled: userPref.isPremium,
+                        title: const Text('Fact checking AI premium'),
+                        subtitle: Text(
+                          userPref.isPremium
+                              ? 'Verrà eseguito per il paese selezionato: $countryLabel.'
+                              : 'Disponibile solo per utenti premium.',
+                        ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                    ],
                   );
                 },
               ),

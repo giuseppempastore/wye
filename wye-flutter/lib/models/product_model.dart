@@ -9,8 +9,9 @@ class Product {
   final double? riskIndex; // 0-100 numeric danger index
   final String riskLevel;
   final List<String> ingredients;
-  final NutritionFacts? nutritionFacts;
   final List<String> allergens;
+  final List<String> dangerousSubstances;
+  final NutritionFacts? nutritionFacts;
   final String? imageUrl;
   final DateTime? fetchedAt;
 
@@ -25,29 +26,38 @@ class Product {
     required this.finalScore,
     required this.riskLevel,
     required this.ingredients,
-    this.nutritionFacts,
     required this.allergens,
+    this.dangerousSubstances = const [],
+    this.nutritionFacts,
     this.imageUrl,
     this.fetchedAt,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
+    final barcodeValue = (json['barcode'] ?? '').toString();
+    final productNameValue = (json['product_name'] ?? json['name'] ?? 'Unnamed product').toString();
+    final brandValue = (json['brand'] ?? json['brand_name'] ?? 'Unknown Brand').toString();
+    final categoryValue = (json['category'] ?? 'food').toString();
+
     return Product(
-      barcode: json['barcode'] as String,
-      productName: json['product_name'] as String,
-      brand: json['brand'] as String,
-      category: json['category'] as String,
-      ingredientScore: (json['ingredient_score'] as num).toDouble(),
+      barcode: barcodeValue,
+      productName: productNameValue,
+      brand: brandValue,
+      category: categoryValue,
+      ingredientScore: (json['ingredient_score'] as num? ?? 0).toDouble(),
       nutritionScore: json['nutrition_score'] != null
           ? (json['nutrition_score'] as num).toDouble()
           : null,
-      finalScore: (json['final_score'] as num).toDouble(),
-      riskLevel: json['risk_level'] as String,
-      ingredients: List<String>.from(json['ingredients'] as List? ?? []),
+      finalScore: (json['final_score'] as num? ?? 0).toDouble(),
+      riskLevel: (json['risk_level'] ?? 'unknown').toString(),
+      ingredients: json['ingredients'] is List
+          ? List<String>.from((json['ingredients'] as List).map((e) => e.toString()))
+          : const [],
+      allergens: List<String>.from(json['allergens'] as List? ?? []),
+      dangerousSubstances: List<String>.from(json['dangerous_substances'] as List? ?? json['hazardous_substances'] as List? ?? []),
       nutritionFacts: json['nutrition_facts'] != null
           ? NutritionFacts.fromJson(json['nutrition_facts'])
           : null,
-      allergens: List<String>.from(json['allergens'] as List? ?? []),
       imageUrl: json['image_url'] as String?,
       riskIndex: json['risk_index'] != null
           ? (json['risk_index'] as num).toDouble()
@@ -70,6 +80,7 @@ class Product {
       'ingredients': ingredients,
       'nutrition_facts': nutritionFacts?.toJson(),
       'allergens': allergens,
+      'dangerous_substances': dangerousSubstances,
       'image_url': imageUrl,
       'fetched_at': fetchedAt?.toIso8601String(),
     };

@@ -74,6 +74,48 @@ class BarcodeScannerProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> addProductFromSubmission({
+    required String barcode,
+    required String brandName,
+    required String productName,
+    required String category,
+    required String productType,
+    required String ingredients,
+    Map<String, dynamic>? nutritionFacts,
+    String source = 'photo_submission',
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      _currentProduct = await _apiClient.createProduct(
+        barcode: barcode,
+        brandName: brandName,
+        productName: productName,
+        category: category,
+        productType: productType,
+        ingredients: ingredients,
+        nutritionFacts: nutritionFacts ?? const {},
+        source: source,
+      );
+      _addToHistory(_currentProduct!);
+      _error = null;
+    } on ProductNotFoundException catch (e) {
+      _error = e.message;
+      _currentProduct = null;
+    } on NetworkException catch (e) {
+      _error = e.message;
+      _currentProduct = null;
+    } catch (e) {
+      _error = 'Errore durante l\'inserimento del prodotto: $e';
+      _currentProduct = null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Aggiunge un prodotto allo storico
   void _addToHistory(Product product) {
     _scanHistory.insert(0, ScanHistory.fromProduct(product));
@@ -108,11 +150,15 @@ class UserPreferencesProvider extends ChangeNotifier {
   bool _isPremium = false;
   List<String> _userAllergies = [];
   String _language = 'it';
+  String _country = 'IT';
+  bool _premiumFactCheckConsent = false;
 
   // Getters
   bool get isPremium => _isPremium;
   List<String> get userAllergies => _userAllergies;
   String get language => _language;
+  String get country => _country;
+  bool get premiumFactCheckConsent => _premiumFactCheckConsent;
 
   void setUserAllergies(List<String> allergies) {
     _userAllergies = allergies;
@@ -121,11 +167,29 @@ class UserPreferencesProvider extends ChangeNotifier {
 
   void setPremium(bool value) {
     _isPremium = value;
+    if (!_isPremium) {
+      _premiumFactCheckConsent = false;
+    }
     notifyListeners();
   }
 
   void setLanguage(String lang) {
     _language = lang;
+    notifyListeners();
+  }
+
+  void setCountry(String countryCode) {
+    _country = countryCode;
+    notifyListeners();
+  }
+
+  void setPremiumFactCheckConsent(bool value) {
+    _premiumFactCheckConsent = value;
+    notifyListeners();
+  }
+
+  void resetPremiumFactCheckConsent() {
+    _premiumFactCheckConsent = false;
     notifyListeners();
   }
 

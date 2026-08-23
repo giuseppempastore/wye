@@ -39,6 +39,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       appBar: AppBar(
         title: const Text('Dettagli Prodotto'),
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.home_rounded),
+          tooltip: 'Torna alla home',
+          onPressed: () => context.go('/'),
+        ),
       ),
       body: FutureBuilder<void>(
         future: _loadProductFuture,
@@ -130,30 +135,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Allergens Section
-                      if (product.allergens.isNotEmpty) ...[
-                        Text(
-                          'Allergeni Rilevati',
-                          style: AppTypography.headline3,
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (String allergen in product.allergens)
-                              AllergenBadge(
-                                allergen: allergen,
-                                isUserSensitive: context
-                                    .read<UserPreferencesProvider>()
-                                    .userAllergies
-                                    .contains(allergen),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                      ],
-
                       // Ingredients Section
                       if (product.ingredients.isNotEmpty) ...[
                         Text(
@@ -186,6 +167,73 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         Expanded(
                                           child: Text(
                                             product.ingredients[i],
+                                            style: AppTypography.bodyMedium,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Allergens Section
+                      if (product.allergens.isNotEmpty) ...[
+                        Text(
+                          'Allergeni Rilevati',
+                          style: AppTypography.headline3,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (String allergen in product.allergens)
+                              AllergenBadge(
+                                allergen: allergen,
+                                isUserSensitive: context
+                                    .read<UserPreferencesProvider>()
+                                    .userAllergies
+                                    .contains(allergen),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Dangerous substances Section
+                      if (product.dangerousSubstances.isNotEmpty) ...[
+                        Text(
+                          'Sostanze Pericolose / Ritiri',
+                          style: AppTypography.headline3,
+                        ),
+                        const SizedBox(height: 12),
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                for (int i = 0; i < product.dangerousSubstances.length; i++)
+                                  Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: i < product.dangerousSubstances.length - 1 ? 12 : 0,
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Icon(
+                                          Icons.warning_amber_rounded,
+                                          color: AppColors.riskHigh,
+                                          size: 18,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            product.dangerousSubstances[i],
                                             style: AppTypography.bodyMedium,
                                           ),
                                         ),
@@ -258,6 +306,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         const SizedBox(height: 24),
                       ],
+
+                      const SizedBox(height: 24),
 
                       // Action Buttons
                       ElevatedButton.icon(
