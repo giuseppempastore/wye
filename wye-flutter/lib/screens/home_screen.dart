@@ -15,7 +15,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(''),
+        title: Text(
+          'WYE',
+          style: AppTypography.headline2.copyWith(
+            color: AppColors.primary,
+            letterSpacing: 1.5,
+          ),
+        ),
         elevation: 0,
       ),
       body: SafeArea(
@@ -25,17 +31,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Align(
-                  alignment: Alignment.center,
-                  child: Text(
-                    'WYE',
-                    style: AppTypography.headline2.copyWith(
-                      color: AppColors.primary,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 // Header
                 Container(
                   height: 180,
