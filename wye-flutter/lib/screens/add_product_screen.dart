@@ -672,7 +672,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   onTap: () async {
                     final source = await _chooseImageSource();
                     if (source == null) return;
-                    await _pickImage((file) => _nutritionImage = file, source);
+                    await _pickImage((file) => _nutritionImage = file, source, isProductPhoto: true);
                   },
                 ),
                 const SizedBox(height: 12),
