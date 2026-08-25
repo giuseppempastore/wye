@@ -148,6 +148,7 @@ class ScanHistory {
   final double finalScore;
   final DateTime scannedAt;
   final String category;
+  final String? imageUrl;
 
   ScanHistory({
     required this.barcode,
@@ -155,6 +156,7 @@ class ScanHistory {
     required this.finalScore,
     required this.scannedAt,
     required this.category,
+    this.imageUrl,
   });
 
   factory ScanHistory.fromProduct(Product product) {
@@ -164,6 +166,7 @@ class ScanHistory {
       finalScore: product.finalScore,
       scannedAt: DateTime.now(),
       category: product.category,
+      imageUrl: product.imageUrl,
     );
   }
 
@@ -174,6 +177,7 @@ class ScanHistory {
       finalScore: (json['final_score'] as num).toDouble(),
       scannedAt: DateTime.parse(json['scanned_at'] as String),
       category: json['category'] as String,
+      imageUrl: json['image_url'] as String?,
     );
   }
 
@@ -184,6 +188,7 @@ class ScanHistory {
       'final_score': finalScore,
       'scanned_at': scannedAt.toIso8601String(),
       'category': category,
+      'image_url': imageUrl,
     };
   }
 }
