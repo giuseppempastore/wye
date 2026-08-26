@@ -1,6 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../models/product_model.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
 import '../widgets/score_widgets.dart';
@@ -59,25 +61,7 @@ class HistoryScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  leading: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: color, width: 2),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '${scan.finalScore.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                      ),
-                    ),
-                  ),
+                  leading: _buildHistoryImage(scan, color),
                   title: Text(
                     scan.productName,
                     style: AppTypography.bodyLarge,
@@ -140,6 +124,41 @@ class HistoryScreen extends StatelessWidget {
               break;
           }
         },
+      ),
+    );
+  }
+
+  Widget _buildHistoryImage(ScanHistory scan, Color color) {
+    if (scan.imageUrl != null && scan.imageUrl!.startsWith('data:image')) {
+      final bytes = const Base64Codec().decode(scan.imageUrl!.split(',').last);
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Image.memory(
+          bytes,
+          width: 60,
+          height: 60,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color, width: 2),
+      ),
+      child: Center(
+        child: Text(
+          '${scan.finalScore.toStringAsFixed(0)}',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
       ),
     );
   }

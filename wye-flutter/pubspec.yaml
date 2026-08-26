@@ -43,6 +43,7 @@ dependencies:
   # Utils
   intl: ^0.20.3
   logger: ^2.1.0
+  image_cropper: ^12.2.1
 
 dev_dependencies:
   flutter_test:

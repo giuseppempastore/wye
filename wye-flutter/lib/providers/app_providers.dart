@@ -83,6 +83,9 @@ class BarcodeScannerProvider extends ChangeNotifier {
     required String ingredients,
     Map<String, dynamic>? nutritionFacts,
     String source = 'photo_submission',
+    String? imageUrl,
+    String? ingredientImageUrl,
+    String? nutritionImageUrl,
   }) async {
     _isLoading = true;
     _error = null;
@@ -98,6 +101,9 @@ class BarcodeScannerProvider extends ChangeNotifier {
         ingredients: ingredients,
         nutritionFacts: nutritionFacts ?? const {},
         source: source,
+        imageUrl: imageUrl,
+        ingredientImageUrl: ingredientImageUrl,
+        nutritionImageUrl: nutritionImageUrl,
       );
       _addToHistory(_currentProduct!);
       _error = null;

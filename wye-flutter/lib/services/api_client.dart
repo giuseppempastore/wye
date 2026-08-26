@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
-
 class ApiConfig {
   // Override opzionale:
   // flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000
@@ -127,6 +126,9 @@ class ApiClient {
     required String ingredients,
     Map<String, dynamic>? nutritionFacts,
     String source = 'photo_submission',
+    String? imageUrl,
+    String? ingredientImageUrl,
+    String? nutritionImageUrl,
   }) async {
     try {
       final payload = {
@@ -138,6 +140,9 @@ class ApiClient {
         'ingredients': ingredients,
         'nutrition': nutritionFacts ?? {},
         'source': source,
+        if (imageUrl != null && imageUrl.trim().isNotEmpty) 'image_url': imageUrl.trim(),
+        if (ingredientImageUrl != null && ingredientImageUrl.trim().isNotEmpty) 'ingredient_image_url': ingredientImageUrl.trim(),
+        if (nutritionImageUrl != null && nutritionImageUrl.trim().isNotEmpty) 'nutrition_image_url': nutritionImageUrl.trim(),
       };
 
       final response = await _client
@@ -265,6 +270,10 @@ class ApiClient {
         return {
           'ingredients': jsonData['ingredients'] ?? const [],
           'nutrition': jsonData['nutrition'] ?? const {},
+          'product_name': jsonData['product_name'] ?? jsonData['name'] ?? '',
+          'brand_name': jsonData['brand_name'] ?? jsonData['brand'] ?? '',
+          'category': jsonData['category'] ?? 'food',
+          'product_type': jsonData['product_type'] ?? jsonData['type'] ?? 'snack',
         };
       }
 
@@ -275,6 +284,53 @@ class ApiClient {
           'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
     } on TimeoutException catch (e) {
       throw NetworkException(e.message ?? 'Timeout della normalizzazione foto');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> analyzeProductImage({
+    required String imageUrl,
+    String? rawText,
+  }) async {
+    try {
+      _logger.i('📤 POST ${ApiConfig.baseUrl}/analyze-image');
+      _logger.d('Payload: imageUrl length=${imageUrl.length}, rawText length=${rawText?.length ?? 0}');
+      final response = await _client
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/analyze-image'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'image_url': imageUrl,
+              if (rawText != null && rawText.trim().isNotEmpty) 'raw_text': rawText,
+            }),
+          )
+          .timeout(ApiConfig.connectionTimeout, onTimeout: () {
+            throw TimeoutException('Analisi immagine timeout - riprova');
+          });
+
+      _logger.i('Response status: ${response.statusCode}');
+      _logger.d('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
+        return {
+          'ingredients': jsonData['ingredients'] ?? const [],
+          'nutrition': jsonData['nutrition'] ?? const {},
+          'product_name': jsonData['product_name'] ?? jsonData['name'] ?? '',
+          'brand_name': jsonData['brand_name'] ?? jsonData['brand'] ?? '',
+          'category': jsonData['category'] ?? 'food',
+          'product_type': jsonData['product_type'] ?? jsonData['type'] ?? 'snack',
+        };
+      }
+
+      throw ApiException(
+          'Errore nell\'analisi immagine (${response.statusCode}): ${response.body}');
+    } on SocketException {
+      throw NetworkException(
+          'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
+    } on TimeoutException catch (e) {
+      throw NetworkException(e.message ?? 'Timeout dell\'analisi immagine');
     } catch (e) {
       rethrow;
     }
@@ -346,6 +402,7 @@ Product _mapDbProductResponse(Map<String, dynamic> jsonData, String fallbackBarc
     ingredients: ingredients,
     allergens: allergens,
     dangerousSubstances: dangerousSubstances,
+    imageUrl: productData['image_url']?.toString(),
   );
 }
 

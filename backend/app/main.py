@@ -5,8 +5,8 @@ from fastapi.responses import HTMLResponse
 from pathlib import Path
 
 from app.services.scoring import score_product
-from app.services.ai_normalizer import normalize_photo_text
-from app.data.ingredients import normalize_ingredient, parse_ingredient_list
+from app.services.ai_normalizer import analyze_image_with_ai, normalize_photo_text
+from app.data.ingredients import normalize_barcode, normalize_ingredient, parse_ingredient_list
 from app.db import get_connection
 import psycopg2.extras
 
@@ -34,6 +34,11 @@ class PhotoNormalizationRequest(BaseModel):
     raw_text: str
 
 
+class ImageAnalysisRequest(BaseModel):
+    image_url: str | None = None
+    raw_text: str = ""
+
+
 class ProductCreateRequest(BaseModel):
     barcode: str
     brand_name: str = ""
@@ -43,6 +48,9 @@ class ProductCreateRequest(BaseModel):
     ingredients: str
     nutrition: dict | None = None
     source: str = "photo_submission"
+    image_url: str | None = None
+    ingredient_image_url: str | None = None
+    nutrition_image_url: str | None = None
 
 
 def _coerce_nutrition_values(nutrition: dict | None) -> dict:
@@ -105,21 +113,44 @@ def normalize_photo(payload: PhotoNormalizationRequest):
     return normalize_photo_text(payload.raw_text)
 
 
+@app.post("/analyze-image")
+def analyze_image(payload: ImageAnalysisRequest):
+    if not payload.image_url and not payload.raw_text.strip():
+        return {"ingredients": [], "nutrition": {}}
+    return analyze_image_with_ai(payload.image_url, payload.raw_text)
+
+
 @app.post("/products")
 def create_product(payload: ProductCreateRequest):
     barcode = (payload.barcode or '').strip()
     product_name = (payload.product_name or '').strip()
     brand_name = (payload.brand_name or '').strip()
+    if not barcode:
+        derived_barcode = normalize_barcode(payload.product_name or payload.ingredients or '')
+        if derived_barcode:
+            barcode = derived_barcode
     if not barcode or not product_name or not brand_name:
         raise HTTPException(status_code=400, detail='barcode, product_name and brand_name are required')
 
     normalized_ingredients = parse_ingredient_list(payload.ingredients)
     normalized_ingredient_names = [normalize_ingredient(item) for item in normalized_ingredients]
     nutrition = _coerce_nutrition_values(payload.nutrition)
+    image_url = (payload.image_url or '').strip() or None
+    ingredient_image_url = (payload.ingredient_image_url or '').strip() or None
+    nutrition_image_url = (payload.nutrition_image_url or '').strip() or None
 
     conn = get_connection()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_name = 'products' AND column_name IN ('image_url', 'ingredient_image_url', 'nutrition_image_url')
+            """
+        )
+        available_product_columns = {row['column_name'] for row in cur.fetchall()}
 
         cur.execute(
             """
@@ -129,24 +160,70 @@ def create_product(payload: ProductCreateRequest):
         )
         product = cur.fetchone()
 
+        if product:
+            raise HTTPException(status_code=409, detail='A product with this barcode already exists')
+
         if not product:
+            insert_columns = [
+                'barcode', 'brand_name', 'product_name', 'category', 'product_type', 'source', 'verified', 'status'
+            ]
+            insert_values: list[Any] = [
+                barcode,
+                payload.brand_name or 'Unknown Brand',
+                product_name,
+                payload.category or 'food',
+                payload.product_type or 'snack',
+                payload.source or 'photo_submission',
+                True,
+                'active',
+            ]
+
+            if 'image_url' in available_product_columns:
+                insert_columns.append('image_url')
+                insert_values.append(image_url)
+            if 'ingredient_image_url' in available_product_columns:
+                insert_columns.append('ingredient_image_url')
+                insert_values.append(ingredient_image_url)
+            if 'nutrition_image_url' in available_product_columns:
+                insert_columns.append('nutrition_image_url')
+                insert_values.append(nutrition_image_url)
+
+            placeholders = ', '.join(['%s'] * len(insert_values))
+            column_sql = ', '.join(insert_columns)
             cur.execute(
-                """
-                INSERT INTO products (barcode, brand_name, product_name, category, product_type, source, verified, status)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'active')
+                f"""
+                INSERT INTO products ({column_sql})
+                VALUES ({placeholders})
                 RETURNING *
                 """,
-                (
-                    barcode,
-                    payload.brand_name or 'Unknown Brand',
-                    product_name,
-                    payload.category or 'food',
-                    payload.product_type or 'snack',
-                    payload.source or 'photo_submission',
-                    True,
-                ),
+                tuple(insert_values),
             )
             product = cur.fetchone()
+
+        if product:
+            update_values: list[Any] = []
+            update_fields: list[str] = []
+            if image_url and 'image_url' in available_product_columns and product.get('image_url') is None:
+                update_fields.append('image_url = %s')
+                update_values.append(image_url)
+            if ingredient_image_url and 'ingredient_image_url' in available_product_columns and product.get('ingredient_image_url') is None:
+                update_fields.append('ingredient_image_url = %s')
+                update_values.append(ingredient_image_url)
+            if nutrition_image_url and 'nutrition_image_url' in available_product_columns and product.get('nutrition_image_url') is None:
+                update_fields.append('nutrition_image_url = %s')
+                update_values.append(nutrition_image_url)
+            if update_fields:
+                update_fields.append('updated_at = NOW()')
+                cur.execute(
+                    f"UPDATE products SET {', '.join(update_fields)} WHERE id = %s",
+                    (*update_values, product['id']),
+                )
+                if image_url and 'image_url' in available_product_columns:
+                    product['image_url'] = image_url
+                if ingredient_image_url and 'ingredient_image_url' in available_product_columns:
+                    product['ingredient_image_url'] = ingredient_image_url
+                if nutrition_image_url and 'nutrition_image_url' in available_product_columns:
+                    product['nutrition_image_url'] = nutrition_image_url
 
         if not product:
             raise HTTPException(status_code=500, detail='Product could not be created')
@@ -163,6 +240,16 @@ def create_product(payload: ProductCreateRequest):
                 (ingredient,),
             )
             ingredient_row = cur.fetchone()
+            if not ingredient_row:
+                cur.execute(
+                    """
+                    INSERT INTO ingredients (canonical_name, ingredient_group, risk_level, allergen_flag, evidence_level, common_name, status)
+                    VALUES (%s, 'unknown', 'moderate', FALSE, 1, %s, 'active')
+                    RETURNING id
+                    """,
+                    (ingredient, ingredient),
+                )
+                ingredient_row = cur.fetchone()
             if not ingredient_row:
                 continue
 
@@ -273,7 +360,7 @@ def get_product(barcode: str):
 
         cur.execute(
             """
-            SELECT pi.raw_name, pi.canonical_name, i.risk_level, i.allergen_flag
+            SELECT pi.raw_name, pi.canonical_name, i.risk_level, i.allergen_flag, i.canonical_name as ingredient_name
             FROM product_ingredients pi
             JOIN ingredients i ON pi.ingredient_id = i.id
             WHERE pi.product_id = %s

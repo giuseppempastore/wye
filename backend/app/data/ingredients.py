@@ -80,7 +80,7 @@ TRANSLATIONS = {
     "olio di colza": "canola oil",
     "bicarbonato di sodio": "sodium bicarbonate",
     "ammonio bicarbonato": "ammonium bicarbonate",
-    "nuci": "nuts",
+    "noci": "nuts",
     "latte intero": "whole milk",
     "latte scremato": "skim milk",
     "proteina del latte": "milk protein",
@@ -98,6 +98,14 @@ TRANSLATIONS = {
     "formaldeide": "formaldehyde",
     "parabeni": "parabens",
     "ftalati": "phthalates",
+    "latte": "milk",
+    "cacao": "cocoa",
+    "cacao powder": "cocoa powder",
+    "cacao in polvere": "cocoa powder",
+    "grano": "wheat",
+    "farina di grano": "wheat flour",
+    "farina": "flour",
+    "olio": "oil",
     "benzene": "benzene",
     "benzeno": "benzene",
 }
@@ -280,11 +288,34 @@ CATALOG = {
 }
 
 
+def normalize_barcode(raw_text: str) -> str | None:
+    if not raw_text:
+        return None
+
+    digits_only = re.sub(r"\D+", " ", raw_text)
+    candidates = re.findall(r"\b\d{8,14}\b", digits_only)
+    if not candidates:
+        return None
+
+    cleaned = [candidate for candidate in candidates if candidate.isdigit()]
+    if not cleaned:
+        return None
+
+    best = max(cleaned, key=lambda value: (len(value), value))
+    if len(best) == 14 and best.startswith("0"):
+        best = best[1:]
+    if len(best) >= 13:
+        return best[:13]
+    return best
+
+
 def normalize_ingredient(raw_text: str) -> str:
-    value = raw_text.strip().lower()
+    value = (raw_text or '').strip().lower()
+    for wrong, right in {"0": "o", "1": "i", "5": "s", "8": "b"}.items():
+        value = value.replace(wrong, right)
     value = value.replace("/", " ")
-    value = re.sub(r"\s+", " ", value)
     value = value.replace("-", " ")
+    value = re.sub(r"\s+", " ", value)
     value = value.strip()
 
     if not value:
@@ -299,6 +330,12 @@ def normalize_ingredient(raw_text: str) -> str:
 
     cleaned = re.sub(r"[^a-z0-9\s]", " ", value)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    for wrong, right in {"0": "o", "1": "i", "5": "s", "8": "b"}.items():
+        cleaned = cleaned.replace(wrong, right)
+
+    if cleaned in {"milk", "water", "sugar", "wheat flour", "cocoa powder", "salt", "oil"}:
+        return cleaned
+
     return cleaned or "unknown ingredient"
 
 
@@ -308,4 +345,51 @@ def parse_ingredient_list(raw_text: str):
 
     chunk = raw_text.replace(";", ",").replace("\n", ",").replace("\r", ",")
     parts = [part.strip() for part in chunk.split(",")]
-    return [part for part in parts if part and part.lower() not in {"ingredienti", "ingredients"}]
+    cleaned = []
+    noise_words = {
+        "ingredienti", "ingredients", "ingredient list", "lista ingredienti", "ingredient",
+        "dichiarazione nutrizionale", "nutrizione", "confezione", "biscotti", "sostenibile",
+        "specifica", "consun", "allergeni", "dichiarazione", "c r a", "cra", "cara"
+    }
+
+    for part in parts:
+        if not part:
+            continue
+        normalized = re.sub(r"^\s*\d+[\.)\-]*\s*", "", part)
+        normalized = re.sub(r"^\s*[-•*]\s*", "", normalized)
+        normalized = re.sub(r"\s*[:\-]\s*", " ", normalized)
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        if not normalized:
+            continue
+
+        lowered = normalized.lower()
+        for wrong, right in {"0": "o", "1": "i", "5": "s", "8": "b"}.items():
+            lowered = lowered.replace(wrong, right)
+
+        if lowered in noise_words:
+            continue
+        if any(token in lowered for token in ["ingredient", "nutriz", "biscotti", "confezione", "dichiarazione", "allergen"]):
+            continue
+        if any(word in lowered for word in ["sosteni", "specifica", "consun", "cultivazione", "icooki", "cocol", "l e c e s"]):
+            continue
+        if re.search(r"\d", normalized):
+            continue
+        single_tokens = normalized.split()
+        if len(single_tokens) == 1:
+            token = single_tokens[0]
+            if len(token) <= 3 and token.lower() not in {"oil", "tea", "egg", "jam"}:
+                continue
+        cleaned.append(normalized)
+
+    unique = []
+    seen = set()
+    for item in cleaned:
+        key = item.lower()
+        for wrong, right in {"0": "o", "1": "i", "5": "s", "8": "b"}.items():
+            key = key.replace(wrong, right)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(item)
+
+    return unique
