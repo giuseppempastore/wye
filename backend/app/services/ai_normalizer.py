@@ -14,7 +14,7 @@ except Exception:  # pragma: no cover
 
 
 def _get_ai_key() -> str | None:
-    for env_name in ("WYE_AI_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY"):
+    for env_name in ("WYE_OPENAI_KEY", "WYE_GEMINI_KEY", "WYE_AI_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"):
         value = os.getenv(env_name)
         if value and value.strip():
             return value.strip()
