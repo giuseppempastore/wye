@@ -543,7 +543,7 @@ class MigrationLifecycleTests(unittest.TestCase):
         try:
             with conn.cursor() as cur:
                 cur.execute("SELECT version_num FROM alembic_version")
-                self.assertEqual(cur.fetchone()[0], "0003_data_integrity_hardening")
+                self.assertEqual(cur.fetchone()[0], "0004_product_image_uploads")
                 cur.execute("DELETE FROM product_images WHERE product_id=%s", (protected_product_id,))
                 cur.execute("DELETE FROM products WHERE id=%s", (protected_product_id,))
                 cur.execute("DELETE FROM storage_objects WHERE id=%s", (storage_object_id,))
