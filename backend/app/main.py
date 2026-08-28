@@ -9,10 +9,12 @@ from app.services.ai_normalizer import analyze_image_with_ai, normalize_photo_te
 from app.data.ingredients import normalize_barcode, normalize_ingredient, parse_ingredient_list
 from app.db import get_connection
 from app.routes.product_images import router as product_images_router
+from app.routes.label_extractions import router as label_extractions_router
 import psycopg2.extras
 
 app = FastAPI(title="Wye MVP prototype")
 app.include_router(product_images_router)
+app.include_router(label_extractions_router)
 
 app.add_middleware(
     CORSMiddleware,
