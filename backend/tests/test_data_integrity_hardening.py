@@ -230,10 +230,11 @@ class DataIntegrityHardeningTests(unittest.TestCase):
 
     def test_valid_image_document_and_mapping_candidate(self):
         product_id = self.product()
-        image_id = self.image(product_id)
+        image_id = self.image(product_id, "ingredients")
         self.cur.execute(
             "INSERT INTO product_label_documents "
-            "(product_image_id, raw_text, source_type) VALUES (%s, 'x', 'image_derived')",
+            "(product_image_id, raw_text, source_type, document_type) "
+            "VALUES (%s, 'x', 'image_derived', 'ingredients')",
             (image_id,),
         )
         _, review_id = self.product_ingredient_and_review(product_id)
@@ -422,16 +423,16 @@ class DataIntegrityHardeningTests(unittest.TestCase):
             self.cur.execute("INSERT INTO storage_objects (storage_provider, bucket, object_key) VALUES ('test', 'wye', 'objects/a')")
 
     def test_release_checksum_is_unique_within_dataset_only(self):
-        self.cur.execute("INSERT INTO sources (source_name, source_type) VALUES ('source-a', 'regulatory') RETURNING id")
+        self.cur.execute("INSERT INTO sources (source_key, source_name, source_type) VALUES ('source_a', 'source-a', 'regulatory') RETURNING id")
         source_id = self.cur.fetchone()[0]
         self.cur.execute("INSERT INTO source_datasets (source_id, dataset_name, dataset_key) VALUES (%s, 'a', 'a') RETURNING id", (source_id,))
         first_dataset = self.cur.fetchone()[0]
         self.cur.execute("INSERT INTO source_datasets (source_id, dataset_name, dataset_key) VALUES (%s, 'b', 'b') RETURNING id", (source_id,))
         second_dataset = self.cur.fetchone()[0]
-        self.cur.execute("INSERT INTO source_dataset_releases (dataset_id, version_label, checksum, checksum_algorithm) VALUES (%s, 'v1', 'same', 'sha256')", (first_dataset,))
-        self.cur.execute("INSERT INTO source_dataset_releases (dataset_id, version_label, checksum, checksum_algorithm) VALUES (%s, 'v1', 'same', 'sha256')", (second_dataset,))
+        self.cur.execute("INSERT INTO source_dataset_releases (dataset_id, external_release_key, version_label, checksum, checksum_algorithm) VALUES (%s, 'release_a', 'v1', 'same', 'sha256')", (first_dataset,))
+        self.cur.execute("INSERT INTO source_dataset_releases (dataset_id, external_release_key, version_label, checksum, checksum_algorithm) VALUES (%s, 'release_a', 'v1', 'same', 'sha256')", (second_dataset,))
         with self.assertRaises(psycopg2.IntegrityError):
-            self.cur.execute("INSERT INTO source_dataset_releases (dataset_id, version_label, checksum, checksum_algorithm) VALUES (%s, 'v2', 'same', 'sha256')", (first_dataset,))
+            self.cur.execute("INSERT INTO source_dataset_releases (dataset_id, external_release_key, version_label, checksum, checksum_algorithm) VALUES (%s, 'release_b', 'v2', 'same', 'sha256')", (first_dataset,))
 
 
 @unittest.skipUnless(
@@ -454,6 +455,13 @@ class MigrationLifecycleTests(unittest.TestCase):
 
     def test_upgrade_preflight_abort_and_protected_downgrade(self):
         suffix = uuid.uuid4().hex
+        conn = get_connection()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT version_num FROM alembic_version")
+                starting_revision = cur.fetchone()[0]
+        finally:
+            conn.close()
         self.alembic("downgrade", "0002_scientific_data_model")
         conn = get_connection()
         try:
@@ -543,7 +551,7 @@ class MigrationLifecycleTests(unittest.TestCase):
         try:
             with conn.cursor() as cur:
                 cur.execute("SELECT version_num FROM alembic_version")
-                self.assertEqual(cur.fetchone()[0], "0004_product_image_uploads")
+                self.assertEqual(cur.fetchone()[0], starting_revision)
                 cur.execute("DELETE FROM product_images WHERE product_id=%s", (protected_product_id,))
                 cur.execute("DELETE FROM products WHERE id=%s", (protected_product_id,))
                 cur.execute("DELETE FROM storage_objects WHERE id=%s", (storage_object_id,))
