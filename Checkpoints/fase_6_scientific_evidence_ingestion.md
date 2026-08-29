@@ -35,7 +35,7 @@ Fase 6.3.5 — Ingredient → Substance Mapping Workflow           ✅ COMPLETAT
 Fase 6.3.6 — Final Validation & Mapping History                ✅ COMPLETATA
 Fase 6.4   — Scientific Source Adapters                        🚧 IN CORSO
 Fase 6.4.1 — Scientific Source Adapter Foundation              ✅ COMPLETATA
-Fase 6.4.2 — Real Acquisition & Ingestion Hardening            ⏳ PROSSIMA
+Fase 6.4.2 — EFSA Real Acquisition & Transport Hardening       ✅ COMPLETATA
 ```
 
 La Fase 6 nel suo complesso resta in corso. In particolare:
@@ -44,8 +44,8 @@ La Fase 6 nel suo complesso resta in corso. In particolare:
 scientific evidence != scientific scoring
 ```
 
-La Fase 6.4 è in corso: il foundation checkpoint 6.4.1 è completato; transport e
-acquisition reali restano fuori da questo checkpoint.
+La Fase 6.4 è in corso: i checkpoint 6.4.1 e 6.4.2 sono completati; acquisition
+OpenFoodTox reale e hardening batch/recovery restano fuori da questo checkpoint.
 
 Stato fasi precedenti:
 
@@ -1446,7 +1446,7 @@ Non creare automaticamente equivalenze scientifiche senza evidenza.
 
 ## Stato
 
-**IN CORSO — FASE 6.4.1 COMPLETATA**
+**IN CORSO — FASI 6.4.1 E 6.4.2 COMPLETATE**
 
 La Fase 6.4.1 riutilizza l'hardening e il core source-agnostic delle Fasi 6.1–6.3.
 Non introduce una seconda pipeline di persistenza o transazione.
@@ -1504,6 +1504,29 @@ Nessuna release viene inventata. Il modello fino ad Alembic
 `0017_ingredient_mapping_history` è sufficiente: nessuna nuova migration è necessaria.
 
 La persistenza non deve contenere logica EFSA-specifica non necessaria.
+
+### Fase 6.4.2 — EFSA Real Acquisition & Transport Hardening
+
+Il primo acquisition path remoto usa la lista ufficiale EFSA Qualified Presumption
+of Safety pubblicata su Knowledge Junction/Zenodo. La release applicativa è
+`zenodo_record_21216051`; il DOI immutabile `10.5281/zenodo.21216051`, il concept DOI,
+la data sorgente e la licenza restano provenance separata dall'acquisition timestamp.
+
+Il transport HTTP condiviso impone HTTPS e host allow-list, timeout espliciti,
+redirect controllati, retry limitati per sole failure transitorie, `Retry-After`,
+limite byte e verifica `Content-Length`. L'acquirer valida metadata, dimensione e
+checksum provider, poi calcola SHA-256 prima di storage e persistenza. Lo storage
+esistente rimane il solo boundary; stesso release/artifact con byte diversi produce
+un conflitto e non un overwrite.
+
+Il parser XLSX usa soltanto byte artifact, non HTTP. Legge in modo bounded il foglio
+pubblico `QPS List`, preserva righe e qualificazioni native e normalizza
+deterministicamente i nomi tassonomici. Il namespace provider-native
+`efsa_qps_taxon` resta soggetto a registrazione governata: nessuna sostanza viene
+creata automaticamente. OpenFoodTox remoto, scoring e frontend restano fuori scope.
+
+I test standard sono offline; la rete EFSA richiede esplicitamente
+`WYE_RUN_REAL_EFSA_TESTS=1`. Alembic resta a `0017_ingredient_mapping_history`.
 
 ---
 
