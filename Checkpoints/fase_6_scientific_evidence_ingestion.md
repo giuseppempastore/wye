@@ -1528,6 +1528,11 @@ creata automaticamente. OpenFoodTox remoto, scoring e frontend restano fuori sco
 I test standard sono offline; la rete EFSA richiede esplicitamente
 `WYE_RUN_REAL_EFSA_TESTS=1`. Alembic resta a `0017_ingredient_mapping_history`.
 
+Repair 6.4.2 validato sul feature branch, merge pending: il DOI del record e la
+release key WYE restano identità distinte; l'assessment usa il DOI canonico della
+metadata provider. Sono inoltre validati Content-Type HTTP compatibili, checksum
+provider e concorrenza reale sul primo inserimento.
+
 ---
 
 # 42. Fase 6.5 — OpenFoodTox Real Acquisition

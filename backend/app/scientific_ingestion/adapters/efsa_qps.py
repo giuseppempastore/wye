@@ -12,6 +12,7 @@ import re
 import unicodedata
 import xml.etree.ElementTree as ET
 import zipfile
+from urllib.parse import quote
 
 from app.scientific_ingestion.contracts import (
     ScientificAdapterMetadata, ScientificAssessmentInput,
@@ -30,6 +31,18 @@ QPS_RECORD_ID = "21216051"
 QPS_RECORD_DOI = "10.5281/zenodo.21216051"
 QPS_EXTERNAL_RELEASE_KEY = "zenodo_record_21216051"
 QPS_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+QPS_ALLOWED_CONTENT_TYPES = frozenset({
+    QPS_CONTENT_TYPE,
+    "application/octet-stream",
+    "application/zip",
+})
+
+
+def canonical_doi_url(value: str) -> str:
+    """Validate a provider DOI and produce its canonical resolver URL."""
+    if not isinstance(value, str) or not re.fullmatch(r"10\.\d{4,9}/[^\s/]+(?:/[^\s/]+)*", value):
+        raise ValueError("record DOI is missing or malformed")
+    return "https://doi.org/" + quote(value, safe="/:._-()")
 
 
 @dataclass(frozen=True)
@@ -53,8 +66,10 @@ class EfsaQpsAdapter:
     SOURCE_KEY = "efsa"
     DATASET_KEY = "efsa_qps"
 
-    def __init__(self, external_release_key=QPS_EXTERNAL_RELEASE_KEY):
+    def __init__(self, external_release_key=QPS_EXTERNAL_RELEASE_KEY, *, record_doi=QPS_RECORD_DOI):
         self.external_release_key = external_release_key
+        self.record_doi = record_doi
+        self.document_reference = canonical_doi_url(record_doi)
         self.metadata = ScientificAdapterMetadata(
             source_key=self.SOURCE_KEY, dataset_key=self.DATASET_KEY,
             adapter_version="efsa-qps-adapter-1", acquisition_version="zenodo-record-acquisition-1",
@@ -98,6 +113,11 @@ class EfsaQpsRemoteAcquirer:
             files = [item for item in document["files"] if item["key"].lower().endswith(".xlsx")]
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
             raise ScientificAcquisitionError("invalid EFSA Knowledge Junction record metadata") from exc
+        try:
+            canonical_doi_url(record_doi)
+            canonical_doi_url(concept_doi)
+        except ValueError as exc:
+            raise ScientificAcquisitionError("invalid EFSA Knowledge Junction DOI metadata") from exc
         if concept_doi != QPS_CONCEPT_DOI or len(files) != 1:
             raise ScientificAcquisitionError("unexpected EFSA QPS record identity or file set")
         item = files[0]
@@ -106,6 +126,23 @@ class EfsaQpsRemoteAcquirer:
             {"Accept": "*/*", "User-Agent": self.headers["User-Agent"]},
             self.max_artifact_bytes))
         body = artifact.body
+        raw_content_type = artifact.headers.get("content-type", "")
+        actual_content_types = tuple(
+            item.split(";", 1)[0].strip().lower()
+            for item in raw_content_type.split(",") if item.strip()
+        )
+        if (not actual_content_types
+                or any(item not in QPS_ALLOWED_CONTENT_TYPES for item in actual_content_types)):
+            raise ScientificAcquisitionError(
+                f"incompatible EFSA QPS artifact Content-Type: {raw_content_type or 'missing'}"
+            )
+        actual_content_type = actual_content_types[0]
+        try:
+            with zipfile.ZipFile(io.BytesIO(body)) as archive:
+                if "xl/workbook.xml" not in archive.namelist():
+                    raise ScientificAcquisitionError("EFSA artifact is not an XLSX workbook")
+        except zipfile.BadZipFile as exc:
+            raise ScientificAcquisitionError("EFSA artifact is not a valid XLSX container") from exc
         sha256 = hashlib.sha256(body).hexdigest()
         if int(item["size"]) != len(body):
             raise ScientificAcquisitionError("EFSA artifact size differs from record metadata")
@@ -120,7 +157,10 @@ class EfsaQpsRemoteAcquirer:
             record_doi, concept_doi, license_id, provider_checksum,
             {"record_id": self.record_id, "record_url": metadata_url,
              "metadata_attempts": response.attempts, "artifact_attempts": artifact.attempts,
-             "source_release_date": released_on.isoformat()},
+             "source_release_date": released_on.isoformat(),
+             "actual_content_type": actual_content_type,
+             "raw_content_type": raw_content_type,
+             "provider_record_metadata": document},
         )
 
 
@@ -190,7 +230,7 @@ class EfsaQpsXlsxParser:
                     external_assessment_version=self.adapter.external_release_key,
                     assessment_type="efsa_qps_recommendation",
                     assessment_version=self.adapter.external_release_key, assessment_status="published",
-                    document_reference=f"https://doi.org/{self.adapter.external_release_key}",
+                    document_reference=self.adapter.document_reference,
                     conclusion_text="Recommended for the Qualified Presumption of Safety list.",
                     assessment_data={"provider": "efsa", "dataset": "qps"}, raw_record=raw,
                 ), findings=tuple(findings),

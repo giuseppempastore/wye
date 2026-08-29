@@ -6,6 +6,7 @@ import unittest
 import zipfile
 from datetime import date
 from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 
 import httpx
 import psycopg2.extras
@@ -24,7 +25,9 @@ from app.services.scientific_substance_resolution import PostgresScientificSubst
 from app.services.substance_resolution_reviews import SubstanceResolutionReviewService
 from app.scientific_ingestion.contracts import ScientificArtifactManifest, ScientificIngestionConfiguration
 from app.storage.base import ObjectMetadata
-from app.scientific_ingestion.errors import ScientificAcquisitionError, ScientificParserError
+from app.scientific_ingestion.errors import (
+    ScientificAcquisitionError, ScientificParserError, ScientificPersistenceConflict,
+)
 from app.scientific_ingestion.http_transport import (
     ControlledHttpTransport, HttpAttemptResponse, HttpContentError, HttpPolicyError,
     HttpRequest, HttpResponseError, HttpRetryPolicy,
@@ -140,10 +143,55 @@ class EfsaAcquisitionAndParserTests(unittest.TestCase):
             "publication_date": "2026-07-06", "license": {"id": "cc-by-4.0"}},
             "files": [{"key": "qps.xlsx", "size": len(workbook), "checksum": "md5:" + md5,
                        "links": {"self": "https://zenodo.org/api/records/21216051/files/qps.xlsx/content"}}]}).encode()
-        transport, _, _ = TransportPolicyTests().transport([response(200, metadata), response(200, workbook)])
+        transport, _, _ = TransportPolicyTests().transport([response(200, metadata), response(
+            200, workbook, {"content-type": "application/octet-stream"})])
         acquired = EfsaQpsRemoteAcquirer(transport).acquire()
         self.assertEqual(acquired.sha256, hashlib.sha256(workbook).hexdigest())
         self.assertEqual(acquired.release.external_release_key, QPS_EXTERNAL_RELEASE_KEY)
+
+    def test_provider_checksum_mismatch_fails_before_any_persistence(self):
+        workbook = xlsx_bytes()
+        metadata = json.dumps({"metadata": {"doi": QPS_RECORD_DOI, "conceptdoi": QPS_CONCEPT_DOI,
+            "publication_date": "2026-07-06", "license": {"id": "cc-by-4.0"}},
+            "files": [{"key": "qps.xlsx", "size": len(workbook), "checksum": "md5:" + "0" * 32,
+                       "links": {"self": "https://zenodo.org/qps.xlsx"}}]}).encode()
+        transport, _, _ = TransportPolicyTests().transport([response(200, metadata), response(
+            200, workbook, {"content-type": "application/octet-stream"})])
+        with self.assertRaisesRegex(ScientificAcquisitionError, "checksum mismatch"):
+            EfsaQpsRemoteAcquirer(transport).acquire()
+
+    def test_missing_record_doi_is_controlled_invalid_metadata(self):
+        workbook = xlsx_bytes()
+        metadata = json.dumps({"metadata": {"conceptdoi": QPS_CONCEPT_DOI,
+            "publication_date": "2026-07-06", "license": {"id": "cc-by-4.0"}},
+            "files": [{"key": "qps.xlsx", "size": len(workbook),
+                       "links": {"self": "https://zenodo.org/qps.xlsx"}}]}).encode()
+        transport, executor, _ = TransportPolicyTests().transport([response(200, metadata)])
+        with self.assertRaises(ScientificAcquisitionError):
+            EfsaQpsRemoteAcquirer(transport).acquire()
+        self.assertEqual(len(executor.calls), 1)
+
+    def test_content_type_policy_accepts_generic_xlsx_and_rejects_incompatible(self):
+        workbook = xlsx_bytes()
+        md5 = hashlib.md5(workbook, usedforsecurity=False).hexdigest()
+        metadata = json.dumps({"metadata": {"doi": QPS_RECORD_DOI, "conceptdoi": QPS_CONCEPT_DOI,
+            "publication_date": "2026-07-06", "license": {"id": "cc-by-4.0"}},
+            "files": [{"key": "qps.xlsx", "size": len(workbook), "checksum": "md5:" + md5,
+                       "links": {"self": "https://zenodo.org/qps.xlsx"}}]}).encode()
+        for mime in ("application/octet-stream", "application/zip",
+                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"):
+            with self.subTest(mime=mime):
+                transport, _, _ = TransportPolicyTests().transport([
+                    response(200, metadata), response(200, workbook, {"content-type": mime})])
+                self.assertEqual(EfsaQpsRemoteAcquirer(transport).acquire().byte_size, len(workbook))
+        transport, _, _ = TransportPolicyTests().transport([
+            response(200, metadata), response(200, workbook,
+                {"content-type": "application/octet-stream, application/octet-stream"})])
+        self.assertEqual(EfsaQpsRemoteAcquirer(transport).acquire().byte_size, len(workbook))
+        transport, _, _ = TransportPolicyTests().transport([
+            response(200, metadata), response(200, b"not-xlsx", {"content-type": "text/html"})])
+        with self.assertRaisesRegex(ScientificAcquisitionError, "Content-Type"):
+            EfsaQpsRemoteAcquirer(transport).acquire()
 
     def test_real_shape_parser_is_deterministic_and_preserves_raw(self):
         parser = EfsaQpsXlsxParser(EfsaQpsAdapter())
@@ -190,11 +238,44 @@ class ArtifactPersistenceTests(unittest.TestCase):
         self.assertFalse(first.reused)
         self.assertTrue(second.reused)
         self.assertEqual(first.reference.storage_object_id, second.reference.storage_object_id)
-        with self.assertRaises(Exception):
+        with self.assertRaises(ScientificPersistenceConflict):
             service.register_efsa_qps(self.acquired(xlsx_bytes("Changed upstream")))
+
+    def test_two_workers_race_on_absent_artifact_and_converge(self):
+        storage = MemoryStorage()
+        service = ScientificArtifactRegistrationService(storage, storage_provider="memory", bucket="phase642")
+        acquired, barrier = self.acquired(), Barrier(2)
+        def register(_):
+            barrier.wait(timeout=5)
+            return service.register_efsa_qps(acquired, artifact_key="concurrent_primary")
         with ThreadPoolExecutor(max_workers=2) as pool:
-            results = list(pool.map(lambda _: service.register_efsa_qps(acquired), range(2)))
+            results = list(pool.map(register, range(2)))
         self.assertEqual(len({r.reference.storage_object_id for r in results}), 1)
+        self.assertEqual(sorted(r.reused for r in results), [False, True])
+        connection = get_connection()
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("""SELECT count(*) FROM scientific_release_artifacts
+                    WHERE artifact_key='concurrent_primary'""")
+                self.assertEqual(cursor.fetchone()[0], 1)
+        finally:
+            connection.close()
+
+    def test_concurrent_different_bytes_has_one_winner_and_one_conflict(self):
+        storage = MemoryStorage()
+        service = ScientificArtifactRegistrationService(storage, storage_provider="memory", bucket="phase642")
+        values = (self.acquired(xlsx_bytes("Race A")), self.acquired(xlsx_bytes("Race B")))
+        barrier = Barrier(2)
+        def register(acquired):
+            barrier.wait(timeout=5)
+            try:
+                return service.register_efsa_qps(acquired, artifact_key="concurrent_conflict")
+            except ScientificPersistenceConflict as exc:
+                return exc
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            results = list(pool.map(register, values))
+        self.assertEqual(sum(not isinstance(item, Exception) for item in results), 1)
+        self.assertEqual(sum(isinstance(item, ScientificPersistenceConflict) for item in results), 1)
 
 
 @unittest.skipUnless(os.environ.get("WYE_RUN_REAL_EFSA_TESTS") == "1",
@@ -203,7 +284,9 @@ class RealEfsaOptInTests(unittest.TestCase):
     def test_real_official_qps_release_is_bounded_and_parseable(self):
         transport = ControlledHttpTransport()
         acquired = EfsaQpsRemoteAcquirer(transport).acquire()
-        parsed = EfsaQpsXlsxParser(EfsaQpsAdapter(acquired.record_doi), max_records=3).parse_bytes(
+        parsed = EfsaQpsXlsxParser(EfsaQpsAdapter(
+            acquired.release.external_release_key, record_doi=acquired.record_doi
+        ), max_records=3).parse_bytes(
             acquired.body, locator=acquired.locator)
         self.assertEqual(acquired.sha256, hashlib.sha256(acquired.body).hexdigest())
         self.assertGreater(len(parsed.records), 0)
@@ -215,7 +298,7 @@ class RealEfsaOptInTests(unittest.TestCase):
 class RealEfsaPersistenceOptInTests(unittest.TestCase):
     def test_remote_artifact_to_verified_identity_assessment_and_findings(self):
         acquired = EfsaQpsRemoteAcquirer(ControlledHttpTransport()).acquire()
-        adapter = EfsaQpsAdapter(acquired.release.external_release_key)
+        adapter = EfsaQpsAdapter(acquired.release.external_release_key, record_doi=acquired.record_doi)
         preview = EfsaQpsXlsxParser(adapter, max_records=1).parse_bytes(acquired.body,
                                                                        locator=acquired.locator)
         identifier = preview.records[0].substance_identifiers[0]
@@ -258,6 +341,27 @@ class RealEfsaPersistenceOptInTests(unittest.TestCase):
             resolution_review_service=SubstanceResolutionReviewService()).execute(prepared)
         self.assertEqual((result.assessments_written, result.records_accepted), (1, 1))
         self.assertGreaterEqual(result.findings_written, 1)
+        connection = get_connection()
+        try:
+            with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
+                cursor.execute("""SELECT rel.external_release_key,a.document_reference,a.raw_record,
+                    art.raw_checksum_value,art.provenance
+                    FROM scientific_assessments a
+                    JOIN scientific_ingestion_runs run ON run.id=a.ingestion_run_id
+                    JOIN source_dataset_releases rel ON rel.id=run.release_id
+                    JOIN scientific_ingestion_run_artifacts membership ON membership.ingestion_run_id=run.id
+                    JOIN scientific_release_artifacts art ON art.id=membership.release_artifact_id
+                    WHERE run.id=%s""", (prepared.id,))
+                row = cursor.fetchone()
+                self.assertEqual(row["external_release_key"], "zenodo_record_21216051")
+                self.assertEqual(row["document_reference"], "https://doi.org/10.5281/zenodo.21216051")
+                self.assertEqual(row["raw_checksum_value"], acquired.sha256)
+                self.assertEqual(row["provenance"]["locator"], acquired.locator)
+                self.assertEqual(row["provenance"]["record_doi"], acquired.record_doi)
+                self.assertEqual(row["provenance"]["concept_doi"], acquired.concept_doi)
+                self.assertEqual(row["raw_record"]["Species"], identifier.raw_value)
+        finally:
+            connection.close()
 
 
 if __name__ == "__main__":
