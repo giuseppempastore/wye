@@ -2,12 +2,12 @@
 
 ## Stato
 
-**Fase 6: IN CORSO**
+**Fase 6: COMPLETATA**
 
 Branch:
 
 ```text
-phase_6_4_4_batch_recovery_hardening
+ingredients_score
 ```
 
 Alembic head corrente:
@@ -33,21 +33,23 @@ Fase 6.3.3 — Substance Registry Materialization                ✅ COMPLETATA
 Fase 6.3.4 — Controlled Substance Creation                     ✅ COMPLETATA
 Fase 6.3.5 — Ingredient → Substance Mapping Workflow           ✅ COMPLETATA
 Fase 6.3.6 — Final Validation & Mapping History                ✅ COMPLETATA
-Fase 6.4   — Scientific Source Adapters                        🚧 IN CORSO
+Fase 6.4   — Scientific Source Adapters                        ✅ COMPLETATA
 Fase 6.4.1 — Scientific Source Adapter Foundation              ✅ COMPLETATA
 Fase 6.4.2 — EFSA Real Acquisition & Transport Hardening       ✅ COMPLETATA
 Fase 6.4.3 — OpenFoodTox Real Acquisition                      ✅ COMPLETATA
 Fase 6.4.4 — Multi-provider Batch / Recovery Hardening          ✅ COMPLETATA
+Fase 6.4.5 — Final Scientific Ingestion Validation             ✅ COMPLETATA
 ```
 
-La Fase 6 nel suo complesso resta in corso. In particolare:
+La Fase 6 è completata. Resta invariato il confine architetturale:
 
 ```text
 scientific evidence != scientific scoring
 ```
 
-La Fase 6.4 è in corso: i checkpoint 6.4.1, 6.4.2, 6.4.3 e 6.4.4 sono completati.
-Il prossimo checkpoint è la validazione finale 6.4.5, senza scoring.
+I checkpoint 6.4.1–6.4.5 sono completati. EFSA e OpenFoodTox sono validati
+offline e tramite bounded real E2E; batch, recovery e product-to-evidence traversal
+sono validati su PostgreSQL temporaneo. Nessuno scoring è stato introdotto.
 
 Stato fasi precedenti:
 
@@ -59,7 +61,7 @@ Fase 3   — Object Storage e acquisizione immagini     ✅ COMPLETATA
 Fase 3.1 — Repository Hygiene                         ✅ COMPLETATA
 Fase 4   — Label Extraction Pipeline                  ✅ COMPLETATA E VALIDATA E2E
 Fase 5   — Normalizzazione e Review Mapping           ✅ COMPLETATA E VALIDATA E2E
-Fase 6   — Scientific Evidence Ingestion              🚧 IN CORSO
+Fase 6   — Scientific Evidence Ingestion              ✅ COMPLETATA
 Fase 7   — Scientific Scoring                         ⏳ FUTURA
 ```
 
@@ -1606,7 +1608,7 @@ La summary espone item completed/failed/retryable/conflicted/reused, artifact
 created/reused, assessment/finding created/reused ed elapsed. Il logging strutturato
 non include payload, byte artifact o segreti.
 
-La Fase 6.4 e la Fase 6 restano IN CORSO. Prossimo checkpoint:
+La Fase 6.4.4 è completata. Il checkpoint conclusivo è:
 
 ```text
 6.4.5 — Final Scientific Ingestion Validation / Phase 6 Closure
@@ -1616,32 +1618,33 @@ La Fase 6.4 e la Fase 6 restano IN CORSO. Prossimo checkpoint:
 
 # 43. Fase 6.4.5 — Final Scientific Ingestion Validation / Phase 6 Closure
 
-Validazione finale della Fase 6.
+**COMPLETATA — FASE 6 CHIUSA**
 
-Dovrà verificare almeno:
+La validazione finale ha verificato su PostgreSQL temporaneo:
 
 ```text
-release A
-release B
-supersession/version history
-reprocessing
-same artifact / different parser
-assessment identity
-finding identity
-substance identity
-cross-source evidence
-provenance traversal
-idempotency
-concurrency
-rollback
-migration lifecycle
+EFSA e OpenFoodTox real bounded E2E
+artifact e release provenance
+controlled substance identity resolution
+multi-release e cross-provider evidence
+batch checkpoint, resume e stale-lease reclaim
+idempotency, reprocessing, concurrency e rollback
+0017 → 0018 → 0017 → 0018 lifecycle
+product → extraction → ingredient → substance → evidence traversal
+batch-produced evidence → product traversal
 ```
 
-Al termine sarà prodotto un documento separato:
+La regressione scientifica offline integrata è verde e mantiene zero chiamate
+remote con gli opt-in disabilitati. Il documento di validazione conclusivo è:
 
 ```text
 Checkpoints/fase_6_validazione_end_to_end.md
 ```
+
+Il database persistente locale `wye` resta intenzionalmente a `0017` e dovrà
+essere aggiornato a `0018` in un task operativo separato con backup e verifica dati.
+Questo disallineamento operativo non invalida la migration né la chiusura
+architetturale della Fase 6.
 
 ---
 

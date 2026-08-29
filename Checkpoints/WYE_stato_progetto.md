@@ -8,11 +8,12 @@ Questo file serve come riepilogo semplice e leggibile dello stato attuale di WYE
 Fase 1      ✅ COMPLETATA
 Fase 2      ✅ COMPLETATA
 Fase 2.1    ✅ COMPLETATA
-Fase 3      ⏳ PROSSIMA
-Fase 4      ⏳ PIANIFICATA
-Fase 5      ⏳ PIANIFICATA
-Fase 6      ⏳ PIANIFICATA
-Fase 7      ⏳ PIANIFICATA
+Fase 3      ✅ COMPLETATA
+Fase 3.1    ✅ COMPLETATA
+Fase 4      ✅ COMPLETATA + E2E
+Fase 5      ✅ COMPLETATA + E2E
+Fase 6      ✅ COMPLETATA
+Fase 7      ⏳ FUTURA — ARCHITETTURA/SCORING DA PROGETTARE
 ```
 
 ---
@@ -201,4 +202,7 @@ Scoring scientifico versionato
 
 Lo stato attuale del progetto può quindi essere riassunto così:
 
-> Le fondamenta del database sono pronte e validate. Il prossimo obiettivo è permettere a WYE di acquisire in modo sicuro e tracciabile le immagini reali dei prodotti.
+> Le Fasi 1–6 sono consolidate. WYE conserva evidenze scientifiche versionate e
+> tracciabili da EFSA e OpenFoodTox, con identity resolution, provenance,
+> batch/recovery e traversal prodotto → evidenza. La Fase 7 dovrà progettare lo
+> scoring senza alterare il principio `scientific evidence != scientific scoring`.
