@@ -953,8 +953,8 @@ No migration is designed or authorized by this analysis.
 | Quality minimum criteria and evidence-type acceptance | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Determinism does not establish scientific validity |
 | QPS role, qualification interpretation and target scope | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Regulatory framework-specific meaning |
 | Cross-study dependency/equivalence review | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Requires source/study expertise |
-| Agreement, discordance and true-conflict synthesis | DEFERRED TO 7.3 | Selection only pre-classifies comparability |
-| Endpoint synthesis, hazard profile and confidence | DEFERRED TO 7.3 | Outside selection boundary |
+| Agreement, discordance and true-conflict synthesis | DEFINED IN 7.3 / EXTERNAL REVIEW REQUIRED | Selection only pre-classifies comparability; synthesis contract is in `WYE_EVIDENCE_SYNTHESIS.md` |
+| Endpoint synthesis, hazard profile and confidence | DEFINED IN 7.3 / EXTERNAL REVIEW REQUIRED | Non-scalar representation is defined; concrete scientific rules remain review-gated |
 | Endpoint/study/dependency ontologies and lineage | DATA GAP | Not represented generally in current schema |
 | Structured route/duration/population/unit basis | DATA GAP | Present only partially/raw |
 
@@ -978,8 +978,8 @@ Classification does not authorize implementation.
 | Unknown-route/population/duration inclusion policies | BLOCKED BY SCIENTIFIC REVIEW | Transfer assumptions affect scientific claims |
 | QPS scientific applicability policy | BLOCKED BY SCIENTIFIC REVIEW | QPS meaning/qualification scope needs expert review |
 | Quality threshold/gate implementation | BLOCKED BY SCIENTIFIC REVIEW | No reviewed rubric or threshold exists |
-| Evidence agreement/conflict resolution | DEFERRED TO 7.3 | Requires synthesis semantics |
-| Endpoint-specific conclusions/hazard profile | DEFERRED TO 7.3 | Outside Phase 7.2 |
+| Evidence agreement/conflict resolution | BLOCKED BY SCIENTIFIC REVIEW | Phase 7.3 defines states and trace; concrete criteria remain unvalidated |
+| Endpoint-specific conclusions/hazard profile | BLOCKED BY SCIENTIFIC REVIEW | Phase 7.3 defines the envelope; scientific rules remain unvalidated |
 
 ## Phase 7.2 exit criteria
 
@@ -1013,20 +1013,16 @@ Classification does not authorize implementation.
 - [x] Current-schema gap matrix completed.
 - [x] Implementation-readiness matrix completed.
 
-## Roadmap and next checkpoint
+## Phase 7.3 specialization and roadmap
 
-The Phase 7 roadmap remains unchanged. Phase 7.2 adds no technical or scientific
-reason to reorder Phases 7.3–7.9.
+The Phase 7 roadmap remains unchanged. The synthesis specialization is defined
+in `WYE_EVIDENCE_SYNTHESIS.md`; it does not alter the immutable selection
+contract in this document.
 
 The proposed next checkpoint is:
 
 ```text
-Phase 7.3 — Endpoint-Specific Evidence Synthesis and Substance Assessment Semantics
+Phase 7.4 — Substance-to-Ingredient Projection Semantics
 ```
 
-It should define comparability completion, evidence-line appraisal, agreement and
-discordance semantics, conflict handling, endpoint result states, sufficiency,
-uncertainty and the first multidimensional substance assessment. It must retain
-the non-numeric, non-risk boundary and require external scientific review.
-
-Phase 7.3 is not started by this document.
+Phase 7.4 is not started by this document.

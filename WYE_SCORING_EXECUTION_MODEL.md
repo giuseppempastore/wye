@@ -190,7 +190,8 @@ signatures and arbitrary property insertion order.
 Semantically meaningful prose cannot be left only in Markdown: it must be
 represented by a stable rule or declaration identifier in canonical content.
 Phase 7.2 defines the eligibility and selection contract in
-`WYE_EVIDENCE_SELECTION.md`; Phase 7.3 will define synthesis semantics.
+`WYE_EVIDENCE_SELECTION.md`; Phase 7.3 defines the evidence-line, endpoint
+synthesis and substance-profile contract in `WYE_EVIDENCE_SYNTHESIS.md`.
 
 ### `evidence_snapshot`
 
@@ -471,8 +472,9 @@ evaluation_result
 
 `result_status` distinguishes valid scientific states such as complete,
 insufficient evidence, unresolved identity or non-computable claim from
-technical execution state. The exact endpoint values and scientific conclusion
-vocabulary are deferred to Phase 7.3.
+technical execution state. Phase 7.3 specializes the result into non-scalar
+endpoint syntheses and a multidimensional substance hazard profile without
+approving concrete hazard conclusions or a numeric score.
 
 ### `result_component`
 
@@ -698,7 +700,7 @@ referenced semantic rows immutable.
 | Target identity snapshot | None | Missing | Future persistence required |
 | Selection decision | None | Missing | Future persistence; semantic contract defined in 7.2 |
 | Scientific evaluation execution/attempt | None | Missing | Future persistence required |
-| Non-scalar result/components | None | Missing | Future persistence; component semantics require 7.3 |
+| Non-scalar result/components | None | Missing | Future persistence; component envelopes specialized in 7.3 |
 | Explanation trace | None | Missing | Future persistence required |
 | Retraction/supersession event for execution | None | Missing | Future persistence required |
 
@@ -834,9 +836,9 @@ The classification describes logical maturity, not authorization to implement.
 | `scientific_evaluation_execution` and mode semantics | READY FOR IMPLEMENTATION | Identity, lifecycle and mode invariants are defined |
 | Execution/attempt DB concurrency constraints | REQUIRES FUTURE PERSISTENCE DESIGN | No final `UNIQUE`, locking or staging schema is approved |
 | `evaluation_result` envelope | READY FOR IMPLEMENTATION | Non-scalar structure and ownership are defined |
-| Scientific result component vocabulary | DEFERRED | Endpoint synthesis belongs to 7.3; future domains define their own types |
+| Scientific result component envelope | READY FOR IMPLEMENTATION | Phase 7.3 defines endpoint synthesis and substance-profile structures; scientific vocabularies remain review-gated |
 | `explanation_trace` envelope | READY FOR IMPLEMENTATION | Canonical graph boundary and AI separation are defined |
-| Selection trace step/rule vocabulary | READY FOR IMPLEMENTATION | Phase 7.2 defines selector stages; synthesis trace remains deferred to 7.3 |
+| Selection and synthesis trace envelopes | READY FOR IMPLEMENTATION | Phase 7.2 defines selector stages and Phase 7.3 defines synthesis trace content |
 | Digest boundary model | READY FOR IMPLEMENTATION | Six independently verifiable semantic boundaries are defined |
 | Governance event persistence | REQUIRES FUTURE PERSISTENCE DESIGN | Append-only semantics are fixed; schema is not |
 | Numerical components | DEFERRED | No numerical output is justified for the first protocol |
@@ -866,7 +868,7 @@ The classification describes logical maturity, not authorization to implement.
 - [x] Twelve logical test vectors defined.
 - [x] Deferred scientific and persistence decisions explicitly classified.
 
-## Phase 7.2 specialization and next checkpoint
+## Phase 7.2–7.3 specializations and next checkpoint
 
 The evidence-selection specialization is defined in:
 
@@ -874,10 +876,16 @@ The evidence-selection specialization is defined in:
 WYE_EVIDENCE_SELECTION.md
 ```
 
+The endpoint-synthesis specialization is defined in:
+
+```text
+WYE_EVIDENCE_SYNTHESIS.md
+```
+
 The proposed next checkpoint is:
 
 ```text
-Phase 7.3 — Endpoint-Specific Evidence Synthesis and Substance Assessment Semantics
+Phase 7.4 — Substance-to-Ingredient Projection Semantics
 ```
 
-Phase 7.3 is not started by this document.
+Phase 7.4 is not started by this document.

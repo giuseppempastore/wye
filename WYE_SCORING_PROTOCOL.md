@@ -245,12 +245,22 @@ precedence is permissible only for documented:
 Precedence affects a stated question, not the universal quality of a source. Its
 application MUST appear in the explanation trace.
 
+Phase 7.3 specializes comparison completion, evidence-line grouping,
+consistency, conflict, sufficiency, coverage, uncertainty propagation and the
+non-scalar substance profile in `WYE_EVIDENCE_SYNTHESIS.md`. It preserves every
+conflict state above and introduces no runtime engine or numeric output.
+
 ## Quality, confidence and uncertainty outputs
 
 Protocols MUST implement the separate dimensions defined in
 `WYE_SCORING_SEMANTICS.md`. Until a scientifically reviewed rubric exists, the
 first protocol may use structured qualitative appraisals and explicit
 `not_assessable`; it MUST NOT invent numeric grades.
+
+The Phase 7.3 contract keeps quality, relevance, consistency, coverage,
+uncertainty and confidence as separate profiles. Concrete endpoint equivalence,
+direction, quality, sufficiency, confidence and hazard-interpretation rules
+remain subject to external scientific review.
 
 An uncertainty item has the logical fields:
 

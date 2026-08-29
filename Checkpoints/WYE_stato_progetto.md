@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 398581fe93b154ffdb49d6a93005485f6888bbca
-origin/ingredients_score: 398581fe93b154ffdb49d6a93005485f6888bbca
+HEAD: 4f3c2d13d3171a6f27e46beaf8abe641243e9611
+origin/ingredients_score: 4f3c2d13d3171a6f27e46beaf8abe641243e9611
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.2 non modifica il database.
+`0018` e validazione. La Fase 7.3 non modifica il database.
 
 ## Avanzamento
 
@@ -28,7 +28,8 @@ Fase 7.0    COMPLETATA — Architecture & Requirements Review
 Fase 7.0.1  COMPLETATA — Architecture Specification & Phase 7.0 Freeze
 Fase 7.1    COMPLETATA — Logical protocol / snapshot / execution model
 Fase 7.2    COMPLETATA — Evidence eligibility & selection semantics
-Fase 7.3    NON INIZIATA
+Fase 7.3    COMPLETATA — Endpoint synthesis / substance assessment semantics
+Fase 7.4    NON INIZIATA
 ```
 
 ## Capacità consolidate
@@ -146,11 +147,36 @@ canonical decision and selection digests
 La Fase 7.2 non implementa il selector e non definisce synthesis, hazard profile,
 ingredient/product aggregation, formule, pesi, threshold o score numerici.
 
+## Fase 7.3
+
+Il contratto semantico della futura synthesis è definito in:
+
+- `WYE_EVIDENCE_SYNTHESIS.md`.
+
+Sono formalizzati:
+
+```text
+evidence line as dependency-aware synthesis input
+comparison groups and endpoint semantic identity requirements
+non-numeric endpoint synthesis states
+agreement, discordance and true-conflict semantics
+quality, relevance, sufficiency and coverage profiles
+typed uncertainty propagation and confidence representation
+endpoint synthesis and multidimensional substance hazard profile
+QPS regulatory context separated from OpenFoodTox toxicology
+cross-source and dependency-aware synthesis
+canonical synthesis trace and deterministic digests
+```
+
+La Fase 7.3 non implementa runtime synthesis o hazard engine. Endpoint mappings,
+direction-of-effect, concrete quality/sufficiency/confidence rules and hazard
+interpretation restano soggetti a dati normalizzati e review scientifica esterna.
+
 ## Prossimo gate
 
-La Fase 7.3 potrà iniziare solo con istruzione esplicita. Dovrà definire
-endpoint-specific synthesis, evidence-line appraisal, comparability completion,
-agreement/discordance, conflict handling, sufficiency, uncertainty e il primo
-substance assessment multidimensionale, con review scientifica esterna.
+La Fase 7.4 potrà iniziare solo con istruzione esplicita. Dovrà definire la
+proiezione relationship-aware da substance hazard profile a ingredient, usando
+identità e mapping temporali congelati senza inferire concentrazione, exposure,
+product risk o score numerici.
 
 L'upgrade del database locale resta un task operativo separato.
