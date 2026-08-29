@@ -77,6 +77,12 @@ Selection is a deterministic classification of every candidate evidence line in
 the snapshot against one protocol version. It MUST retain a decision for included
 and excluded candidates.
 
+Phase 7.2 specializes this contract in `WYE_EVIDENCE_SELECTION.md`, including
+the finding-level default selection unit, assessment context, binary decision
+plus deferred resolution state, evidence channels, dependency model, canonical
+decision payload and selection digest. That specialization defines no runtime
+engine and no synthesis.
+
 ### Selection order
 
 The protocol MUST apply a documented canonical sequence equivalent to:
@@ -140,6 +146,11 @@ assuming all persisted assessments are usable.
 
 Reason codes are machine-readable stable concepts. Human text may be localised;
 the code and semantic meaning may not change within a published version.
+
+The table below is the frozen Phase 7.0.1 conceptual vocabulary. Phase 7.2
+refines it into versioned core and protocol-specific namespaces and records the
+explicit compatibility mapping in `WYE_EVIDENCE_SELECTION.md`. No published
+protocol or historical execution used the conceptual aliases.
 
 | Code | Decision meaning |
 |---|---|

@@ -6,21 +6,22 @@
 Fase 7.0   — Architecture & Requirements Review                 COMPLETATA
 Fase 7.0.1 — Architecture Specification & Phase 7.0 Freeze     COMPLETATA
 Fase 7.1   — Logical protocol / snapshot / execution model      COMPLETATA
-Fase 7.2   — Evidence eligibility & selection semantics         NON INIZIATA
+Fase 7.2   — Evidence eligibility & selection semantics         COMPLETATA
+Fase 7.3   — Endpoint synthesis / substance assessment          NON INIZIATA
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline della review 7.1:
+Baseline della review 7.2:
 
 ```text
 branch: ingredients_score
-HEAD: f708b0aa7ab56a506a05ee2f51a8e1001379ca0a
-origin/ingredients_score: f708b0aa7ab56a506a05ee2f51a8e1001379ca0a
+HEAD: 398581fe93b154ffdb49d6a93005485f6888bbca
+origin/ingredients_score: 398581fe93b154ffdb49d6a93005485f6888bbca
 Alembic repository head: 0018_scientific_batch_recovery
-local database wye: 0017
+local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale non è stato aggiornato. Backup, upgrade a `0018` e data
@@ -34,6 +35,8 @@ validation restano un task operativo separato.
   riproducibilità, explainability e test vector concettuali.
 - `WYE_SCORING_EXECUTION_MODEL.md`: modello logico 7.1 di protocollo/versione,
   snapshot, target freeze, execution, result, trace e determinismo.
+- `WYE_EVIDENCE_SELECTION.md`: contratto 7.2 di candidate evidence,
+  eligibility, applicability, dependency, decisioni e selection digest.
 - questo documento: scope, confine legacy, governance, decisioni e roadmap.
 
 In caso di conflitto, i principi non negoziabili e le decisioni esplicite di
@@ -250,7 +253,7 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.0 | Architecture & Requirements Review | Review repository e confini completati |
 | 7.0.1 | Specification & Phase 7.0 Freeze | Contratti documentali e decisioni esplicite |
 | 7.1 | Logical protocol / snapshot / execution model | ADR e schema logico approvati; nessuna formula |
-| 7.2 | Evidence eligibility & selection engine | Selezione deterministica, auditabile e as-of |
+| 7.2 | Evidence eligibility & selection semantics | Contratto deterministico e auditabile; nessun runtime |
 | 7.3 | Endpoint-specific synthesis / substance assessment | Primo hazard profile multidimensionale validato |
 | 7.4 | Substance → ingredient projection | Relationship semantics e temporal mapping rispettati |
 | 7.5 | Exposure readiness / ingredient → product assessment | Exposure sufficiente o `risk_not_computable` |
@@ -259,8 +262,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
 
-La Fase 7.1 è completata come specifica logica documentale. Non ha creato
-migration né runtime. La Fase 7.2 non è iniziata da questo checkpoint.
+La Fase 7.2 è completata come specifica semantica documentale. Non ha creato
+migration né runtime. La Fase 7.3 non è iniziata da questo checkpoint.
 
 ## Phase 7.0 exit review
 

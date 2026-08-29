@@ -189,8 +189,8 @@ signatures and arbitrary property insertion order.
 
 Semantically meaningful prose cannot be left only in Markdown: it must be
 represented by a stable rule or declaration identifier in canonical content.
-Phase 7.2 will define the first concrete eligibility and selection rule
-vocabulary; Phase 7.3 will define synthesis semantics.
+Phase 7.2 defines the eligibility and selection contract in
+`WYE_EVIDENCE_SELECTION.md`; Phase 7.3 will define synthesis semantics.
 
 ### `evidence_snapshot`
 
@@ -313,8 +313,8 @@ requirement before those targets can be replay-safe.
 
 ### `evidence_selection_decision`
 
-This is the immutable, execution-scoped contract that a future Phase 7.2
-selection engine must produce for every candidate evidence line. An assessment
+This is the immutable, execution-scoped contract that a future selection engine
+must produce for every candidate evidence line. An assessment
 may also receive a parent decision when assessment-level policy makes all of its
 findings ineligible.
 
@@ -337,7 +337,8 @@ Minimum contract:
 
 Reason codes are versioned machine keys, not free text. Human explanations may
 be attached as non-canonical display content. Concrete reason-code vocabularies,
-relevance dimensions and their scientific meanings belong to Phase 7.2.
+relevance dimensions and their review boundaries are defined by Phase 7.2 in
+`WYE_EVIDENCE_SELECTION.md`.
 
 ### `scientific_evaluation_execution`
 
@@ -695,7 +696,7 @@ referenced semantic rows immutable.
 | Evidence snapshot/header | None | Missing | Future persistence required |
 | Resolved snapshot membership | None | Missing | Future persistence required |
 | Target identity snapshot | None | Missing | Future persistence required |
-| Selection decision | None | Missing | Future persistence; concrete semantics require 7.2 |
+| Selection decision | None | Missing | Future persistence; semantic contract defined in 7.2 |
 | Scientific evaluation execution/attempt | None | Missing | Future persistence required |
 | Non-scalar result/components | None | Missing | Future persistence; component semantics require 7.3 |
 | Explanation trace | None | Missing | Future persistence required |
@@ -823,19 +824,19 @@ The classification describes logical maturity, not authorization to implement.
 |---|---|---|
 | `scientific_protocol` identity and family contract | READY FOR IMPLEMENTATION | Logical identity and lifecycle boundary are defined |
 | `scientific_protocol_version` lifecycle/immutability | READY FOR IMPLEMENTATION | Publication and correction semantics are defined |
-| Concrete canonical rule language/content | REQUIRES 7.2 SEMANTICS | Eligibility/reason vocabulary is not yet defined; synthesis awaits 7.3 |
+| Selection canonical rule envelope/content | READY FOR IMPLEMENTATION | Eligibility/reason/dependency contract defined in 7.2; scientific allowlists still require review |
 | Protocol canonical JSON/digest envelope | READY FOR IMPLEMENTATION | Canonicalization requirements and digest boundary are defined |
 | Evidence snapshot/header and hybrid membership contract | READY FOR IMPLEMENTATION | Universe/membership distinction and freeze boundary are defined |
 | Snapshot database schema and storage optimization | REQUIRES FUTURE PERSISTENCE DESIGN | Table/artifact split, retention and indexes belong to persistence work |
 | Target identity snapshot envelope | READY FOR IMPLEMENTATION | Required freeze semantics are defined |
 | Product composition historical model | REQUIRES FUTURE PERSISTENCE DESIGN | Current schema lacks full temporal composition history |
-| Evidence selection decision envelope | REQUIRES 7.2 SEMANTICS | Contract is defined; reason codes/relevance rules are not |
+| Evidence selection decision envelope | READY FOR IMPLEMENTATION | Phase 7.2 defines reason codes, relevance states and canonical decision content |
 | `scientific_evaluation_execution` and mode semantics | READY FOR IMPLEMENTATION | Identity, lifecycle and mode invariants are defined |
 | Execution/attempt DB concurrency constraints | REQUIRES FUTURE PERSISTENCE DESIGN | No final `UNIQUE`, locking or staging schema is approved |
 | `evaluation_result` envelope | READY FOR IMPLEMENTATION | Non-scalar structure and ownership are defined |
 | Scientific result component vocabulary | DEFERRED | Endpoint synthesis belongs to 7.3; future domains define their own types |
 | `explanation_trace` envelope | READY FOR IMPLEMENTATION | Canonical graph boundary and AI separation are defined |
-| Concrete trace step/rule vocabulary | REQUIRES 7.2 SEMANTICS | Must mirror the deterministic selector and later synthesis |
+| Selection trace step/rule vocabulary | READY FOR IMPLEMENTATION | Phase 7.2 defines selector stages; synthesis trace remains deferred to 7.3 |
 | Digest boundary model | READY FOR IMPLEMENTATION | Six independently verifiable semantic boundaries are defined |
 | Governance event persistence | REQUIRES FUTURE PERSISTENCE DESIGN | Append-only semantics are fixed; schema is not |
 | Numerical components | DEFERRED | No numerical output is justified for the first protocol |
@@ -865,19 +866,18 @@ The classification describes logical maturity, not authorization to implement.
 - [x] Twelve logical test vectors defined.
 - [x] Deferred scientific and persistence decisions explicitly classified.
 
-## Next checkpoint: Phase 7.2
+## Phase 7.2 specialization and next checkpoint
+
+The evidence-selection specialization is defined in:
+
+```text
+WYE_EVIDENCE_SELECTION.md
+```
 
 The proposed next checkpoint is:
 
 ```text
-Phase 7.2 — Evidence Eligibility, Selection Semantics & Deterministic Decision Contract
+Phase 7.3 — Endpoint-Specific Evidence Synthesis and Substance Assessment Semantics
 ```
 
-It should define the concrete eligibility-policy vocabulary, candidate-unit
-semantics, assessment/finding status treatment, duplicate/dependency rules,
-reason codes, relevance dimensions, cutoff rules, conflict inputs and selector
-test vectors. It must not yet implement endpoint synthesis, hazard aggregation,
-ingredient/product scoring, exposure or numerical scoring unless separately
-authorized after scientific review.
-
-Phase 7.2 is not started by this document.
+Phase 7.3 is not started by this document.
