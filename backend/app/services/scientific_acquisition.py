@@ -18,6 +18,16 @@ class RegisteredScientificArtifact:
     reused: bool
 
 
+@dataclass(frozen=True)
+class ScientificArtifactRegistrationProfile:
+    source_name: str
+    source_url: str
+    dataset_name: str
+    dataset_description: str
+    artifact_format: str
+    object_extension: str
+
+
 class ScientificArtifactRegistrationService:
     """Serialize one logical artifact and reject changed upstream bytes."""
 
@@ -27,30 +37,54 @@ class ScientificArtifactRegistrationService:
         self.connection_factory = connection_factory
 
     def register_efsa_qps(self, acquired, *, artifact_key="primary"):
+        return self.register(acquired, ScientificArtifactRegistrationProfile(
+            source_name="European Food Safety Authority",
+            source_url="https://www.efsa.europa.eu/",
+            dataset_name="Qualified Presumption of Safety list",
+            dataset_description="Official EFSA QPS Knowledge Junction release",
+            artifact_format="xlsx",
+            object_extension="xlsx",
+        ), artifact_key=artifact_key)
+
+    def register_openfoodtox(self, acquired, *, artifact_key="primary"):
+        return self.register(acquired, ScientificArtifactRegistrationProfile(
+            source_name="European Food Safety Authority",
+            source_url="https://www.efsa.europa.eu/en/data-report/chemical-hazards-database-openfoodtox",
+            dataset_name="OpenFoodTox 3.0",
+            dataset_description="Official EFSA OpenFoodTox IUCLID 6/OHT XLSX release",
+            artifact_format="xlsx",
+            object_extension="xlsx",
+        ), artifact_key=artifact_key)
+
+    def register(self, acquired, profile, *, artifact_key="primary"):
         release = acquired.release
-        object_key = f"scientific/{release.source_key}/{release.dataset_key}/{acquired.sha256}.xlsx"
+        object_key = (f"scientific/{release.source_key}/{release.dataset_key}/"
+                      f"{acquired.sha256}.{profile.object_extension}")
         connection = self.connection_factory()
         try:
             with connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
                                (f"{release.source_key}:{release.dataset_key}:{release.external_release_key}:{artifact_key}",))
                 cursor.execute("""INSERT INTO sources(source_key,source_name,source_type,url)
-                    VALUES(%s,'European Food Safety Authority','scientific','https://www.efsa.europa.eu/')
-                    ON CONFLICT(source_key) DO UPDATE SET source_name=EXCLUDED.source_name RETURNING id""",
-                    (release.source_key,))
+                    VALUES(%s,%s,'scientific',%s)
+                    ON CONFLICT(source_key) DO UPDATE SET
+                      source_name=EXCLUDED.source_name,url=EXCLUDED.url RETURNING id""",
+                    (release.source_key, profile.source_name, profile.source_url))
                 source_id = cursor.fetchone()["id"]
                 cursor.execute("""INSERT INTO source_datasets(source_id,dataset_name,dataset_key,description)
-                    VALUES(%s,'Qualified Presumption of Safety list',%s,'Official EFSA QPS Knowledge Junction release')
+                    VALUES(%s,%s,%s,%s)
                     ON CONFLICT(source_id,dataset_key) DO UPDATE SET dataset_name=EXCLUDED.dataset_name RETURNING id""",
-                    (source_id, release.dataset_key))
+                    (source_id, profile.dataset_name, release.dataset_key,
+                     profile.dataset_description))
                 dataset_id = cursor.fetchone()["id"]
                 cursor.execute("""INSERT INTO source_dataset_releases(
                     dataset_id,external_release_key,version_label,released_at,source_url,format,release_status,license_text)
-                    VALUES(%s,%s,%s,%s,%s,'xlsx','validated',%s)
+                    VALUES(%s,%s,%s,%s,%s,%s,'validated',%s)
                     ON CONFLICT(dataset_id,external_release_key) DO UPDATE
                     SET version_label=source_dataset_releases.version_label RETURNING id""",
                     (dataset_id, release.external_release_key, release.external_release_key,
-                     acquired.released_on, acquired.locator, acquired.license_id))
+                     acquired.released_on, acquired.locator, profile.artifact_format,
+                     acquired.license_id))
                 release_id = cursor.fetchone()["id"]
                 cursor.execute("""SELECT a.id,a.storage_object_id,a.raw_checksum_value,a.byte_size,
                     o.object_key FROM scientific_release_artifacts a JOIN storage_objects o ON o.id=a.storage_object_id
@@ -58,7 +92,9 @@ class ScientificArtifactRegistrationService:
                 existing = cursor.fetchone()
                 if existing:
                     if existing["raw_checksum_value"] != acquired.sha256 or existing["byte_size"] != acquired.byte_size:
-                        raise ScientificPersistenceConflict("same EFSA release has changed upstream artifact bytes")
+                        raise ScientificPersistenceConflict(
+                            "same scientific release has changed upstream artifact bytes"
+                        )
                     reference = self._reference(existing["storage_object_id"], artifact_key, acquired)
                     connection.commit()
                     return RegisteredScientificArtifact(release_id, reference, True)
@@ -86,8 +122,9 @@ class ScientificArtifactRegistrationService:
                     "checksum_established_before_persistence": True}
                 cursor.execute("""INSERT INTO scientific_release_artifacts(release_id,storage_object_id,
                     artifact_key,artifact_role,format,media_type,raw_checksum_algorithm,raw_checksum_value,
-                    byte_size,acquired_at,provenance) VALUES(%s,%s,%s,'primary','xlsx',%s,'sha256',%s,%s,NOW(),%s)""",
-                    (release_id, storage_id, artifact_key, acquired.content_type, acquired.sha256,
+                    byte_size,acquired_at,provenance) VALUES(%s,%s,%s,'primary',%s,%s,'sha256',%s,%s,NOW(),%s)""",
+                    (release_id, storage_id, artifact_key, profile.artifact_format,
+                     acquired.content_type, acquired.sha256,
                      acquired.byte_size, psycopg2.extras.Json(provenance)))
             connection.commit()
             return RegisteredScientificArtifact(release_id, self._reference(storage_id, artifact_key, acquired), False)
