@@ -1,0 +1,67 @@
+{
+  "schema": "efsa_fixture_v1",
+  "source": {"key": "efsa", "name": "European Food Safety Authority"},
+  "dataset": {"key": "efsa_chemical_assessments", "title": "Minimal chemical assessments fixture"},
+  "release": {"official_release": "2025-01-15", "published_on": "2025-01-15"},
+  "records": [
+    {
+      "question_number": "EFSA-Q-2025-0001",
+      "substance_identity": {"namespace": "CAS", "value": "50-00-0"},
+      "assessment": {
+        "assessment_id": "EFSA-ASSESSMENT-0001",
+        "version": "1",
+        "type": "regulatory_risk_assessment",
+        "status": "published",
+        "published_on": "2025-01-10",
+        "document_reference": "doi:10.0000/efsa.fixture.1",
+        "conclusion": "Fixture conclusion for deterministic adapter validation only."
+      },
+      "findings": [
+        {
+          "finding_id": "ADI-1",
+          "endpoint": "acceptable_daily_intake",
+          "value": 0.15,
+          "unit": "mg/kg bw/day",
+          "population": "general_population",
+          "evidence_type": "regulatory_assessment",
+          "conclusion": "Fixture endpoint; not a WYE score."
+        }
+      ]
+    },
+    {
+      "question_number": "EFSA-Q-2025-0002",
+      "substance_identity": {"namespace": "EFSA_SUBSTANCE_ID", "value": "EFSA-SUB-999"},
+      "assessment": {
+        "assessment_id": "EFSA-ASSESSMENT-0002",
+        "version": "1",
+        "type": "regulatory_risk_assessment",
+        "status": "pending_review",
+        "conclusion": "Unknown registry namespace fixture."
+      },
+      "findings": [
+        {
+          "finding_id": "OBS-2",
+          "endpoint": "observed_effect",
+          "value_text": "fixture observation",
+          "evidence_type": "regulatory_assessment"
+        }
+      ]
+    },
+    {
+      "question_number": "EFSA-Q-2025-UNSUPPORTED",
+      "substance_identity": {"namespace": "UNMAPPED_PROVIDER_CODE", "value": "X-1"},
+      "assessment": {
+        "assessment_id": "EFSA-ASSESSMENT-UNSUPPORTED",
+        "version": "1",
+        "type": "regulatory_risk_assessment"
+      },
+      "findings": []
+    },
+    {
+      "question_number": "EFSA-Q-2025-MALFORMED",
+      "substance_identity": {"namespace": "CAS", "value": ""},
+      "assessment": {"version": "1", "type": "regulatory_risk_assessment"},
+      "findings": []
+    }
+  ]
+}

@@ -73,6 +73,8 @@ class ScientificIngestionService:
                     storage_object_id=a.storage_object_id,
                     raw_checksum_algorithm=a.raw_checksum_algorithm,
                     raw_checksum_value=a.raw_checksum_value, byte_size=a.byte_size,
+                    source_locator=a.source_locator, content_type=a.content_type,
+                    acquisition_metadata=a.acquisition_metadata,
                 ) for a in artifacts)
                 manifest = ScientificArtifactManifest.build(release, references)
                 values = self._run_values(release_row.id, configuration, manifest, idempotency_key)

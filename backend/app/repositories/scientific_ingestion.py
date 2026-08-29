@@ -28,6 +28,9 @@ class ArtifactRow:
     storage_checksum_algorithm: str | None
     storage_checksum_value: str | None
     storage_byte_size: int | None
+    source_locator: str | None = None
+    content_type: str | None = None
+    acquisition_metadata: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -59,7 +62,9 @@ class PostgresScientificIngestionRepository:
             SELECT a.id,a.release_id,a.storage_object_id,a.artifact_key,a.artifact_role,
               a.raw_checksum_algorithm,a.raw_checksum_value,a.byte_size,
               o.checksum_algorithm storage_checksum_algorithm,o.checksum_value storage_checksum_value,
-              o.byte_size storage_byte_size
+              o.byte_size storage_byte_size,o.object_key source_locator,
+              COALESCE(a.media_type,o.mime_type) content_type,
+              a.provenance acquisition_metadata
             FROM scientific_release_artifacts a JOIN storage_objects o ON o.id=a.storage_object_id
             WHERE a.release_id=%s AND a.artifact_key=ANY(%s)
             ORDER BY a.artifact_key FOR SHARE OF a, o

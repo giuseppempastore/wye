@@ -77,6 +77,9 @@ class ScientificArtifactReference(FrozenContract):
     raw_checksum_algorithm: Algorithm
     raw_checksum_value: NonEmptyText
     byte_size: int | None = Field(default=None, ge=0)
+    source_locator: NonEmptyText | None = None
+    content_type: NonEmptyText | None = None
+    acquisition_metadata: dict[str, Any] | None = None
 
     @model_validator(mode="after")
     def validate_raw_checksum(self):
@@ -293,3 +296,10 @@ class ScientificArtifactParser(Protocol):
     """Transform acquired artifacts into source-agnostic record envelopes."""
 
     def parse(self, manifest: ScientificArtifactManifest) -> ScientificParserResult: ...
+
+
+@runtime_checkable
+class ScientificArtifactPayloadReader(Protocol):
+    """Read immutable acquired bytes without coupling parsers to transport."""
+
+    def read_bytes(self, artifact: ScientificArtifactReference) -> bytes: ...

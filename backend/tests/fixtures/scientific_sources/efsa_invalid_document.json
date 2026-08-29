@@ -1,0 +1,7 @@
+{
+  "schema": "unsupported_fixture_schema",
+  "source": {"key": "efsa"},
+  "dataset": {"key": "efsa_chemical_assessments"},
+  "release": {"official_release": "invalid"},
+  "records": []
+}
