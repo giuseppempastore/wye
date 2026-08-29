@@ -1,208 +1,98 @@
 # WYE — Stato del progetto
 
-Questo file serve come riepilogo semplice e leggibile dello stato attuale di WYE.
-
-## Dove siamo
+## Baseline corrente
 
 ```text
-Fase 1      ✅ COMPLETATA
-Fase 2      ✅ COMPLETATA
-Fase 2.1    ✅ COMPLETATA
-Fase 3      ✅ COMPLETATA
-Fase 3.1    ✅ COMPLETATA
-Fase 4      ✅ COMPLETATA + E2E
-Fase 5      ✅ COMPLETATA + E2E
-Fase 6      ✅ COMPLETATA
-Fase 7      ⏳ FUTURA — ARCHITETTURA/SCORING DA PROGETTARE
+branch: ingredients_score
+HEAD: 27b7edbab4caa76abd5d2e67f5aa45e6b1128445
+origin/ingredients_score: 27b7edbab4caa76abd5d2e67f5aa45e6b1128445
+Alembic repository head: 0018_scientific_batch_recovery
+local database wye: 0017
 ```
 
----
+Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
+`0018` e validazione. La Fase 7.0.1 non modifica il database.
 
-## Fase 1 — Fondamenta database
-
-È stato introdotto Alembic per gestire in modo controllato l'evoluzione del database PostgreSQL.
-
-In pratica:
+## Avanzamento
 
 ```text
-schema database
-→ versionato
-→ aggiornabile tramite migration
+Fase 1      COMPLETATA
+Fase 2      COMPLETATA
+Fase 2.1    COMPLETATA
+Fase 3      COMPLETATA
+Fase 3.1    COMPLETATA
+Fase 4      COMPLETATA + E2E
+Fase 5      COMPLETATA + E2E
+Fase 6      COMPLETATA
+Fase 7.0    COMPLETATA — Architecture & Requirements Review
+Fase 7.0.1  COMPLETATA — Architecture Specification & Phase 7.0 Freeze
+Fase 7.1    NON INIZIATA
 ```
 
----
+## Capacità consolidate
 
-## Fase 2 — Modello scientifico e provenance
-
-È stato costruito il modello dati necessario per rappresentare:
-
-- immagini prodotto;
-- documenti etichetta;
-- estrazioni versionate;
-- ingredienti;
-- sostanze scientifiche;
-- mapping;
-- review;
-- dataset scientifici;
-- release;
-- assessment.
-
-L'obiettivo era preparare il database senza implementare ancora upload, OCR, AI o scoring.
-
----
-
-## Fase 2.1 — Integrità del modello
-
-È stata aggiunta la migration:
+WYE conserva e collega:
 
 ```text
-0003_data_integrity_hardening
+product
+→ extraction item
+→ accepted canonical ingredient
+→ accepted temporal ingredient-substance mapping
+→ active substance and verified identifier
+→ scientific assessment and finding
+→ ingestion run and immutable artifact
+→ release
+→ dataset
+→ source
 ```
 
-che impedisce molte incoerenze direttamente a livello PostgreSQL.
+La Fase 6 ha consolidato acquisizione reale EFSA QPS e OpenFoodTox, identity
+resolution, provenance, reprocessing, multi-provider coexistence, batch,
+checkpoint/resume, crash recovery, concurrency e storico.
 
-Tra le protezioni:
+## Fase 7.0.1
 
-- prodotto derivato correttamente dall'immagine;
-- mapping del testo solo verso ingredienti WYE;
-- review storiche 1:N;
-- una review accepted deve avere un solo candidato;
-- separazione tra file storage e product image;
-- versionamento immagini coerente;
-- niente cicli nelle supersession;
-- checksum scientifici contestualizzati al dataset;
-- abort sicuro della migration sui dati ambigui.
+La progettazione iniziale dello scoring è congelata nei documenti:
 
-La migration è stata validata realmente su PostgreSQL 18.6.
+- `WYE_PHASE_7.md`;
+- `WYE_SCORING_SEMANTICS.md`;
+- `WYE_SCORING_PROTOCOL.md`.
 
-Test database:
+Decisioni principali:
 
 ```text
-14 / 14 OK
+evidence synthesis / hazard profile != risk estimate != generic health score
+
+first protocol:
+endpoint-specific evidence synthesis
++ multidimensional substance hazard profile
+
+numeric score for first protocol:
+not scientifically justified
 ```
 
-Upgrade, downgrade e re-upgrade:
+Il rischio quantitativo di prodotto non è computabile con i dati attuali perché
+mancano in modo generale concentrazione, dose/amount, frequenza, durata, route,
+target population e condizioni di preparazione/uso.
+
+## Confine legacy
+
+Il simple scoring MVP, il catalogo/pesi hardcoded, gli score placeholder e le
+tabelle/campi legacy di scoring sono classificati:
 
 ```text
-OK
+legacy / excluded from Phase 7 scientific scoring
 ```
 
-Test di concorrenza:
+Non sono stati modificati o reinterpretati dalla Fase 7.0.1.
 
-```text
-OK
-```
+## Prossimo gate
 
----
+La Fase 7.1 potrà iniziare solo con istruzione esplicita e dopo aver accettato che:
 
-## Problema tecnico ancora aperto
-
-La suite backend completa presenta ancora due errori preesistenti:
-
-```text
-Client.__init__() got an unexpected keyword argument 'proxies'
-```
-
-relativi alla compatibilità:
-
-```text
-openai ↔ httpx
-```
-
-Non appartengono alla Fase 2.1.
-
-Questo problema dovrà essere risolto prima di lavorare seriamente sulla futura pipeline AI.
-
----
-
-## Operazione Git ancora da fare
-
-Codex ha creato ma non ancora committato:
-
-```text
-backend/migrations/versions/0003_data_integrity_hardening.py
-backend/tests/test_data_integrity_hardening.py
-```
-
-Prima di iniziare la Fase 3 conviene creare un commit dedicato alla Fase 2.1.
-
----
-
-# Prossima fase
-
-## Fase 3 — Object Storage e acquisizione immagini
-
-Sarà il primo vero pezzo applicativo che utilizza il modello appena costruito.
-
-Flusso previsto:
-
-```text
-utente/client
-    ↓
-richiesta upload
-    ↓
-object storage
-    ↓
-verifica file
-    ↓
-storage_objects
-    ↓
-product_images
-    ↓
-product_label_documents
-```
-
-La fase dovrà affrontare:
-
-- scelta/configurazione object storage;
-- adapter backend;
-- upload sicuro;
-- URL firmati;
-- MIME type;
-- dimensione massima;
-- checksum;
-- finalizzazione;
-- idempotenza;
-- concorrenza;
-- immagini obsolete/superseded;
-- upload incompleti;
-- autorizzazioni.
-
-Non entreranno ancora:
-
-```text
-OCR
-AI
-EFSA/OpenFoodTox
-scoring
-```
-
----
-
-# Visione complessiva
-
-```text
-IMMAGINE PRODOTTO
-       ↓
-[Fase 3]
-Acquisizione sicura
-       ↓
-[Fase 4]
-OCR / AI / parsing
-       ↓
-[Fase 5]
-Normalizzazione + review
-       ↓
-[Fase 6]
-Evidenza EFSA/OpenFoodTox
-       ↓
-[Fase 7]
-Scoring scientifico versionato
-```
-
-Lo stato attuale del progetto può quindi essere riassunto così:
-
-> Le Fasi 1–6 sono consolidate. WYE conserva evidenze scientifiche versionate e
-> tracciabili da EFSA e OpenFoodTox, con identity resolution, provenance,
-> batch/recovery e traversal prodotto → evidenza. La Fase 7 dovrà progettare lo
-> scoring senza alterare il principio `scientific evidence != scientific scoring`.
+- l'architettura è definita, ma il metodo non è ancora scientificamente validato;
+- il primo protocollo non produce uno score numerico;
+- i criteri scientifici concreti richiedono review esterna di dominio;
+- il logical protocol/snapshot/execution model deve essere progettato prima di
+  migration o runtime;
+- l'upgrade del database locale resta un task operativo separato.
