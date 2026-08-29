@@ -1,0 +1,93 @@
+{
+  "format": "openfoodtox_snapshot_v1",
+  "catalog": {
+    "dataset": "openfoodtox_effects",
+    "snapshot_date": "2025-02-01",
+    "publisher": "OpenFoodTox fixture"
+  },
+  "entries": [
+    {
+      "entry_id": "OFT-ENTRY-0001",
+      "compound_ids": [{"scheme": "CASRN", "identifier": "50-00-0"}],
+      "study": {
+        "study_id": "OFT-STUDY-0001",
+        "revision": "2025.1",
+        "study_type": "toxicology_study",
+        "status": "published",
+        "publication_date": "2025-01-20",
+        "reference": "openfoodtox:study:0001",
+        "summary": "Fixture study summary for deterministic parsing only."
+      },
+      "effects": [
+        {
+          "effect_id": "EFFECT-1",
+          "endpoint": "no_observed_adverse_effect_level",
+          "dose": 2.5,
+          "unit": "mg/kg bw/day",
+          "test_system": "rat_chronic",
+          "evidence_type": "experimental_study",
+          "conclusion": "Fixture endpoint; not a WYE score."
+        }
+      ]
+    },
+    {
+      "entry_id": "OFT-ENTRY-0002",
+      "compound_ids": [{"scheme": "PUBCHEM_CID", "identifier": "999999999"}],
+      "study": {
+        "study_id": "OFT-STUDY-0002",
+        "revision": "2025.1",
+        "study_type": "toxicology_study",
+        "status": "pending_review",
+        "summary": "Unknown registry namespace fixture."
+      },
+      "effects": [
+        {
+          "effect_id": "EFFECT-2",
+          "endpoint": "observed_effect",
+          "result": "fixture observation",
+          "evidence_type": "experimental_study"
+        }
+      ]
+    },
+    {
+      "entry_id": "OFT-ENTRY-0001",
+      "compound_ids": [{"scheme": "CASRN", "identifier": "50-00-0"}],
+      "study": {
+        "study_id": "OFT-STUDY-0001",
+        "revision": "2025.1",
+        "study_type": "toxicology_study",
+        "status": "published",
+        "publication_date": "2025-01-20",
+        "reference": "openfoodtox:study:0001",
+        "summary": "Fixture study summary for deterministic parsing only."
+      },
+      "effects": [
+        {
+          "effect_id": "EFFECT-1",
+          "endpoint": "no_observed_adverse_effect_level",
+          "dose": 2.5,
+          "unit": "mg/kg bw/day",
+          "test_system": "rat_chronic",
+          "evidence_type": "experimental_study",
+          "conclusion": "Fixture endpoint; not a WYE score."
+        }
+      ]
+    },
+    {
+      "entry_id": "OFT-ENTRY-UNSUPPORTED",
+      "compound_ids": [{"scheme": "UNMAPPED_SCHEME", "identifier": "X-2"}],
+      "study": {
+        "study_id": "OFT-STUDY-UNSUPPORTED",
+        "revision": "1",
+        "study_type": "toxicology_study"
+      },
+      "effects": []
+    },
+    {
+      "entry_id": "OFT-ENTRY-MALFORMED",
+      "compound_ids": [],
+      "study": {"revision": "1", "study_type": "toxicology_study"},
+      "effects": []
+    }
+  ]
+}

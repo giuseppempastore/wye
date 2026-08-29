@@ -7,7 +7,7 @@
 Branch:
 
 ```text
-ingredients_score
+phase_6_4_adapter_foundation
 ```
 
 Alembic head corrente:
@@ -33,7 +33,9 @@ Fase 6.3.3 — Substance Registry Materialization                ✅ COMPLETATA
 Fase 6.3.4 — Controlled Substance Creation                     ✅ COMPLETATA
 Fase 6.3.5 — Ingredient → Substance Mapping Workflow           ✅ COMPLETATA
 Fase 6.3.6 — Final Validation & Mapping History                ✅ COMPLETATA
-Fase 6.4   — EFSA Adapter                                      ⏳ PROSSIMA — NON INIZIATA
+Fase 6.4   — Scientific Source Adapters                        🚧 IN CORSO
+Fase 6.4.1 — Scientific Source Adapter Foundation              ✅ COMPLETATA
+Fase 6.4.2 — Real Acquisition & Ingestion Hardening            ⏳ PROSSIMA
 ```
 
 La Fase 6 nel suo complesso resta in corso. In particolare:
@@ -42,7 +44,8 @@ La Fase 6 nel suo complesso resta in corso. In particolare:
 scientific evidence != scientific scoring
 ```
 
-La Fase 6.4 è il prossimo blocco e non fa parte di questo checkpoint.
+La Fase 6.4 è in corso: il foundation checkpoint 6.4.1 è completato; transport e
+acquisition reali restano fuori da questo checkpoint.
 
 Stato fasi precedenti:
 
@@ -1439,35 +1442,75 @@ Non creare automaticamente equivalenze scientifiche senza evidenza.
 
 ---
 
-# 41. Fase 6.4 — EFSA Adapter
+# 41. Fase 6.4 — Scientific Source Adapters
 
 ## Stato
 
-**PROSSIMA — NON INIZIATA**
+**IN CORSO — FASE 6.4.1 COMPLETATA**
 
-Solo dopo hardening e core source-agnostic.
+La Fase 6.4.1 riutilizza l'hardening e il core source-agnostic delle Fasi 6.1–6.3.
+Non introduce una seconda pipeline di persistenza o transazione.
 
-Pipeline prevista:
+Pipeline offline validata:
 
 ```text
-EFSA acquisition
-→ immutable artifact
-→ versioned EFSA parser
-→ source-agnostic ingestion models
-→ substances
-→ assessments
-→ findings
+EFSA fixture              OpenFoodTox fixture
+→ EFSA parser             → OpenFoodTox parser
+          ↘              ↙
+       normalized scientific record
+       → source-agnostic ingestion core
+       → verified identifier oppure resolution candidate
+       → assessment
+       → findings
 ```
 
-L'acquisition deve essere separata dal parser.
+Contract e boundary implementati:
+
+```text
+source/dataset/release identity
+immutable artifact manifest
+locator/checksum/content type/size/acquisition metadata
+transport-independent artifact payload reader
+provider-specific deterministic parser
+raw record/finding/native identifier preservation
+adapter/parser/normalization version identity
+```
+
+L'acquisition locale è separata dal parser e nessun parser effettua HTTP. EFSA e
+OpenFoodTox hanno adapter e parser indipendenti; il core non contiene branching per
+provider.
+
+Identity policy:
+
+```text
+verified registered identifier → existing active substance
+known provider namespace not registered in WYE → resolution candidate
+unsupported provider namespace → controlled parser rejection
+unknown identifier → mai creazione automatica di substance
+```
+
+Le fixture sono minimali, locali e rappresentative. Sono verificati determinismo,
+raw preservation, provenance completa, idempotent retry, reprocessing con parser
+versionato, rollback e provider/network isolation.
+
+Release identity:
+
+```text
+EFSA → official_release della fonte
+OpenFoodTox → catalog snapshot_date della fonte
+```
+
+Nessuna release viene inventata. Il modello fino ad Alembic
+`0017_ingredient_mapping_history` è sufficiente: nessuna nuova migration è necessaria.
 
 La persistenza non deve contenere logica EFSA-specifica non necessaria.
 
 ---
 
-# 42. Fase 6.5 — OpenFoodTox Adapter
+# 42. Fase 6.5 — OpenFoodTox Real Acquisition
 
-Adapter separato.
+Il foundation parser separato è completato nella 6.4.1. Restano futuri transport,
+acquisition e validazione contro artifact reali OpenFoodTox.
 
 Pipeline equivalente:
 
