@@ -7,13 +7,13 @@
 Branch:
 
 ```text
-phase_6_4_3_openfoodtox_real_acquisition
+phase_6_4_4_batch_recovery_hardening
 ```
 
 Alembic head corrente:
 
 ```text
-0017_ingredient_mapping_history
+0018_scientific_batch_recovery
 ```
 
 Checkpoint implementativo corrente:
@@ -37,6 +37,7 @@ Fase 6.4   — Scientific Source Adapters                        🚧 IN CORSO
 Fase 6.4.1 — Scientific Source Adapter Foundation              ✅ COMPLETATA
 Fase 6.4.2 — EFSA Real Acquisition & Transport Hardening       ✅ COMPLETATA
 Fase 6.4.3 — OpenFoodTox Real Acquisition                      ✅ COMPLETATA
+Fase 6.4.4 — Multi-provider Batch / Recovery Hardening          ✅ COMPLETATA
 ```
 
 La Fase 6 nel suo complesso resta in corso. In particolare:
@@ -45,8 +46,8 @@ La Fase 6 nel suo complesso resta in corso. In particolare:
 scientific evidence != scientific scoring
 ```
 
-La Fase 6.4 è in corso: i checkpoint 6.4.1, 6.4.2 e 6.4.3 sono completati;
-hardening batch/recovery multi-provider resta fuori da questo checkpoint.
+La Fase 6.4 è in corso: i checkpoint 6.4.1, 6.4.2, 6.4.3 e 6.4.4 sono completati.
+Il prossimo checkpoint è la validazione finale 6.4.5, senza scoring.
 
 Stato fasi precedenti:
 
@@ -1447,7 +1448,7 @@ Non creare automaticamente equivalenze scientifiche senza evidenza.
 
 ## Stato
 
-**IN CORSO — FASI 6.4.1, 6.4.2 E 6.4.3 COMPLETATE**
+**IN CORSO — FASI 6.4.1, 6.4.2, 6.4.3 E 6.4.4 COMPLETATE**
 
 La Fase 6.4.1 riutilizza l'hardening e il core source-agnostic delle Fasi 6.1–6.3.
 Non introduce una seconda pipeline di persistenza o transazione.
@@ -1560,37 +1561,60 @@ stata necessaria.
 
 # 42. Fase 6.4.4 — Multi-provider Batch / Recovery Hardening
 
-EFSA e OpenFoodTox possiedono ora percorsi reali bounded. Il prossimo checkpoint
-deve concentrarsi sull'esecuzione operativa multi-release senza introdurre scoring:
+## Stato
+
+**COMPLETATA**
+
+EFSA e OpenFoodTox condividono ora un'orchestrazione batch provider-neutral sopra
+gli invarianti artifact-first e le ingestion run consolidate:
 
 ```text
-batch ingestion
-→ checkpoint/resume
-→ failure recovery
-→ multi-release synchronization
-→ operational metrics
-→ bounded provider retry orchestration
+semantic batch plan
+→ persistent work-item checkpoint
+→ bounded lease/claim
+→ provider acquisition callback
+→ immutable artifact checkpoint
+→ versioned scientific ingestion run
+→ structured item result e batch summary
 ```
 
-La Fase 6.4 e la Fase 6 restano IN CORSO.
+La semantic identity include source, dataset, release, artifact selection,
+adapter/acquisition/parser/normalization version e configuration fingerprint. UUID e
+timestamp restano execution/audit identity e non definiscono il lavoro logico.
 
-Pipeline consolidata:
+Alembic `0018_scientific_batch_recovery` aggiunge esclusivamente checkpoint e storia
+dei tentativi batch. La migration è necessaria perché a `0017` un crash prima della
+creazione della scientific ingestion run non lasciava uno stato persistente
+ricostruibile. `scientific_ingestion_runs`, artifact, assessment e finding restano la
+fonte di verità scientifica: non è stata introdotta una seconda persistence pipeline.
 
 ```text
-OpenFoodTox acquisition
-→ immutable artifact
-→ versioned parser
-→ source-agnostic ingestion models
-→ substances
-→ assessments
-→ findings
+completed work → recognized/reused
+retryable work → bounded later logical attempt
+stale running lease → abandoned attempt + safe reclaim
+permanent failure → isolated failed item
+changed upstream → isolated conflict
 ```
 
-Il modello interno deve rimanere comune.
+Sono validati crash prima e dopo l'artifact checkpoint, rollback su finding failure,
+resume da nuovo processo, retry exhausted, first-worker overlap, plan ordering
+independence, parser-version reprocessing, artifact reuse tra piani, history
+multi-release e un workload bounded da 40 item. EFSA e OpenFoodTox mantengono
+provenance indipendente anche quando risolvono la stessa canonical substance.
+
+La summary espone item completed/failed/retryable/conflicted/reused, artifact
+created/reused, assessment/finding created/reused ed elapsed. Il logging strutturato
+non include payload, byte artifact o segreti.
+
+La Fase 6.4 e la Fase 6 restano IN CORSO. Prossimo checkpoint:
+
+```text
+6.4.5 — Final Scientific Ingestion Validation / Phase 6 Closure
+```
 
 ---
 
-# 43. Fase 6.6 — Cross-source Validation
+# 43. Fase 6.4.5 — Final Scientific Ingestion Validation / Phase 6 Closure
 
 Validazione finale della Fase 6.
 
