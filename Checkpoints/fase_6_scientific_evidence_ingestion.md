@@ -7,7 +7,7 @@
 Branch:
 
 ```text
-phase_6_4_adapter_foundation
+phase_6_4_3_openfoodtox_real_acquisition
 ```
 
 Alembic head corrente:
@@ -36,6 +36,7 @@ Fase 6.3.6 — Final Validation & Mapping History                ✅ COMPLETATA
 Fase 6.4   — Scientific Source Adapters                        🚧 IN CORSO
 Fase 6.4.1 — Scientific Source Adapter Foundation              ✅ COMPLETATA
 Fase 6.4.2 — EFSA Real Acquisition & Transport Hardening       ✅ COMPLETATA
+Fase 6.4.3 — OpenFoodTox Real Acquisition                      ✅ COMPLETATA
 ```
 
 La Fase 6 nel suo complesso resta in corso. In particolare:
@@ -44,8 +45,8 @@ La Fase 6 nel suo complesso resta in corso. In particolare:
 scientific evidence != scientific scoring
 ```
 
-La Fase 6.4 è in corso: i checkpoint 6.4.1 e 6.4.2 sono completati; acquisition
-OpenFoodTox reale e hardening batch/recovery restano fuori da questo checkpoint.
+La Fase 6.4 è in corso: i checkpoint 6.4.1, 6.4.2 e 6.4.3 sono completati;
+hardening batch/recovery multi-provider resta fuori da questo checkpoint.
 
 Stato fasi precedenti:
 
@@ -1446,7 +1447,7 @@ Non creare automaticamente equivalenze scientifiche senza evidenza.
 
 ## Stato
 
-**IN CORSO — FASI 6.4.1 E 6.4.2 COMPLETATE**
+**IN CORSO — FASI 6.4.1, 6.4.2 E 6.4.3 COMPLETATE**
 
 La Fase 6.4.1 riutilizza l'hardening e il core source-agnostic delle Fasi 6.1–6.3.
 Non introduce una seconda pipeline di persistenza o transazione.
@@ -1497,7 +1498,8 @@ Release identity:
 
 ```text
 EFSA → official_release della fonte
-OpenFoodTox → catalog snapshot_date della fonte
+OpenFoodTox fixture 6.4.1 → catalog snapshot_date della fixture
+OpenFoodTox 3.0 reale → Zenodo record identity della release ufficiale
 ```
 
 Nessuna release viene inventata. Il modello fino ad Alembic
@@ -1528,19 +1530,51 @@ creata automaticamente. OpenFoodTox remoto, scoring e frontend restano fuori sco
 I test standard sono offline; la rete EFSA richiede esplicitamente
 `WYE_RUN_REAL_EFSA_TESTS=1`. Alembic resta a `0017_ingredient_mapping_history`.
 
-Repair 6.4.2 validato sul feature branch, merge pending: il DOI del record e la
+Repair 6.4.2 consolidato: il DOI del record e la
 release key WYE restano identità distinte; l'assessment usa il DOI canonico della
 metadata provider. Sono inoltre validati Content-Type HTTP compatibili, checksum
 provider e concorrenza reale sul primo inserimento.
 
+### Fase 6.4.3 — OpenFoodTox Real Acquisition
+
+OpenFoodTox 3.0 è acquisito dalla release ufficiale EFSA Knowledge Junction/Zenodo
+`zenodo_record_19388272`. Il DOI di record `10.5281/zenodo.19388272`, il concept DOI
+`10.5281/zenodo.780543`, la data di pubblicazione e la licenza restano separati
+dall'acquisition timestamp e dalle chiavi interne WYE.
+
+Il percorso riutilizza il transport condiviso e la persistenza artifact-first della
+6.4.2. L'XLSX ufficiale è validato per MIME/container, dimensione, MD5 provider e
+SHA-256 WYE prima del parsing. Il parser deterministico ricostruisce soltanto join
+IUCLID espliciti tra studio, dossier, sostanza, reference substance e letteratura;
+preserva record raw, unità/valori originali e usa il DOI dell'output EFSA come
+`assessment.document_reference`, mai una chiave WYE.
+
+La suite standard resta offline; l'E2E reale richiede
+`WYE_RUN_REAL_OPENFOODTOX_TESTS=1` e usa PostgreSQL temporaneo. Sono validati retry
+idempotente, first-write concurrency, changed-upstream conflict, rollback,
+resolution candidate controllata e coesistenza EFSA/OpenFoodTox con provenance
+indipendente. Alembic resta a `0017_ingredient_mapping_history`; nessuna migration è
+stata necessaria.
+
 ---
 
-# 42. Fase 6.5 — OpenFoodTox Real Acquisition
+# 42. Fase 6.4.4 — Multi-provider Batch / Recovery Hardening
 
-Il foundation parser separato è completato nella 6.4.1. Restano futuri transport,
-acquisition e validazione contro artifact reali OpenFoodTox.
+EFSA e OpenFoodTox possiedono ora percorsi reali bounded. Il prossimo checkpoint
+deve concentrarsi sull'esecuzione operativa multi-release senza introdurre scoring:
 
-Pipeline equivalente:
+```text
+batch ingestion
+→ checkpoint/resume
+→ failure recovery
+→ multi-release synchronization
+→ operational metrics
+→ bounded provider retry orchestration
+```
+
+La Fase 6.4 e la Fase 6 restano IN CORSO.
+
+Pipeline consolidata:
 
 ```text
 OpenFoodTox acquisition

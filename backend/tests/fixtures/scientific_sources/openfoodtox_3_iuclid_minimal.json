@@ -1,0 +1,68 @@
+{
+  "source_shape": "OpenFoodTox 3.0 IUCLID 6/OHT XLSX relational export",
+  "release": {
+    "zenodo_record_id": "19388272",
+    "record_doi": "10.5281/zenodo.19388272",
+    "concept_doi": "10.5281/zenodo.780543",
+    "publication_date": "2026-04-30",
+    "license": "cc-by-nd-4.0"
+  },
+  "sheets": {
+    "DOSSIER": [
+      {
+        "Document UUID": "dossier-0001",
+        "Definition": "DOSSIER.EFSA_CHEMICALS_DATABASE",
+        "DataSource.EFSAQuestionNumber": "EFSA-Q-2020-0001",
+        "LiteratureReference.DateOfEvaluation": "2020-06-11",
+        "LiteratureReference.EFSAOutputTitle": "Fixture EFSA conclusion",
+        "LiteratureReference.LinkToPersistentIdentifier": "doi:10.2903/j.efsa.2020.6181"
+      }
+    ],
+    "DOSSIER_DOCS": [
+      {"DOSSIER UUID": "dossier-0001", "DOCUMENT TYPE": "SUBSTANCE", "DOCUMENT UUID": "substance-0001"},
+      {"DOSSIER UUID": "dossier-0001", "DOCUMENT TYPE": "ENDPOINT_STUDY_RECORD", "DOCUMENT UUID": "study-0001"}
+    ],
+    "SUB": [
+      {
+        "Document UUID": "substance-0001",
+        "Definition": "SUBSTANCE",
+        "ChemicalName": "4-methoxy-6-methyl-1,3,5-triazine-2-amine",
+        "ReferenceSubstance.ReferenceSubstance": "reference-0001"
+      }
+    ],
+    "REF_SUB": [
+      {
+        "Document UUID": "reference-0001",
+        "Definition": "REFERENCE_SUBSTANCE",
+        "Inventory.CASNumber": "1668-54-8",
+        "ReferenceSubstanceName": "4-methoxy-6-methyl-1,3,5-triazine-2-amine",
+        "EFSA PARAM CODE": "RF-00005970-PAR"
+      }
+    ],
+    "LIT": [
+      {
+        "Document UUID": "literature-0001",
+        "Definition": "LITERATURE",
+        "GeneralInfo.Name": "Peer review of a pesticide active substance",
+        "GeneralInfo.ReferenceYear": "2020",
+        "GeneralInfo.Source": "doi:10.2903/j.efsa.2020.6181"
+      }
+    ],
+    "END_STUDY_REC.HumanHealth": [
+      {
+        "Document UUID": "study-0001",
+        "Definition": "ENDPOINT_STUDY_RECORD.AcuteToxicityDermal",
+        "AdministrativeData.Endpoint": "acute toxicity: dermal",
+        "DataSource.Reference": "literature-0001",
+        "MaterialsAndMethods.AdministrationExposure.RouteOfAdministration": "dermal",
+        "MaterialsAndMethods.TestAnimals.Species": "rat",
+        "MaterialsAndMethods.TestAnimals.Sex": "female",
+        "ResultsAndDiscussion.EffectLevels.Efflevel.EffectLevel.upperQualifier": "=",
+        "ResultsAndDiscussion.EffectLevels.Efflevel.EffectLevel.upperValue": "1000",
+        "ResultsAndDiscussion.EffectLevels.Efflevel.EffectLevel.Unit": "mg/kg bw",
+        "ResultsAndDiscussion.EffectLevels.Efflevel.Endpoint": "LD50",
+        "ResultsAndDiscussion.EffectLevels.Efflevel.RemarksOnResults.Remarks": "Reported source result; not a WYE interpretation."
+      }
+    ]
+  }
+}

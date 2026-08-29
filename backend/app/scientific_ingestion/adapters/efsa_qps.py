@@ -8,11 +8,8 @@ import hashlib
 import io
 import json
 import os
-import re
 import unicodedata
-import xml.etree.ElementTree as ET
 import zipfile
-from urllib.parse import quote
 
 from app.scientific_ingestion.contracts import (
     ScientificAdapterMetadata, ScientificAssessmentInput,
@@ -23,6 +20,8 @@ from app.scientific_ingestion.errors import ScientificAcquisitionError, Scientif
 from app.scientific_ingestion.http_transport import (
     ControlledHttpTransport, HttpRequest, HttpRetryPolicy, HttpTimeouts,
 )
+from app.scientific_ingestion.references import canonical_doi_url
+from app.scientific_ingestion.xlsx import BoundedXlsxReader
 
 
 ZENODO_HOST = "zenodo.org"
@@ -36,13 +35,6 @@ QPS_ALLOWED_CONTENT_TYPES = frozenset({
     "application/octet-stream",
     "application/zip",
 })
-
-
-def canonical_doi_url(value: str) -> str:
-    """Validate a provider DOI and produce its canonical resolver URL."""
-    if not isinstance(value, str) or not re.fullmatch(r"10\.\d{4,9}/[^\s/]+(?:/[^\s/]+)*", value):
-        raise ValueError("record DOI is missing or malformed")
-    return "https://doi.org/" + quote(value, safe="/:._-()")
 
 
 @dataclass(frozen=True)
@@ -248,21 +240,12 @@ class EfsaQpsXlsxParser:
         return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
     def _read_qps_rows(self, body):
-        try:
-            archive = zipfile.ZipFile(io.BytesIO(body))
-        except (zipfile.BadZipFile, OSError) as exc:
-            raise ScientificParserError("EFSA QPS artifact is not a valid XLSX container") from exc
-        infos = archive.infolist()
-        if len(infos) > self.max_archive_entries or sum(i.file_size for i in infos) > self.max_decompressed_bytes:
-            raise ScientificParserError("EFSA QPS archive exceeds decompression limits")
-        if any(".." in i.filename.split("/") or i.filename.startswith(("/", "\\")) for i in infos):
-            raise ScientificParserError("unsafe XLSX archive path")
-        try:
-            shared = self._shared_strings(archive)
-            sheet_path = self._sheet_path(archive, "QPS List")
-            matrix = self._sheet_rows(archive.read(sheet_path), shared)
-        except (KeyError, ET.ParseError, IndexError, ValueError) as exc:
-            raise ScientificParserError("invalid EFSA QPS workbook structure") from exc
+        with BoundedXlsxReader(
+            body, provider="EFSA QPS",
+            max_decompressed_bytes=self.max_decompressed_bytes,
+            max_archive_entries=self.max_archive_entries,
+        ) as workbook:
+            matrix = workbook.rows("QPS List")
         if len(matrix) < 2:
             raise ScientificParserError("EFSA QPS worksheet contains no header")
         headers = matrix[1]
@@ -274,48 +257,6 @@ class EfsaQpsXlsxParser:
             indexes[wanted] = matches[0]
         return [{key: (row[index] if index < len(row) else "") for key, index in indexes.items()}
                 for row in matrix[2:] if any(value.strip() for value in row)]
-
-    @staticmethod
-    def _shared_strings(archive):
-        try:
-            root = ET.fromstring(archive.read("xl/sharedStrings.xml"))
-        except KeyError:
-            return []
-        ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
-        return ["".join(node.text or "" for node in item.iter(ns + "t")) for item in root]
-
-    @staticmethod
-    def _sheet_path(archive, name):
-        main = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
-        rel = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
-        workbook = ET.fromstring(archive.read("xl/workbook.xml"))
-        target_id = next(item.attrib[rel + "id"] for item in workbook.iter(main + "sheet")
-                         if item.attrib["name"] == name)
-        relationships = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
-        target = next(item.attrib["Target"] for item in relationships if item.attrib["Id"] == target_id)
-        return "xl/" + target.lstrip("/").removeprefix("xl/")
-
-    @staticmethod
-    def _sheet_rows(xml, shared):
-        ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
-        root, rows = ET.fromstring(xml), []
-        for row in root.iter(ns + "row"):
-            values = {}
-            for cell in row.findall(ns + "c"):
-                letters = re.match(r"[A-Z]+", cell.attrib["r"]).group()
-                column = 0
-                for char in letters:
-                    column = column * 26 + ord(char) - 64
-                node = cell.find(ns + "v")
-                value = "" if node is None else node.text or ""
-                if cell.attrib.get("t") == "s" and value:
-                    value = shared[int(value)]
-                elif cell.attrib.get("t") == "inlineStr":
-                    value = "".join(n.text or "" for n in cell.iter(ns + "t"))
-                values[column - 1] = value
-            rows.append([values.get(i, "") for i in range(max(values, default=-1) + 1)])
-        return rows
-
 
 class EfsaQpsArtifactParser:
     """Manifest-facing wrapper that keeps storage reads outside the XLSX parser."""
