@@ -5,19 +5,20 @@
 ```text
 Fase 7.0   — Architecture & Requirements Review                 COMPLETATA
 Fase 7.0.1 — Architecture Specification & Phase 7.0 Freeze     COMPLETATA
-Fase 7.1   — Logical protocol / snapshot / execution model      NON INIZIATA
+Fase 7.1   — Logical protocol / snapshot / execution model      COMPLETATA
+Fase 7.2   — Evidence eligibility & selection semantics         NON INIZIATA
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline della review:
+Baseline della review 7.1:
 
 ```text
 branch: ingredients_score
-HEAD: 27b7edbab4caa76abd5d2e67f5aa45e6b1128445
-origin/ingredients_score: 27b7edbab4caa76abd5d2e67f5aa45e6b1128445
+HEAD: f708b0aa7ab56a506a05ee2f51a8e1001379ca0a
+origin/ingredients_score: f708b0aa7ab56a506a05ee2f51a8e1001379ca0a
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017
 ```
@@ -31,6 +32,8 @@ validation restano un task operativo separato.
   data gap.
 - `WYE_SCORING_PROTOCOL.md`: selezione deterministica, conflitti, snapshot,
   riproducibilità, explainability e test vector concettuali.
+- `WYE_SCORING_EXECUTION_MODEL.md`: modello logico 7.1 di protocollo/versione,
+  snapshot, target freeze, execution, result, trace e determinismo.
 - questo documento: scope, confine legacy, governance, decisioni e roadmap.
 
 In caso di conflitto, i principi non negoziabili e le decisioni esplicite di
@@ -256,7 +259,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
 
-La Fase 7.1 non è iniziata da questo checkpoint.
+La Fase 7.1 è completata come specifica logica documentale. Non ha creato
+migration né runtime. La Fase 7.2 non è iniziata da questo checkpoint.
 
 ## Phase 7.0 exit review
 

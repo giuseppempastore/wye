@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 27b7edbab4caa76abd5d2e67f5aa45e6b1128445
-origin/ingredients_score: 27b7edbab4caa76abd5d2e67f5aa45e6b1128445
+HEAD: f708b0aa7ab56a506a05ee2f51a8e1001379ca0a
+origin/ingredients_score: f708b0aa7ab56a506a05ee2f51a8e1001379ca0a
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.0.1 non modifica il database.
+`0018` e validazione. La Fase 7.1 non modifica il database.
 
 ## Avanzamento
 
@@ -26,7 +26,8 @@ Fase 5      COMPLETATA + E2E
 Fase 6      COMPLETATA
 Fase 7.0    COMPLETATA — Architecture & Requirements Review
 Fase 7.0.1  COMPLETATA — Architecture Specification & Phase 7.0 Freeze
-Fase 7.1    NON INIZIATA
+Fase 7.1    COMPLETATA — Logical protocol / snapshot / execution model
+Fase 7.2    NON INIZIATA
 ```
 
 ## Capacità consolidate
@@ -86,13 +87,43 @@ legacy / excluded from Phase 7 scientific scoring
 
 Non sono stati modificati o reinterpretati dalla Fase 7.0.1.
 
+## Fase 7.1
+
+Il modello logico versionato è definito in:
+
+- `WYE_SCORING_EXECUTION_MODEL.md`.
+
+Sono congelati a livello logico:
+
+```text
+scientific protocol family
+immutable published protocol version
+canonical protocol representation and digest
+hybrid evidence snapshot: query definition + resolved membership
+target identity snapshot
+evidence selection decision contract
+scientific evaluation execution
+NORMAL / REPLAY / COUNTERFACTUAL / REFRESH
+non-scalar result and result components
+machine-readable explanation trace
+determinism, idempotency and failure semantics
+```
+
+La review di compatibilità ha confermato che il layer Fase 6 fornisce provenance,
+artifact checksum, versioni di ingestion/parser/normalizzazione, finding
+fingerprint e mapping temporali utili allo snapshot. Restano requisiti futuri la
+membership congelata completa, il target identity freeze, il lifecycle storico
+della composizione prodotto e la persistence di protocollo, execution, decisioni,
+risultati e trace.
+
+La Fase 7.1 non definisce criteri scientifici concreti, endpoint synthesis,
+formule, pesi, threshold, score numerici o runtime.
+
 ## Prossimo gate
 
-La Fase 7.1 potrà iniziare solo con istruzione esplicita e dopo aver accettato che:
+La Fase 7.2 potrà iniziare solo con istruzione esplicita. Dovrà definire evidence
+eligibility, candidate-unit semantics, reason-code vocabulary, relevance,
+duplicate/dependency handling e il contratto deterministico del selector, senza
+anticipare endpoint synthesis, hazard aggregation o scoring numerico.
 
-- l'architettura è definita, ma il metodo non è ancora scientificamente validato;
-- il primo protocollo non produce uno score numerico;
-- i criteri scientifici concreti richiedono review esterna di dominio;
-- il logical protocol/snapshot/execution model deve essere progettato prima di
-  migration o runtime;
-- l'upgrade del database locale resta un task operativo separato.
+L'upgrade del database locale resta un task operativo separato.

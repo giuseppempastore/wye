@@ -262,6 +262,11 @@ traceable to its limiting dimensions. It is never an alias for safety.
 
 The following are logical concepts, not approved database tables.
 
+Phase 7.1 specializes these placeholders in
+`WYE_SCORING_EXECUTION_MODEL.md`. In particular, the canonical general-purpose
+execution name is `scientific_evaluation_execution`; the naming refinement does
+not change this frozen semantic contract and does not imply a database table.
+
 ### `scoring_protocol`
 
 Stable identity for one intended use, scientific construct and domain. It owns
