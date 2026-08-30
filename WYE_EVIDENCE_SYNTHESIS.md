@@ -782,3 +782,11 @@ Phase 7.5 is defined in `WYE_PRODUCT_ASSESSMENT.md` without changing this
 substance-synthesis contract. Hazard/profile uncertainty remains separately
 traceable and cannot be converted into product risk without sufficient exposure
 and reviewed reference semantics.
+
+## Phase 7.6 persistence specialization
+
+`WYE_SCORING_PERSISTENCE.md` defines immutable typed artifacts for evidence
+lines, comparison groups, endpoint syntheses and substance profiles. Their
+domain digests are component roots beneath the canonical `result_digest`; query
+tables may flatten them but cannot replace or reinterpret their payloads. No
+synthesis runtime or scientific categorization is authorized by persistence.

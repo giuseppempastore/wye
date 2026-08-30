@@ -960,7 +960,7 @@ Classification describes logical maturity, not authorization.
 | Actual exposure calculation | BLOCKED BY SCIENTIFIC REVIEW | No approved model, units, populations or assumptions |
 | Reference-point comparison | BLOCKED BY SCIENTIFIC REVIEW | No approved reference ontology/compatibility policy |
 | Risk characterisation | BLOCKED BY SCIENTIFIC REVIEW | No validated risk protocol |
-| Product-assessment persistence | DEFERRED TO 7.6 | Schema/artifact/index transaction design belongs to persistence phase |
+| Product-assessment persistence | DESIGNED IN 7.6; IMPLEMENTATION DEFERRED | Canonical artifact/index/publication contract is defined; schema freeze and migration remain pending |
 | API/shadow rollout | DEFERRED TO 7.8+ | Validation and persistence precede exposure of results |
 | Numerical product/health/safety/risk score | DEFERRED | Not justified or defined |
 
@@ -1005,13 +1005,14 @@ Classification describes logical maturity, not authorization.
 The Phase 7 roadmap remains unchanged. Phase 7.5 confirms that persistence must
 freeze product composition and scenario inputs before replay can be trusted.
 
-The proposed next checkpoint is:
+The Phase 7.6 persistence specialization is defined in:
 
 ```text
-Phase 7.6 — Persistence, Explainability and Historical Replay Design
+WYE_SCORING_PERSISTENCE.md
 ```
 
-Phase 7.6 should design immutable storage, transaction boundaries, canonical
-artifacts/index projections and replay verification for the logical contracts
-defined in Phases 7.1–7.5. It must not invent scientific rules or numerical
-scores. Phase 7.6 is not started by this document.
+It freezes product-composition/scenario inputs as canonical artifacts and binds
+scenario-specific readiness/assessment results to immutable publication bundles.
+User-specific scenarios require a distinct privacy boundary. Migration decision
+B requires a canonicalization/schema/publication freeze before implementation.
+The proposed Phase 7.6.1 checkpoint is not started by this document.

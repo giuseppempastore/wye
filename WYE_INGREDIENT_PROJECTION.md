@@ -776,3 +776,8 @@ first-class outcome. It must not invent missing exposure or begin runtime work.
 Phase 7.5 is defined in `WYE_PRODUCT_ASSESSMENT.md` without changing this
 projection contract. It consumes only frozen projection entries and preserves
 their separate scope, uncertainty and non-aggregation boundary.
+
+Phase 7.6 now defines the canonical mapping-snapshot and ingredient-projection
+artifact envelopes in `WYE_SCORING_PERSISTENCE.md`. Historical mappings and
+separate substance projections are digest-bound and immutable; physical query
+projections remain rebuildable. Composition/form scientific gaps are unchanged.

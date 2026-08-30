@@ -10,19 +10,20 @@ Fase 7.2   — Evidence eligibility & selection semantics         COMPLETATA
 Fase 7.3   — Endpoint synthesis / substance assessment          COMPLETATA
 Fase 7.4   — Substance → ingredient projection                  COMPLETATA
 Fase 7.5   — Exposure readiness / product assessment            COMPLETATA
-Fase 7.6   — Persistence / explainability / historical replay   NON INIZIATA
+Fase 7.6   — Persistence / explainability / historical replay   COMPLETATA
+Fase 7.6.1 — Canonicalization / schema / publication freeze     PROPOSTA, NON INIZIATA
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline della review 7.5:
+Baseline della review 7.6:
 
 ```text
 branch: ingredients_score
-HEAD: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
-origin/ingredients_score: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
+HEAD: c042401fe57247b6fdb27c57b321a3e3bd4db5a8
+origin/ingredients_score: c042401fe57247b6fdb27c57b321a3e3bd4db5a8
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
@@ -46,6 +47,8 @@ validation restano un task operativo separato.
   relationship-aware projection, uncertainty e multi-substance collection.
 - `WYE_PRODUCT_ASSESSMENT.md`: contratto 7.5 di product composition snapshot,
   exposure readiness, scenario e risk computability.
+- `WYE_SCORING_PERSISTENCE.md`: contratto 7.6 di artifact canonici,
+  publication atomica, query projection, explainability e historical replay.
 - questo documento: scope, confine legacy, governance, decisioni e roadmap.
 
 In caso di conflitto, i principi non negoziabili e le decisioni esplicite di
@@ -266,13 +269,17 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.3 | Endpoint-specific synthesis / substance assessment | Contratto multidimensionale definito; regole scientifiche da review esterna |
 | 7.4 | Substance → ingredient projection | Contratto relationship-aware definito; composition/form review-gated |
 | 7.5 | Exposure readiness / ingredient → product assessment | Exposure sufficiente o `risk_not_computable` |
-| 7.6 | Persistence / explainability / historical replay | Execution immutabili, trace e replay |
+| 7.6 | Persistence / explainability / historical replay | Contratto completato; migration subordinata al freeze 7.6.1 |
+| 7.6.1 | Canonicalization / schema / publication freeze | Proposta tecnica, non iniziata |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
 
-La Fase 7.5 è completata come specifica semantica documentale. Non ha creato
-migration né runtime. La Fase 7.6 non è iniziata da questo checkpoint.
+La Fase 7.6 è completata come specifica architetturale documentale. Non ha
+creato migration né runtime. La decisione di migration è B: prima di autorizzare
+lo schema devono essere congelati canonicalization profile, artifact envelope,
+vincoli SQL, publication/reconciliation, engine retention, privacy e query
+projections. La Fase 7.6.1 non è iniziata da questo checkpoint.
 
 ## Phase 7.0 exit review
 

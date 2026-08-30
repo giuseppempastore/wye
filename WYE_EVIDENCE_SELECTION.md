@@ -1025,4 +1025,8 @@ The proposed next checkpoint is:
 Phase 7.4 — Substance-to-Ingredient Projection Semantics
 ```
 
-Phase 7.4 is not started by this document.
+Phase 7.4 and the later 7.5 semantic specialization are complete. Phase 7.6
+defines the immutable candidate-membership and decision-artifact persistence in
+`WYE_SCORING_PERSISTENCE.md`: every snapshot candidate retains one canonical
+decision and reason trace, while query projections remain rebuildable. This does
+not implement the selector or validate protocol-specific scientific rules.

@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
-origin/ingredients_score: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
+HEAD: c042401fe57247b6fdb27c57b321a3e3bd4db5a8
+origin/ingredients_score: c042401fe57247b6fdb27c57b321a3e3bd4db5a8
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.5 non modifica il database.
+`0018` e validazione. La Fase 7.6 non modifica il database.
 
 ## Avanzamento
 
@@ -31,7 +31,8 @@ Fase 7.2    COMPLETATA — Evidence eligibility & selection semantics
 Fase 7.3    COMPLETATA — Endpoint synthesis / substance assessment semantics
 Fase 7.4    COMPLETATA — Substance-to-ingredient projection semantics
 Fase 7.5    COMPLETATA — Exposure readiness / product assessment semantics
-Fase 7.6    NON INIZIATA
+Fase 7.6    COMPLETATA — Persistence, explainability & historical replay design
+Fase 7.6.1  PROPOSTA, NON INIZIATA — Canonicalization/schema/publication freeze
 ```
 
 ## Capacità consolidate
@@ -230,11 +231,28 @@ disponibili. Il product risk resta quindi non computabile in generale.
 La Fase 7.5 non implementa runtime exposure/risk, reference-point comparison,
 product score, formule, pesi, threshold o output numerici.
 
+## Fase 7.6
+
+Il contratto di persistence, explainability e historical replay è definito in:
+
+- `WYE_SCORING_PERSISTENCE.md`.
+
+Sono formalizzati artifact canonici content-addressed, query projections
+ricostruibili, lifecycle separati di execution/attempt, publication atomica su
+DB e object storage, governance append-only, replay verifier, engine
+compatibility, trace machine-readable, digest DAG non circolare, retention,
+privacy, concurrency e migration decomposition.
+
+La decisione di migration è `B`: il modello semantico è stabile, ma una migration
+richiede prima il freeze tecnico di canonical JSON/decimal/time fixtures,
+artifact envelope, schema e vincoli, publication/reconciliation, retention
+dell'engine, privacy e access pattern. Nessuna struttura Phase 7 è ancora
+presente nel DB.
+
 ## Prossimo gate
 
-La Fase 7.6 potrà iniziare solo con istruzione esplicita. Dovrà progettare la
-persistence immutabile, gli artifact canonici, le projection/index tables,
-l'atomic publication e la verifica di historical replay per i contratti 7.1–7.5,
-senza introdurre nuove regole scientifiche o score numerici.
+Il checkpoint proposto è `Phase 7.6.1 — Canonicalization, Persistence Schema and
+Publication Protocol Freeze`. Non è iniziato. La Fase 7.7 non deve usare runtime
+persistito finché questi gap tecnici non sono risolti.
 
 L'upgrade del database locale resta un task operativo separato.

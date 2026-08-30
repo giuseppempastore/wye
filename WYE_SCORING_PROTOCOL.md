@@ -497,3 +497,16 @@ No Phase 7 runtime implementation may be published until the target protocol has
 - an independent validation plan;
 - explicit handling for all unavailable states;
 - confirmation that no legacy score or field is treated as scientific input.
+
+## Phase 7.6 persistence specialization
+
+`WYE_SCORING_PERSISTENCE.md` defines how this protocol contract is persisted:
+published rule bytes are immutable canonical artifacts; snapshot membership,
+selection, result and explanation roots are bound by a non-circular digest DAG;
+and a completed result exists only after atomic publication of a verified
+bundle. Query projections are rebuildable indexes, never scientific authority.
+
+The persistence design does not relax this acceptance gate. Its migration
+decision is B: exact canonicalization fixtures, schema/constraint design,
+object-publication operations, engine compatibility and privacy controls must be
+frozen before a migration is authorized.
