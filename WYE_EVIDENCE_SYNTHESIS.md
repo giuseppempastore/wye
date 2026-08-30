@@ -6,7 +6,7 @@ This document is the canonical Phase 7.3 specification for endpoint-specific
 evidence synthesis and the multidimensional substance hazard profile. It
 specializes, but does not replace, the contracts in:
 
-- `WYE_PHASE_7.md`;
+- `Checkpoints/WYE_PHASE_7.md`;
 - `WYE_SCORING_SEMANTICS.md`;
 - `WYE_SCORING_PROTOCOL.md`;
 - `WYE_SCORING_EXECUTION_MODEL.md`;

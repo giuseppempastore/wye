@@ -6,7 +6,7 @@ This document is the canonical Phase 7.2 specification for evidence eligibility,
 applicability and deterministic selection. It specializes the frozen contracts
 in:
 
-- `WYE_PHASE_7.md`;
+- `Checkpoints/WYE_PHASE_7.md`;
 - `WYE_SCORING_SEMANTICS.md`;
 - `WYE_SCORING_PROTOCOL.md`;
 - `WYE_SCORING_EXECUTION_MODEL.md`.

@@ -7,7 +7,7 @@ frozen ingredient scientific projections and product data are sufficient to
 support exposure assessment or risk characterisation. It specializes, but does
 not replace:
 
-- `WYE_PHASE_7.md`;
+- `Checkpoints/WYE_PHASE_7.md`;
 - `WYE_SCORING_SEMANTICS.md`;
 - `WYE_SCORING_PROTOCOL.md`;
 - `WYE_SCORING_EXECUTION_MODEL.md`;

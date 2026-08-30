@@ -13,19 +13,21 @@ Fase 7.5   — Exposure readiness / product assessment            COMPLETATA
 Fase 7.6   — Persistence / explainability / historical replay   COMPLETATA
 Fase 7.6.1 — Canonicalization / schema / publication freeze     COMPLETATA
 Fase 7.6.2A — Scientific evaluation persistence foundation      IMPLEMENTATA E VALIDATA
+Fase 7.6.2B-1 — Scientific evidence snapshots design/freeze      COMPLETATA
+Fase 7.6.2B-2 — Scientific evidence snapshots migration          IMPLEMENTED + VALIDATED
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline dell'implementazione 7.6.2A:
+Baseline di implementazione 7.6.2B-2:
 
 ```text
 branch: ingredients_score
-HEAD: 48a0681e7e928bec47441d468c86f20784d00ea5
+HEAD: 0ea3a26283f617e5cc07e7ad83c04c7fa20a67af
 origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
-Alembic repository head: 0019_scientific_evaluation_foundation
+Alembic repository head: 0020_scientific_evidence_snapshots
 local database wye: 0017_ingredient_mapping_history
 ```
 
@@ -275,7 +277,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.6 | Persistence / explainability / historical replay | Contratto completato; migration subordinata al freeze 7.6.1 |
 | 7.6.1 | Canonicalization / schema / publication freeze | Completata; decisione READY FOR MIGRATION IMPLEMENTATION |
 | 7.6.2A | Scientific evaluation persistence foundation | `0019` implementata e validata |
-| 7.6.2B | Scientific evidence snapshots | Prossimo checkpoint; non iniziato |
+| 7.6.2B-1 | Scientific evidence snapshots design/freeze | Completata; READY FOR MIGRATION IMPLEMENTATION |
+| 7.6.2B-2 | Scientific evidence snapshots migration | IMPLEMENTED + VALIDATED |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -295,8 +298,24 @@ caratteri. Snapshot, execution, result, trace, publication e projection restano
 fuori scope e saranno trattati soltanto dalle slice successive. Il database
 locale resta a `0017_ingredient_mapping_history`.
 
-Il prossimo checkpoint è `Phase 7.6.2B — Scientific Evidence Snapshots`; non è
-iniziato.
+La Fase 7.6.2B-1 congela lo snapshot come candidate universe tecnico,
+protocol-independent e content-addressed. Finding è il membro atomico normale,
+assessment è contesto obbligatorio e mapping/target/selection restano input o
+output separati. Lifecycle `building -> sealed`, manifest canonico, provenance,
+immutabilità, concurrency/idempotency, preflight, downgrade e piano test sono
+definiti in `WYE_SCORING_SCHEMA_FREEZE.md`.
+
+Decisione:
+
+```text
+DESIGN FROZEN — READY FOR MIGRATION IMPLEMENTATION
+```
+
+La migration `0020_scientific_evidence_snapshots` implementa snapshot e membri,
+sealing immutabile, artifact binding, governance concreta, preflight e downgrade
+fail-safe. Il repository Alembic head è `0020_scientific_evidence_snapshots`.
+Non sono stati implementati serializer, artifact writer, snapshot repository o
+finalizer runtime, execution, replay o motori scientifici.
 
 ## Phase 7.0 exit review
 

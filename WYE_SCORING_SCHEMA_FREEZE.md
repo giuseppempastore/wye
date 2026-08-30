@@ -9,18 +9,29 @@ scientific semantic contract from Phases 7.0–7.5.
 ```text
 FINAL DECISION: READY FOR MIGRATION IMPLEMENTATION
 first checkpoint: Phase 7.6.2A / 0019_scientific_evaluation_foundation
+snapshot checkpoint: Phase 7.6.2B-1 design frozen
+snapshot implementation: Phase 7.6.2B-2 IMPLEMENTED + VALIDATED
 ```
 
-This decision authorizes only the bounded migration checkpoint defined at the
-end of this document. It does not create that migration, authorize a scientific
-engine or approve any score, formula, weight, threshold, exposure model or risk
-model.
+Each decision authorizes only its bounded migration checkpoint. The 7.6.2B-1
+freeze does not itself create 0020, authorize a scientific engine or approve any
+score, formula, weight, threshold, exposure model or risk model.
 
-Audited baseline:
+Phase 7.6.1 audited baseline:
 
 ```text
 Git:                    0a3d912725dcc4cafac457c6fa11cb11e242a965
 Alembic repository:     0018_scientific_batch_recovery
+local database:         0017_ingredient_mapping_history
+```
+
+Phase 7.6.2B-1 design-review baseline:
+
+```text
+branch:                 ingredients_score
+Git HEAD:               0ea3a26283f617e5cc07e7ad83c04c7fa20a67af
+origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
+Alembic repository:     0019_scientific_evaluation_foundation
 local database:         0017_ingredient_mapping_history
 ```
 
@@ -402,18 +413,27 @@ tables exist. No temporarily unenforced polymorphic reference is allowed.
 | `snapshot_key` | `UUID NOT NULL UNIQUE` |
 | `snapshot_policy_key` | `VARCHAR(100) NOT NULL`, lowercase snake-case |
 | `snapshot_policy_version` | `VARCHAR(50) NOT NULL`, nonempty version |
-| `as_of`, `evidence_cutoff` | canonical `TIMESTAMPTZ NOT NULL` |
+| `as_of`, `evidence_cutoff` | canonical `TIMESTAMPTZ NOT NULL`; cutoff cannot exceed `as_of` |
 | `query_definition_artifact_id` | NOT NULL FK artifact |
+| `canonicalization_version` | `VARCHAR(50) NOT NULL`, initially `wye-c14n-json-v1` |
+| `digest_algorithm` | `VARCHAR(20) NOT NULL`, initially `sha256` |
 | `manifest_artifact_id` | nullable while building, required when sealed |
-| `snapshot_digest` | nullable while building, 32 bytes and UNIQUE when sealed |
-| `member_count` | `BIGINT NOT NULL DEFAULT 0 CHECK >= 0` |
+| `snapshot_digest` | nullable while building, exactly 32 bytes when sealed |
+| `member_count` | nullable while building; `BIGINT >= 0` and required when sealed |
 | `status` | CHECK `building, sealed` |
+| `created_by`, `sealed_by` | non-secret actor/build identity; `sealed_by` required when sealed |
 | `created_at`, `sealed_at` | audit timestamps with state-consistency CHECK |
 
 There is deliberately no `protocol_version_id`: snapshot policy freezes the
 technical candidate universe, while protocol selection is execution-specific.
 This preserves exact counterfactual reuse of one historical universe under a
 different protocol. The execution links snapshot and protocol version.
+
+The partial semantic identity is UNIQUE on
+`(canonicalization_version, digest_algorithm, snapshot_digest)` when sealed.
+`snapshot_key` is a stable public/operational identifier, not scientific
+identity. Two equivalent builders may temporarily have different building rows,
+but two sealed rows cannot represent the same canonical universe.
 
 ### `scientific_evidence_snapshot_members`
 
@@ -425,18 +445,356 @@ different protocol. The execution links snapshot and protocol version.
 | `finding_id` | nullable FK finding; required for `finding` |
 | `assessment_id` | NOT NULL FK assessment context |
 | `ingestion_run_id` | NOT NULL FK ingestion run |
-| `release_id` | NOT NULL FK source dataset release |
-| `release_artifact_id` | nullable FK scientific release artifact |
+| `source_dataset_release_id` | NOT NULL FK source dataset release |
+| `member_identity_digest` | 32-byte digest of the frozen candidate identity |
 | `member_payload_artifact_id` | NOT NULL FK canonical frozen member payload |
 | `member_semantic_digest` | 32-byte SHA-256, equals payload artifact digest |
 | `membership_ordinal` | `INTEGER NOT NULL CHECK >= 0` |
 | `status_as_of` | nonempty normalized status |
 | `created_at` | audit timestamp |
 
-UNIQUE `(snapshot_id, membership_ordinal)`, `(snapshot_id,
-member_semantic_digest)` and partial UNIQUE `(snapshot_id, finding_id)` when a
-finding exists. All semantic fields needed for replay live in the member payload;
-FKs alone are explicitly insufficient.
+UNIQUE `(snapshot_id, membership_ordinal)` and `(snapshot_id,
+member_identity_digest)` plus partial UNIQUE `(snapshot_id, finding_id)` for
+finding members and `(snapshot_id, assessment_id)` for assessment-only members
+prevent duplicate insertion of the same persisted candidate. There is
+deliberately no uniqueness rule on `member_semantic_digest`: duplicate
+ingestion, two source records referring to the same study, and dependent
+evidence remain distinct candidate representations until protocol-specific
+selection/dependency handling. Artifact-level byte deduplication is allowed;
+scientific deduplication is not performed by snapshot persistence.
+
+All semantic fields needed for replay live in the member payload; FKs alone are
+explicitly insufficient. A singular release-artifact FK is not stored because
+one ingestion run can consume an ordered artifact manifest. Direct provenance
+remains traversable through
+`scientific_ingestion_run_artifacts -> scientific_release_artifacts`, and that
+exact manifest is also committed in the canonical member payload.
+
+## Phase 7.6.2B-1 evidence snapshot design freeze
+
+### Normative definition and boundary
+
+A **scientific evidence snapshot** is a sealed, protocol-independent,
+content-addressed materialization of the technically available scientific
+candidate universe resolved under one versioned snapshot policy, one `as_of`
+boundary and one scientific `evidence_cutoff`. It freezes both exact candidate
+membership and the semantic/provenance payload required to interpret every
+candidate historically.
+
+It includes:
+
+- scientific finding identity and content, with mandatory assessment context;
+- assessment-only candidates only where the assessment itself is the atomic
+  source record and no finding represents that candidate;
+- the evidence-linked substance identity fragment and identifier/status state
+  required to interpret that assessment at snapshot time;
+- ingestion representation, parser/normalization/acquisition versions, source
+  release identity and the exact ordered run-artifact provenance manifest;
+- canonical query definition, snapshot policy, `as_of`, cutoff, ordered member
+  descriptors, counts and digests.
+
+It does **not** include:
+
+- protocol eligibility, applicability, inclusion/exclusion, dependency
+  resolution or selected evidence;
+- endpoint synthesis, hazard interpretation, result or explanation trace;
+- evaluation target identity;
+- ingredient-to-substance mapping state, product composition, exposure scenario
+  or any current-state alias;
+- scoring formula, weight, threshold, source precedence or numerical score.
+
+The evidence-linked substance fragment answers “which scientific identity did
+this persisted evidence describe?” It does not replace the independently frozen
+evaluation target and it does not freeze ingredient mapping. Therefore the
+reproducibility boundary remains:
+
+```text
+sealed evidence snapshot
++ separately frozen target/mapping/composition/scenario inputs as applicable
++ published protocol version
+= canonical execution input
+```
+
+Earlier 7.1 text that used “evidence snapshot” as shorthand for the entire
+execution input, including mapping state, is narrowed by this persistence
+freeze. This is a boundary clarification, not a merger or silent change:
+mapping remains a distinct canonical execution input.
+
+### Candidate granularity
+
+`finding` is the normal atomic candidate. `assessment` is always mandatory
+context for a finding. An `assessment` member is permitted only when the
+assessment-level record is itself the atomic evidence/status/recommendation
+candidate and no finding represents it. The base v1 snapshot policy forbids an
+assessment-only member and finding members from the same assessment in one
+snapshot; any future relaxation requires a new snapshot-policy version and a
+non-overlapping candidate-role definition.
+
+Assessments, releases, ingestion runs, datasets, sources and raw artifacts are
+not additional member kinds merely because they are provenance nodes. This
+avoids counting one scientific candidate several times. Assessment rows with no
+candidate content may remain provenance-only and need not become members. A
+sealed zero-member snapshot is valid and represents an empty candidate universe,
+not danger, safety or technical failure.
+
+### Canonical artifacts and snapshot digest
+
+Revision 0020 will reuse the 0019 artifact registry for three authoritative
+artifact kinds:
+
+| `artifact_kind` | `schema_version` | Role |
+|---|---|---|
+| `scientific_evidence_snapshot_query` | `1` | canonical construction scope/policy |
+| `scientific_evidence_snapshot_member` | `1` | one frozen candidate representation |
+| `scientific_evidence_snapshot_manifest` | `1` | sealed snapshot root |
+
+All three use content type `application/vnd.wye.scientific+json`,
+canonicalization `wye-c14n-json-v1` and digest algorithm `sha256`.
+
+The query artifact freezes scope, technical inclusion policy and versioned
+construction parameters. Each member artifact freezes the stable source/run/
+record identity, assessment/finding content, evidence-linked substance state,
+status-as-of and the complete provenance/version manifest. The snapshot manifest
+freezes policy, `as_of`, cutoff, query digest and canonically ordered member
+descriptors.
+
+The minimum canonical payload shapes are:
+
+```text
+query/v1:
+  artifact_type, schema_version, snapshot_policy_key,
+  snapshot_policy_version, as_of, evidence_cutoff, scope,
+  technical_predicates, canonicalization_version
+
+member/v1:
+  artifact_type, schema_version, member_kind, candidate_identity,
+  assessment_context, finding_content when applicable,
+  evidence_linked_substance_identity, status_as_of, provenance
+
+manifest/v1:
+  artifact_type, schema_version, snapshot_policy_key,
+  snapshot_policy_version, as_of, evidence_cutoff,
+  query_definition_digest, ordered_members[], member_count
+```
+
+`scope` and `technical_predicates` are typed canonical objects, never stored SQL
+or unconstrained executable text. The member descriptor in `ordered_members`
+contains member kind, identity digest and semantic digest; the full payload is
+resolved through the member artifact.
+
+The canonical `member_identity_digest` is SHA-256 over a
+`wye-c14n-json-v1` identity object containing `member_kind` and stable
+source/dataset/release/run/assessment/finding keys. Finding identity fallback is
+deterministic: source finding key, else source ordinal, else verified finding
+fingerprint, else the digest of the frozen finding payload, always namespaced by
+run and assessment source-record identity. It never relies on a database PK
+alone. The ingestion run key is included, so a later reprocessing is a distinct
+candidate representation even when normalized scientific values are unchanged.
+
+`snapshot_digest` MUST equal the content digest of
+`manifest_artifact_id`; `member_semantic_digest` MUST equal the content digest
+of `member_payload_artifact_id`. All referenced canonical artifacts must have a
+verified location before seal. The database stores SHA-256 as 32-byte `BYTEA`;
+documents/API use lowercase 64-character hexadecimal.
+
+Database PKs, row insertion order, runtime timestamps, worker identity,
+presentation metadata and physical storage locations are excluded from
+canonical payloads. Stable source/dataset/release/run/record keys and referenced
+artifact digests are included. Canonical member ordering is the bytewise order
+of the `wye-c14n-json-v1` tuple:
+
+```text
+[member_kind, lowercase(member_identity_digest), lowercase(member_semantic_digest)]
+```
+
+`membership_ordinal` records that zero-based contiguous order. The same logical
+set therefore yields the same manifest and digest independently of query or
+insertion order. Duplicate tuple identities are rejected; semantically related
+or scientifically duplicate-but-distinct candidate records are retained.
+
+### Referential and provenance invariants
+
+Every canonical FK introduced by 0020 uses `ON DELETE RESTRICT`:
+
+| Child | Parent | Delete action |
+|---|---|---|
+| snapshot query/manifest | `scientific_evaluation_artifacts` | RESTRICT |
+| member | snapshot | RESTRICT |
+| member finding | `scientific_assessment_findings` | RESTRICT |
+| member assessment | `scientific_assessments` | RESTRICT |
+| member ingestion run | `scientific_ingestion_runs` | RESTRICT |
+| member source release | `source_dataset_releases` | RESTRICT |
+| member payload | `scientific_evaluation_artifacts` | RESTRICT |
+| governance snapshot reference | snapshot | RESTRICT |
+
+A deferred consistency trigger validates before commit that a finding belongs to
+the member assessment, the assessment belongs to the recorded ingestion run and
+release, and the ingestion run belongs to that release. It also validates the
+member-kind shape and the no-parent-plus-children rule. Source and dataset remain
+directly traversable through the release. Raw artifacts remain directly
+traversable through the ingestion-run artifact membership. Their stable keys,
+checksums/digests and version fields are additionally materialized inside the
+member artifact so later mutable descriptive fields cannot change replay.
+
+The reference/materialization rule is:
+
+| Input | Relational reference | Canonical materialization |
+|---|---|---|
+| finding/assessment | restrictive FK | stable keys, status-as-of and complete semantic fields |
+| substance/identifiers | traversable through assessment/current registry | evidence-linked identity fragment and identifier state used by the candidate |
+| ingestion run | restrictive FK | run key, importer/adapter/parser/normalization versions and checksums |
+| release/dataset/source | release FK and existing parent chain | stable logical keys, scientific dates/status-as-of and source identity |
+| raw release artifacts | existing run-artifact membership | ordered artifact keys, roles, checksums/digests and lengths |
+| ingredient mapping/target/product/scenario | none in snapshot membership | none; separate future canonical execution inputs |
+
+The relational references provide efficient traversal and deletion protection;
+the canonical copy proves historical semantics. Neither substitutes for the
+other.
+
+### Lifecycle and immutability
+
+The only lifecycle states are:
+
+```text
+building -> sealed
+```
+
+`draft` is redundant with `building`; `finalized` is the semantic name for
+`sealed`; `invalidated` is not a mutable lifecycle state. Snapshot policy,
+cutoff/as-of, canonicalization/digest algorithm, query artifact, public key and
+creation audit are immutable from row creation. Members may be inserted,
+replaced or removed only while the parent is building. Seal is a single atomic
+transition that sets manifest, digest, count, sealer and `sealed_at`.
+
+After seal:
+
+- the snapshot row and every member are UPDATE/DELETE protected;
+- membership, ordinal, metadata, digest and canonical artifacts cannot change;
+- no member can be inserted;
+- the snapshot cannot be deleted;
+- scientific correction creates a new snapshot; the old snapshot remains
+  historically reachable.
+
+An unreferenced building snapshot is noncanonical construction state and may be
+cleaned up only after its members are explicitly removed. No CASCADE is used.
+
+Snapshot integrity/supersession is represented by append-only governance rather
+than mutation. Revision 0020 extends the 0019 concrete governance model with
+`evidence_snapshot`, `snapshot_id` and `related_snapshot_id`, both real FKs with
+RESTRICT, and updates the exactly-one, related-entity and acyclic-lineage checks.
+Ordinary deterministic sealing does not require a governance event. Later
+`integrity_compromised`, `retracts`, `supersedes` or `annotation` events may
+qualify current use without rewriting the sealed universe.
+
+Historical evidence later superseded, withdrawn, rejected or corrected remains
+in every already sealed snapshot. A newer technical universe normally retains
+the still-traversable old candidate with its frozen/current-as-of lifecycle state
+and adds the corrected representation when it falls inside the new boundaries;
+protocol eligibility later decides whether either participates. Only an
+explicitly versioned technical snapshot-policy rule may omit an unavailable or
+structurally invalid record. Current scientific eligibility never rewrites or
+silently filters historical membership.
+
+### Relationship to 0019 and later execution
+
+The 0019 artifact registry owns canonical query/member/manifest bytes and their
+verified inline/object locations; location rows never define snapshot identity.
+Protocol families and protocol versions are deliberately not referenced by a
+snapshot. One sealed evidence universe may be evaluated under multiple protocol
+versions for counterfactual analysis. The generic append-only governance table
+is extended only because snapshot integrity/supersession is a real governed
+relationship with concrete FKs.
+
+No execution FK, selection decision, result or trace is introduced by 0020. A
+later execution binds exactly one sealed evidence snapshot to a published
+protocol version plus separately frozen target and mapping/composition/scenario
+roots. That later binding, not the snapshot, defines the scientific question and
+selection context.
+
+### Transaction and concurrency model
+
+Construction follows:
+
+```text
+create immutable building header
+-> resolve and write/reuse canonical member artifacts
+-> insert candidate membership
+-> prepare canonical manifest bytes
+-> lock snapshot FOR UPDATE
+-> re-read and validate the exact canonical member set
+-> write/reuse and verify manifest artifact
+-> bind manifest/digest/count and transition to sealed
+-> commit
+```
+
+Member-mutation triggers lock/check the parent snapshot. The finalizer's row
+lock therefore serializes against concurrent membership changes. The deferred
+seal validator checks verified artifact locations, digest equality, actual
+member count, contiguous canonical ordinals, referential consistency and the
+complete sealed-state shape. It also checks that query, member and manifest FKs
+resolve to the frozen artifact kinds/schema versions and that their
+canonicalization/digest algorithms match the snapshot header. Service code
+constructs canonical bytes; database constraints/triggers protect identity and
+history rather than reimplementing the serializer in PL/pgSQL.
+
+Two workers may build the same universe. The partial UNIQUE semantic identity
+allows only one sealed `(canonicalization_version, digest_algorithm,
+snapshot_digest)`. The loser may return the winner only after verifying manifest
+bytes, policy, cutoff/as-of and every canonical root; otherwise it reports an
+integrity conflict. Retry after rollback creates no canonical state. A digest
+matching different bytes is a cryptographic integrity failure, never an
+idempotent success. PostgreSQL remains final authority; advisory locks may reduce
+work but are not correctness controls.
+
+### Future 0020 downgrade and preflight
+
+Downgrade `0020 -> 0019` is allowed only when snapshot tables contain no rows
+and no governance event references a snapshot. Building rows count as data.
+Draft construction is still information and is not silently deleted. Snapshot
+artifacts already registered by 0019 may remain as representable, immutable
+artifact rows after an otherwise safe empty downgrade. A permitted downgrade
+must remove the snapshot governance columns/check expansions and restore the
+exact 0019 governance functions/constraints before dropping the two snapshot
+tables.
+
+Before DDL, 0020 must reject collisions for every proposed table, index,
+constraint, function and trigger. It must also verify that the 0019 governance
+table, constraints and trigger functions have the exact expected foundation
+shape before extending them. No PostgreSQL ENUM is created. Preflight runs
+before the first schema mutation so an incompatible database cannot be left with
+a partial snapshot foundation.
+
+### 0020 migration and integration test plan
+
+The implementation checkpoint must cover at least:
+
+1. fresh chain through 0020 and representative `0019 -> 0020` upgrade;
+2. empty downgrade and refusal for building, member, sealed or snapshot-
+   governance history;
+3. exact table/column/PK/FK RESTRICT/CHECK/UNIQUE/index shape;
+4. digest byte length, algorithm/canonicalization and sealed-state checks;
+5. finding/assessment shape, provenance consistency and no-parent-plus-children;
+6. duplicate persisted-candidate rejection without collapsing distinct
+   reingestions or dependent evidence;
+7. unordered insertion converging to identical canonical manifest/digest;
+8. zero-member sealed snapshot;
+9. query/member/manifest artifact verification and digest equality;
+10. snapshot/member UPDATE and DELETE rejection after seal;
+11. concurrent identical builders, one canonical sealed identity and verified
+    loser convergence;
+12. concurrent finalization versus member insert/update/delete serialization;
+13. retry after rollback and explicit incompatible/digest-collision failure;
+14. append-only snapshot governance, related-entity consistency and lineage
+    cycle rejection;
+15. superseded/withdrawn/corrected source evidence remaining traversable from a
+    historical sealed snapshot;
+16. collision preflight for tables, indexes, constraints, functions and
+    triggers before partial DDL;
+17. Phase 6 provenance/data preservation and all 0019 foundation invariants;
+18. absence of dependencies on `product_scores`, `ingredient_risk_profiles` or
+    `ingredient_evidence` and unchanged legacy behavior.
+
+No 0020 test may require a scientific selection, execution, result or score.
 
 ### Target identity freeze
 
@@ -939,7 +1297,7 @@ tombstone/integrity event while retaining non-sensitive digest evidence.
 | Slice | Proposed revision | Dependency and scope |
 |---|---|---|
 | 7.6.2A | `0019_scientific_evaluation_foundation` | From `0018`; artifact registry/locations, protocols, versions, initial governance, immutable functions/triggers |
-| 7.6.2B | `0020_scientific_evidence_snapshots` | Snapshots, members, sealing and artifact links |
+| 7.6.2B | `0020_scientific_evidence_snapshots` | Snapshots, members, sealing, artifact links and concrete snapshot-governance extension |
 | 7.6.2C | `0021_scientific_evaluation_publication` | Executions, attempts, idempotency, decisions, results/components, traces, publications |
 | 7.6.2D | `0022_scientific_evaluation_projections` | Domain projections, replay reports, current views and reconciliation support |
 
@@ -1044,5 +1402,26 @@ tables and their database protections. Because the frozen revision identifier
 is longer than Alembic's historical `VARCHAR(32)`, the migration also widens the
 Alembic metadata column to `VARCHAR(64)` before Alembic records the new head.
 The local `wye` database remains at `0017_ingredient_mapping_history`.
-Phase 7.6.2B / `0020_scientific_evidence_snapshots` is the next checkpoint and
-has not started.
+Phase 7.6.2B-1 has now completed the design/review freeze for
+`0020_scientific_evidence_snapshots` with decision:
+
+```text
+DESIGN FROZEN — READY FOR MIGRATION IMPLEMENTATION
+```
+
+At the B-1 freeze, migration 0020 had not yet been created and the repository
+head was 0019. That design checkpoint introduced no snapshot runtime,
+execution, replay or scientific engine.
+
+## Phase 7.6.2B-2 implementation status
+
+The frozen design is implemented by revision
+`0020_scientific_evidence_snapshots` and has passed its dedicated PostgreSQL
+migration, integrity and concurrency suite. The repository Alembic head is now
+0020; the local `wye` database remains at
+`0017_ingredient_mapping_history`.
+
+The implementation remains persistence-only: no canonical serializer, artifact
+writer, snapshot repository/finalizer, execution, replay or scientific engine
+has been added. Formulas, weights, thresholds and numeric scores remain absent,
+and legacy scoring remains isolated.

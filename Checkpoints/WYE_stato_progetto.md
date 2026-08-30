@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 48a0681e7e928bec47441d468c86f20784d00ea5
+HEAD: 0ea3a26283f617e5cc07e7ad83c04c7fa20a67af
 origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
-Alembic repository head: 0019_scientific_evaluation_foundation
+Alembic repository head: 0020_scientific_evidence_snapshots
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.6.2A non aggiorna il database locale.
+`0018` e validazione. Le Fasi 7.6.2A e 7.6.2B non aggiornano il database locale.
 
 ## Avanzamento
 
@@ -34,6 +34,8 @@ Fase 7.5    COMPLETATA — Exposure readiness / product assessment semantics
 Fase 7.6    COMPLETATA — Persistence, explainability & historical replay design
 Fase 7.6.1  COMPLETATA — Canonicalization/schema/publication freeze
 Fase 7.6.2A IMPLEMENTATA E VALIDATA — Scientific evaluation persistence foundation
+Fase 7.6.2B-1 COMPLETATA — Scientific evidence snapshots design/freeze
+Fase 7.6.2B-2 IMPLEMENTED + VALIDATED
 ```
 
 ## Capacità consolidate
@@ -61,7 +63,7 @@ checkpoint/resume, crash recovery, concurrency e storico.
 
 La progettazione iniziale dello scoring è congelata nei documenti:
 
-- `WYE_PHASE_7.md`;
+- `Checkpoints/WYE_PHASE_7.md`;
 - `WYE_SCORING_SEMANTICS.md`;
 - `WYE_SCORING_PROTOCOL.md`.
 
@@ -292,8 +294,48 @@ e protetto, constraint, concurrency, trigger e isolamento legacy. Non sono
 implementati serializer/runtime persistence, snapshot, execution, result,
 trace, replay o motori scientifici.
 
+## Fase 7.6.2B-1
+
+Il contratto persistence di Scientific Evidence Snapshots è congelato in
+`WYE_SCORING_SCHEMA_FREEZE.md`.
+
+```text
+DESIGN FROZEN — READY FOR MIGRATION IMPLEMENTATION
+target revision: 0020_scientific_evidence_snapshots
+```
+
+Lo snapshot congela il candidate universe tecnico disponibile a uno specifico
+`as_of`/cutoff e snapshot-policy version. Il finding è il membro atomico normale;
+l'assessment è contesto obbligatorio e diventa membro soltanto per record
+assessment-level realmente atomici. Query, member payload e manifest sono
+artifact canonici; il digest del manifest è l'identità scientifica dello
+snapshot. Mapping state, target identity, eligibility/selection, synthesis e
+result restano separati.
+
+Sono congelati lifecycle `building -> sealed`, immutabilità post-seal, FK
+`RESTRICT`, provenance completa tramite run/release/artifact manifest,
+canonical ordering, idempotenza/concurrency, governance append-only,
+preflight, downgrade only-when-empty e piano test 0020. Duplicate reingestion e
+dependency non vengono trasformate in deduplicazione scientifica dal layer
+snapshot.
+
+## Fase 7.6.2B-2
+
+La revision `0020_scientific_evidence_snapshots` è implementata e validata.
+Introduce soltanto snapshot/membership persistence, sealing e
+immutabilità, artifact binding, governance snapshot, preflight e downgrade
+fail-safe. Il repository Alembic head è 0020; il database locale resta a
+`0017_ingredient_mapping_history`.
+
+Serializer, artifact writer, snapshot repository/finalizer, execution e replay
+runtime non sono implementati. Non sono stati introdotti motori scientifici,
+formule, pesi, threshold o score numerici; lo scoring legacy resta isolato.
+
 ## Prossimo gate
 
-Il checkpoint successivo proposto è `Phase 7.6.2B — Scientific Evidence
-Snapshots`, revision congelata `0020_scientific_evidence_snapshots`. Non è
-iniziato. L'upgrade del database locale resta un task operativo separato.
+Il successivo checkpoint runtime non è iniziato e richiederà autorizzazione
+separata. Canonical serializer e artifact writer runtime, snapshot repository,
+builder/finalizer, mapping-state runtime persistence, scoring execution,
+execution/result persistence, replay/reproduce/recalculate e motore scientifico
+deterministico restano non implementati. L'upgrade del database locale resta un
+task operativo separato.

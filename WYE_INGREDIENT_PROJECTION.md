@@ -7,7 +7,7 @@ immutable `substance_hazard_profile` onto a frozen ingredient identity through
 the historical ingredient-to-substance bridge. It specializes, but does not
 replace:
 
-- `WYE_PHASE_7.md`;
+- `Checkpoints/WYE_PHASE_7.md`;
 - `WYE_SCORING_SEMANTICS.md`;
 - `WYE_SCORING_PROTOCOL.md`;
 - `WYE_SCORING_EXECUTION_MODEL.md`;

@@ -195,7 +195,7 @@ seal operation verifies and freezes:
 - query-definition artifact and cutoff/as-of semantics;
 - exact resolved members in canonical order;
 - each evidence, identity, parser/normalization and provenance reference;
-- mapping/identity state references needed by the execution domain;
+- evidence-linked substance identity needed to interpret each candidate;
 - member count, membership digest and root `snapshot_digest`.
 
 The resolved membership is mandatory. Re-executing a stored query against future
@@ -204,15 +204,23 @@ sealed universe.
 
 Candidate findings require explicit membership rows because selection,
 inclusion/exclusion queries and FK enforcement operate at that atomic unit. Each
-row also identifies its mandatory assessment context and the chosen normalized
-ingestion representation; release, ingestion run and source artifact are
-restrictive provenance references on that member and are redundantly committed
-in the canonical manifest. Assessment-only candidates, if a future protocol
-explicitly permits them, use the same typed membership shape. Target identity,
-mapping state and product composition are separate sealed input artifacts linked
-from `input_digest`, not misleading evidence-member rows. The manifest retains
-complete frozen semantic payloads/digests even when the DB reference points to a
-row that may later change.
+row also identifies its mandatory assessment context and chosen normalized
+ingestion representation. Release and ingestion-run rows are restrictive
+provenance references; the exact ordered raw-artifact membership is traversed
+through `scientific_ingestion_run_artifacts` and committed in the canonical
+member payload. Assessment-only candidates are permitted only when the
+assessment itself is the atomic candidate and no finding represents it. Target
+identity, mapping state and product composition are separate sealed execution
+inputs, not evidence-member rows. The manifest retains complete frozen semantic
+payloads/digests even when current descriptive state later changes.
+
+Phase 7.6.2B-1 freezes the snapshot as a protocol-independent technical
+candidate universe. Structural availability policy used to construct that
+universe is not protocol eligibility. Eligibility, applicability,
+inclusion/exclusion, duplicate/dependency resolution and selection remain
+execution/protocol outputs in 0021. Consequently duplicate reingestions and
+dependent source representations are not collapsed merely because canonical
+payload values appear equivalent.
 
 ### Selection and synthesis persistence
 
@@ -781,5 +789,34 @@ upgrades, empty and protected downgrades, schema/trigger behavior and concurrent
 semantic inserts. No serializer, artifact writer, repository/service, snapshot,
 execution, publication, replay or scientific engine is implemented.
 
-The next checkpoint is Phase 7.6.2B / `0020_scientific_evidence_snapshots`; it
-has not started.
+## Phase 7.6.2B-1 design status
+
+The persistence semantics for Phase 7.6.2B are now frozen in
+`WYE_SCORING_SCHEMA_FREEZE.md`:
+
+```text
+DESIGN FROZEN — READY FOR MIGRATION IMPLEMENTATION
+target revision: 0020_scientific_evidence_snapshots
+```
+
+The freeze resolves the evidence/member boundary, canonical manifest and digest,
+protocol-independent candidate scope, provenance traversal, mapping separation,
+two-state lifecycle, immutable sealing, governance qualification, transaction,
+concurrency/idempotency, preflight, downgrade and future test requirements.
+At the B-1 freeze, migration 0020 had not yet been created and the repository
+head was 0019. No snapshot writer, repository, service, execution or replay
+runtime was introduced by that design checkpoint.
+
+## Phase 7.6.2B-2 implementation status
+
+Revision `0020_scientific_evidence_snapshots` is implemented and validated. It
+adds the frozen snapshot/member persistence model, sealed
+content-addressed identity, artifact integrity, immutable membership,
+snapshot-governance references, collision preflight and fail-safe downgrade.
+The Alembic repository head is now `0020_scientific_evidence_snapshots`; the
+local `wye` database remains at `0017_ingredient_mapping_history`.
+
+This bounded migration does not implement the canonical serializer, artifact
+writer, snapshot repository/finalizer, scientific execution, replay or any
+scientific engine. No formula, weight, threshold or numeric score is introduced,
+and legacy scoring remains isolated.

@@ -5,7 +5,7 @@
 This document is the Phase 7.1 logical architecture specification. It extends,
 but does not replace, the semantic contracts in:
 
-- `WYE_PHASE_7.md`;
+- `Checkpoints/WYE_PHASE_7.md`;
 - `WYE_SCORING_SEMANTICS.md`;
 - `WYE_SCORING_PROTOCOL.md`.
 
