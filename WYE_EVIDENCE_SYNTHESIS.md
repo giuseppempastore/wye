@@ -687,7 +687,7 @@ cross-endpoint scalar.
 | Structured route/duration/population/dose basis | DATA GAP | Current OpenFoodTox representation is partial/raw |
 | Quality/relevance/coverage/uncertainty source fields | DATA GAP | No general persisted normalized model |
 | Ingredient projection | DEFINED IN 7.4 / EXTERNAL REVIEW AND DATA REQUIRED | `WYE_INGREDIENT_PROJECTION.md` defines the non-scalar mapping-aware envelope; form/composition transfer remains review-gated |
-| Exposure/product risk | DEFERRED TO LATER PHASE | Phase 7.5 and exposure inputs required |
+| Exposure/product assessment | DEFINED IN 7.5 / EXTERNAL REVIEW AND DATA REQUIRED | `WYE_PRODUCT_ASSESSMENT.md` defines readiness and risk non-computability without changing hazard synthesis |
 | Persistence/runtime/API | DEFERRED TO LATER PHASE | Persistence and rollout phases; not authorized here |
 
 ## Current-schema gap matrix
@@ -732,7 +732,7 @@ Classification does not authorize implementation.
 | Evidence sufficiency/confidence | BLOCKED BY SCIENTIFIC REVIEW | No approved framework or conclusion vocabulary |
 | Scientific hazard interpretation | BLOCKED BY SCIENTIFIC REVIEW | Profile envelope does not validate hazard conclusions |
 | Ingredient projection envelope | READY FOR IMPLEMENTATION | Phase 7.4 defines mapping-aware non-scalar entries; concrete form/composition transfer remains blocked by data/review |
-| Exposure/product risk and numerical outputs | DEFERRED TO 7.5+ | Required exposure data/protocol absent |
+| Exposure/product assessment envelopes | READY FOR IMPLEMENTATION | Phase 7.5 defines non-numeric readiness/gate objects; exposure/risk methods remain blocked |
 | DB persistence/API/rollout | DEFERRED TO LATER PHASE | Requires persistence design, validation and governance |
 
 ## Phase 7.3 exit criteria
@@ -778,4 +778,7 @@ The proposed next checkpoint is:
 Phase 7.5 — Exposure Readiness and Product Assessment Semantics
 ```
 
-Phase 7.5 is not started by this document.
+Phase 7.5 is defined in `WYE_PRODUCT_ASSESSMENT.md` without changing this
+substance-synthesis contract. Hazard/profile uncertainty remains separately
+traceable and cannot be converted into product risk without sufficient exposure
+and reviewed reference semantics.

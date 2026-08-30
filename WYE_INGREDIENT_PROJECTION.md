@@ -702,7 +702,7 @@ Classification describes logical maturity, not authorization.
 | `derived_from` residual transfer | BLOCKED BY SCIENTIFIC REVIEW | Transformation/residual semantics require domain evidence |
 | Confidence propagation vocabulary | BLOCKED BY SCIENTIFIC REVIEW | Representation constraint exists; no approved framework |
 | Multi-substance structured collection | READY FOR IMPLEMENTATION | Separate entries/canonical order/no aggregation are defined |
-| Exposure/product assessment | DEFERRED TO 7.5+ | Composition plus exposure protocol/data required |
+| Exposure/product assessment envelopes | READY FOR IMPLEMENTATION | Phase 7.5 defines composition/exposure readiness and risk-computability states; actual calculation remains review/data blocked |
 | Persistence/API/runtime rollout | DEFERRED | Later persistence, validation and rollout phases |
 
 ## Scientific-review boundaries
@@ -723,7 +723,7 @@ Classification describes logical maturity, not authorization.
 | Confidence vocabulary/propagation method | REQUIRES EXTERNAL SCIENTIFIC REVIEW | No formula or qualitative scale validated |
 | Form, composition, presence and residual data | DATA GAP | Not generally represented through `0017` |
 | Projection persistence/snapshot documents | DATA GAP | No Phase 7 storage exists |
-| Exposure readiness and product assessment | DEFERRED | Phase 7.5 boundary |
+| Exposure readiness and product assessment | DEFINED IN 7.5 / REVIEW AND DATA REQUIRED | `WYE_PRODUCT_ASSESSMENT.md` preserves separate entries and does not infer exposure/risk |
 | Runtime/persistence/API/rollout | DEFERRED | Later roadmap checkpoints |
 
 ## Phase 7.4 exit criteria
@@ -773,4 +773,6 @@ amount/use, frequency, duration, route, target population and scenario; separate
 hazard-only product views from exposure/risk; and make `risk_not_computable` a
 first-class outcome. It must not invent missing exposure or begin runtime work.
 
-Phase 7.5 is not started by this document.
+Phase 7.5 is defined in `WYE_PRODUCT_ASSESSMENT.md` without changing this
+projection contract. It consumes only frozen projection entries and preserves
+their separate scope, uncertainty and non-aggregation boundary.

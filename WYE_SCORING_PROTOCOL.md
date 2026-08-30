@@ -292,6 +292,19 @@ sum, worst-substance rule, exposure assumption or product-risk inference is
 permitted. Concrete equivalence, cross-form, mixture, residual-presence and
 confidence-transfer rules remain subject to external scientific review.
 
+## Product assessment and exposure-readiness specialization
+
+Phase 7.5 specializes the product-level contract in
+`WYE_PRODUCT_ASSESSMENT.md`. It freezes product composition and scenario inputs,
+separates label serving from actual intake, classifies composition/exposure
+readiness and makes `risk_not_computable` a first-class scientific result.
+
+Ingredient order, presence and nutrition totals do not supply concentration or
+consumed dose. No silent default scenario, cross-ingredient aggregation,
+reference-point comparison, risk inference or product score is permitted.
+Concrete exposure models, population/route transfer, reference semantics and
+risk characterisation require external scientific/regulatory review.
+
 ## Logical versioning and reproducibility model
 
 The following are logical concepts, not approved database tables.

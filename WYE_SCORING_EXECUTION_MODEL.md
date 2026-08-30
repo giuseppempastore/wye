@@ -193,7 +193,9 @@ Phase 7.2 defines the eligibility and selection contract in
 `WYE_EVIDENCE_SELECTION.md`; Phase 7.3 defines the evidence-line, endpoint
 synthesis and substance-profile contract in `WYE_EVIDENCE_SYNTHESIS.md`;
 Phase 7.4 defines the mapping-snapshot and ingredient-projection contract in
-`WYE_INGREDIENT_PROJECTION.md`.
+`WYE_INGREDIENT_PROJECTION.md`; Phase 7.5 defines the product-composition,
+exposure-scenario, readiness and product-assessment contract in
+`WYE_PRODUCT_ASSESSMENT.md`.
 
 ### `evidence_snapshot`
 
@@ -845,7 +847,10 @@ The classification describes logical maturity, not authorization to implement.
 | Governance event persistence | REQUIRES FUTURE PERSISTENCE DESIGN | Append-only semantics are fixed; schema is not |
 | Numerical components | DEFERRED | No numerical output is justified for the first protocol |
 | Ingredient scientific projection envelope | READY FOR IMPLEMENTATION | Phase 7.4 defines non-scalar entries, mapping snapshot, states, trace and digests; scientific transfer rules remain review-gated |
-| Product assessment / exposure / risk | DEFERRED | Phase 7.5 data sufficiency and scientific semantics are prerequisites |
+| Product-composition snapshot and exposure-scenario envelopes | READY FOR IMPLEMENTATION | Phase 7.5 defines freeze, provenance, assumptions, trace and digest boundaries; persistence remains pending |
+| Exposure-readiness and risk-computability result envelopes | READY FOR IMPLEMENTATION | Phase 7.5 defines non-numeric states and reason codes without calculation |
+| Complete historical product composition reader | REQUIRES FUTURE PERSISTENCE DESIGN | Current product/composition/serving history is incomplete |
+| Exposure calculation / reference comparison / risk characterisation | BLOCKED BY SCIENTIFIC REVIEW | Logical gate is defined; scientific methods and required canonical data are not approved |
 
 ## Phase 7.1 exit criteria
 
@@ -871,7 +876,7 @@ The classification describes logical maturity, not authorization to implement.
 - [x] Twelve logical test vectors defined.
 - [x] Deferred scientific and persistence decisions explicitly classified.
 
-## Phase 7.2–7.4 specializations and next checkpoint
+## Phase 7.2–7.5 specializations and next checkpoint
 
 The evidence-selection specialization is defined in:
 
@@ -891,10 +896,16 @@ The ingredient-projection specialization is defined in:
 WYE_INGREDIENT_PROJECTION.md
 ```
 
+The product-assessment and exposure-readiness specialization is defined in:
+
+```text
+WYE_PRODUCT_ASSESSMENT.md
+```
+
 The proposed next checkpoint is:
 
 ```text
-Phase 7.5 — Exposure Readiness and Product Assessment Semantics
+Phase 7.6 — Persistence, Explainability and Historical Replay Design
 ```
 
-Phase 7.5 is not started by this document.
+Phase 7.6 is not started by this document.

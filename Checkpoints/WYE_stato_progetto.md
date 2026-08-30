@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 6e9f4d465edcd795fac60fac983fb085865bd418
-origin/ingredients_score: 6e9f4d465edcd795fac60fac983fb085865bd418
+HEAD: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
+origin/ingredients_score: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.4 non modifica il database.
+`0018` e validazione. La Fase 7.5 non modifica il database.
 
 ## Avanzamento
 
@@ -30,7 +30,8 @@ Fase 7.1    COMPLETATA — Logical protocol / snapshot / execution model
 Fase 7.2    COMPLETATA — Evidence eligibility & selection semantics
 Fase 7.3    COMPLETATA — Endpoint synthesis / substance assessment semantics
 Fase 7.4    COMPLETATA — Substance-to-ingredient projection semantics
-Fase 7.5    NON INIZIATA
+Fase 7.5    COMPLETATA — Exposure readiness / product assessment semantics
+Fase 7.6    NON INIZIATA
 ```
 
 ## Capacità consolidate
@@ -200,11 +201,40 @@ cross-substance aggregation, exposure o risk. Form equivalence, composition,
 mixture, residual-presence e confidence rules restano soggetti a data model e
 review scientifica esterna.
 
+## Fase 7.5
+
+Il contratto semantico di exposure readiness e product assessment è definito in:
+
+- `WYE_PRODUCT_ASSESSMENT.md`.
+
+Sono formalizzati:
+
+```text
+current product/composition/extraction model audit
+product_composition_snapshot and exposure_scenario envelopes
+composition, unit/basis and exposure readiness states
+no-silent-default and scenario-provenance policy
+explicit risk-computability gate and risk_not_computable result
+non-scalar product_scientific_assessment
+scenario-specific outputs without ingredient/substance aggregation
+separate hazard/projection/composition/exposure/reference uncertainty
+hybrid reason codes, canonical trace and deterministic digests
+```
+
+Il DB locale contiene dieci prodotti, 27 product ingredients tutti
+`legacy_unreviewed`, cinque nutrition facts e nessun image/document/extraction
+record. Quantità ingrediente/sostanza, serving canonico storico, actual intake,
+frequenza, durata, popolazione e preparation/use state non sono generalmente
+disponibili. Il product risk resta quindi non computabile in generale.
+
+La Fase 7.5 non implementa runtime exposure/risk, reference-point comparison,
+product score, formule, pesi, threshold o output numerici.
+
 ## Prossimo gate
 
-La Fase 7.5 potrà iniziare solo con istruzione esplicita. Dovrà definire exposure
-readiness e product-assessment semantics, rendendo `risk_not_computable` un
-risultato esplicito quando concentrazione, quantità, frequenza, durata, route,
-popolazione o scenario sono insufficienti.
+La Fase 7.6 potrà iniziare solo con istruzione esplicita. Dovrà progettare la
+persistence immutabile, gli artifact canonici, le projection/index tables,
+l'atomic publication e la verifica di historical replay per i contratti 7.1–7.5,
+senza introdurre nuove regole scientifiche o score numerici.
 
 L'upgrade del database locale resta un task operativo separato.

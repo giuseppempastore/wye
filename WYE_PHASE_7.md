@@ -9,19 +9,20 @@ Fase 7.1   — Logical protocol / snapshot / execution model      COMPLETATA
 Fase 7.2   — Evidence eligibility & selection semantics         COMPLETATA
 Fase 7.3   — Endpoint synthesis / substance assessment          COMPLETATA
 Fase 7.4   — Substance → ingredient projection                  COMPLETATA
-Fase 7.5   — Exposure readiness / product assessment            NON INIZIATA
+Fase 7.5   — Exposure readiness / product assessment            COMPLETATA
+Fase 7.6   — Persistence / explainability / historical replay   NON INIZIATA
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline della review 7.4:
+Baseline della review 7.5:
 
 ```text
 branch: ingredients_score
-HEAD: 6e9f4d465edcd795fac60fac983fb085865bd418
-origin/ingredients_score: 6e9f4d465edcd795fac60fac983fb085865bd418
+HEAD: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
+origin/ingredients_score: 7a8a6acf72a5c5d4e1eda85e85fb868254a95f23
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
@@ -43,6 +44,8 @@ validation restano un task operativo separato.
   group, endpoint synthesis e substance hazard profile multidimensionale.
 - `WYE_INGREDIENT_PROJECTION.md`: contratto 7.4 di mapping snapshot,
   relationship-aware projection, uncertainty e multi-substance collection.
+- `WYE_PRODUCT_ASSESSMENT.md`: contratto 7.5 di product composition snapshot,
+  exposure readiness, scenario e risk computability.
 - questo documento: scope, confine legacy, governance, decisioni e roadmap.
 
 In caso di conflitto, i principi non negoziabili e le decisioni esplicite di
@@ -268,8 +271,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
 
-La Fase 7.4 è completata come specifica semantica documentale. Non ha creato
-migration né runtime. La Fase 7.5 non è iniziata da questo checkpoint.
+La Fase 7.5 è completata come specifica semantica documentale. Non ha creato
+migration né runtime. La Fase 7.6 non è iniziata da questo checkpoint.
 
 ## Phase 7.0 exit review
 
