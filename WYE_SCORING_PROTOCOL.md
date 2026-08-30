@@ -279,6 +279,19 @@ rationale
 Final conclusion confidence is derived only by the published protocol and remains
 traceable to its limiting dimensions. It is never an alias for safety.
 
+## Ingredient projection specialization
+
+Phase 7.4 specializes the ingredient-level projection contract in
+`WYE_INGREDIENT_PROJECTION.md`. Projection dispatch is governed by the frozen
+historical relationship type, validity, identity/form compatibility and
+composition readiness. The canonical output is the non-scalar
+`ingredient_scientific_projection`, not an ingredient hazard/risk score.
+
+Multiple projected substance profiles remain separate. No `maximum`, average,
+sum, worst-substance rule, exposure assumption or product-risk inference is
+permitted. Concrete equivalence, cross-form, mixture, residual-presence and
+confidence-transfer rules remain subject to external scientific review.
+
 ## Logical versioning and reproducibility model
 
 The following are logical concepts, not approved database tables.

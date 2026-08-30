@@ -686,7 +686,7 @@ cross-endpoint scalar.
 | Endpoint/study/dependency ontologies | DATA GAP | Not represented generally through `0018` |
 | Structured route/duration/population/dose basis | DATA GAP | Current OpenFoodTox representation is partial/raw |
 | Quality/relevance/coverage/uncertainty source fields | DATA GAP | No general persisted normalized model |
-| Ingredient projection | DEFERRED TO LATER PHASE | Phase 7.4 boundary |
+| Ingredient projection | DEFINED IN 7.4 / EXTERNAL REVIEW AND DATA REQUIRED | `WYE_INGREDIENT_PROJECTION.md` defines the non-scalar mapping-aware envelope; form/composition transfer remains review-gated |
 | Exposure/product risk | DEFERRED TO LATER PHASE | Phase 7.5 and exposure inputs required |
 | Persistence/runtime/API | DEFERRED TO LATER PHASE | Persistence and rollout phases; not authorized here |
 
@@ -731,7 +731,7 @@ Classification does not authorize implementation.
 | Consistency/conflict classification runtime | BLOCKED BY SCIENTIFIC REVIEW | Concrete equivalence/discordance criteria are unvalidated |
 | Evidence sufficiency/confidence | BLOCKED BY SCIENTIFIC REVIEW | No approved framework or conclusion vocabulary |
 | Scientific hazard interpretation | BLOCKED BY SCIENTIFIC REVIEW | Profile envelope does not validate hazard conclusions |
-| Ingredient aggregation/projection | DEFERRED TO 7.4+ | Requires mapping-aware projection semantics |
+| Ingredient projection envelope | READY FOR IMPLEMENTATION | Phase 7.4 defines mapping-aware non-scalar entries; concrete form/composition transfer remains blocked by data/review |
 | Exposure/product risk and numerical outputs | DEFERRED TO 7.5+ | Required exposure data/protocol absent |
 | DB persistence/API/rollout | DEFERRED TO LATER PHASE | Requires persistence design, validation and governance |
 
@@ -766,20 +766,16 @@ Classification does not authorize implementation.
 - [x] Current-schema gaps documented.
 - [x] Implementation readiness classified.
 
-## Roadmap and next checkpoint
+## Phase 7.4 specialization and roadmap
 
-The Phase 7 roadmap remains unchanged. Phase 7.3 adds no technical or scientific
-reason to reorder Phases 7.4–7.9.
+The Phase 7 roadmap remains unchanged. Ingredient projection is specialized in
+`WYE_INGREDIENT_PROJECTION.md` without changing this substance-synthesis
+contract.
 
 The proposed next checkpoint is:
 
 ```text
-Phase 7.4 — Substance-to-Ingredient Projection Semantics
+Phase 7.5 — Exposure Readiness and Product Assessment Semantics
 ```
 
-It should define relationship-aware projection of immutable substance profiles
-through frozen ingredient-to-substance mappings, including mapping role,
-substance form, temporal identity, uncertainty and non-projectable states. It
-must not infer concentration, exposure, product risk or a numerical score.
-
-Phase 7.4 is not started by this document.
+Phase 7.5 is not started by this document.

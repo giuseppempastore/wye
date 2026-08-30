@@ -8,19 +8,20 @@ Fase 7.0.1 — Architecture Specification & Phase 7.0 Freeze     COMPLETATA
 Fase 7.1   — Logical protocol / snapshot / execution model      COMPLETATA
 Fase 7.2   — Evidence eligibility & selection semantics         COMPLETATA
 Fase 7.3   — Endpoint synthesis / substance assessment          COMPLETATA
-Fase 7.4   — Substance → ingredient projection                  NON INIZIATA
+Fase 7.4   — Substance → ingredient projection                  COMPLETATA
+Fase 7.5   — Exposure readiness / product assessment            NON INIZIATA
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline della review 7.3:
+Baseline della review 7.4:
 
 ```text
 branch: ingredients_score
-HEAD: 4f3c2d13d3171a6f27e46beaf8abe641243e9611
-origin/ingredients_score: 4f3c2d13d3171a6f27e46beaf8abe641243e9611
+HEAD: 6e9f4d465edcd795fac60fac983fb085865bd418
+origin/ingredients_score: 6e9f4d465edcd795fac60fac983fb085865bd418
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
@@ -40,6 +41,8 @@ validation restano un task operativo separato.
   eligibility, applicability, dependency, decisioni e selection digest.
 - `WYE_EVIDENCE_SYNTHESIS.md`: contratto 7.3 di evidence line, comparison
   group, endpoint synthesis e substance hazard profile multidimensionale.
+- `WYE_INGREDIENT_PROJECTION.md`: contratto 7.4 di mapping snapshot,
+  relationship-aware projection, uncertainty e multi-substance collection.
 - questo documento: scope, confine legacy, governance, decisioni e roadmap.
 
 In caso di conflitto, i principi non negoziabili e le decisioni esplicite di
@@ -258,15 +261,15 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.1 | Logical protocol / snapshot / execution model | ADR e schema logico approvati; nessuna formula |
 | 7.2 | Evidence eligibility & selection semantics | Contratto deterministico e auditabile; nessun runtime |
 | 7.3 | Endpoint-specific synthesis / substance assessment | Contratto multidimensionale definito; regole scientifiche da review esterna |
-| 7.4 | Substance → ingredient projection | Relationship semantics e temporal mapping rispettati |
+| 7.4 | Substance → ingredient projection | Contratto relationship-aware definito; composition/form review-gated |
 | 7.5 | Exposure readiness / ingredient → product assessment | Exposure sufficiente o `risk_not_computable` |
 | 7.6 | Persistence / explainability / historical replay | Execution immutabili, trace e replay |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
 
-La Fase 7.3 è completata come specifica semantica documentale. Non ha creato
-migration né runtime. La Fase 7.4 non è iniziata da questo checkpoint.
+La Fase 7.4 è completata come specifica semantica documentale. Non ha creato
+migration né runtime. La Fase 7.5 non è iniziata da questo checkpoint.
 
 ## Phase 7.0 exit review
 

@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 4f3c2d13d3171a6f27e46beaf8abe641243e9611
-origin/ingredients_score: 4f3c2d13d3171a6f27e46beaf8abe641243e9611
+HEAD: 6e9f4d465edcd795fac60fac983fb085865bd418
+origin/ingredients_score: 6e9f4d465edcd795fac60fac983fb085865bd418
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.3 non modifica il database.
+`0018` e validazione. La Fase 7.4 non modifica il database.
 
 ## Avanzamento
 
@@ -29,7 +29,8 @@ Fase 7.0.1  COMPLETATA — Architecture Specification & Phase 7.0 Freeze
 Fase 7.1    COMPLETATA — Logical protocol / snapshot / execution model
 Fase 7.2    COMPLETATA — Evidence eligibility & selection semantics
 Fase 7.3    COMPLETATA — Endpoint synthesis / substance assessment semantics
-Fase 7.4    NON INIZIATA
+Fase 7.4    COMPLETATA — Substance-to-ingredient projection semantics
+Fase 7.5    NON INIZIATA
 ```
 
 ## Capacità consolidate
@@ -172,11 +173,38 @@ La Fase 7.3 non implementa runtime synthesis o hazard engine. Endpoint mappings,
 direction-of-effect, concrete quality/sufficiency/confidence rules and hazard
 interpretation restano soggetti a dati normalizzati e review scientifica esterna.
 
+## Fase 7.4
+
+Il contratto semantico della futura ingredient projection è definito in:
+
+- `WYE_INGREDIENT_PROJECTION.md`.
+
+Sono formalizzati:
+
+```text
+current mapping model and 0017 history audit
+relationship-aware represents/equivalent_to/contains/mixture_component/derived_from semantics
+mapping snapshot and inclusive as_of validity
+direct, qualified, qualitative, blocked and unresolved projection states
+ingredient_scientific_projection as a non-scalar substance-entry collection
+projected/qualified/blocked dimensions
+additive projection uncertainty and confidence constraints
+ambiguous/rejected/absent mapping behavior
+composition readiness without inferred quantity
+separate QPS regulatory-context association
+canonical trace and deterministic mapping/projection digests
+```
+
+La Fase 7.4 non implementa runtime projection, ingredient/product score,
+cross-substance aggregation, exposure o risk. Form equivalence, composition,
+mixture, residual-presence e confidence rules restano soggetti a data model e
+review scientifica esterna.
+
 ## Prossimo gate
 
-La Fase 7.4 potrà iniziare solo con istruzione esplicita. Dovrà definire la
-proiezione relationship-aware da substance hazard profile a ingredient, usando
-identità e mapping temporali congelati senza inferire concentrazione, exposure,
-product risk o score numerici.
+La Fase 7.5 potrà iniziare solo con istruzione esplicita. Dovrà definire exposure
+readiness e product-assessment semantics, rendendo `risk_not_computable` un
+risultato esplicito quando concentrazione, quantità, frequenza, durata, route,
+popolazione o scenario sono insufficienti.
 
 L'upgrade del database locale resta un task operativo separato.
