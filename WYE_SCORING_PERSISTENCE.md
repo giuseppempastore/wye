@@ -715,8 +715,8 @@ validation. No giant all-in-one migration is recommended.
 | Governance events/current views | READY FOR SCHEMA DESIGN | Append-only semantics defined |
 | Replay verifier envelope | READY FOR IMPLEMENTATION DESIGN | Inputs/outcomes defined; engine packaging policy pending |
 | Digest DAG | READY FOR IMPLEMENTATION DESIGN | Non-circular boundaries defined |
-| Exact canonicalization contract | FROZEN IN 7.6.1; IMPLEMENTATION PENDING | `wye-c14n-json-v1` and fixture requirements are defined |
-| Object-store/inline artifact envelope | FROZEN IN 7.6.1; IMPLEMENTATION PENDING | Artifact identity/location split and placement policy are defined |
+| Exact canonicalization contract | IMPLEMENTED + VALIDATED IN 7.6.3A; PENDING COMMIT | `wye-c14n-json-v1`, golden fixture and boundary tests are implemented |
+| Object-store/inline artifact envelope | INLINE WRITER IMPLEMENTED; OBJECT UPLOAD DEFERRED | Artifact identity/location split is frozen; verified inline persistence is implemented in 7.6.3A |
 | Privacy persistence for user scenarios | DEFERRED, NOT AN 0019 BLOCKER | Access/RLS/erasure is required before the later user-scenario slice |
 | Query projections/indexes | FROZEN FOR INITIAL WORKLOAD | Minimum projection generations, indexes and twelve queries defined in 7.6.1 |
 | Evidence selection/synthesis runtime | BLOCKED BY SCIENTIFIC REVIEW/DATA MODEL | Deterministic envelopes do not validate scientific rules |
@@ -820,3 +820,29 @@ This bounded migration does not implement the canonical serializer, artifact
 writer, snapshot repository/finalizer, scientific execution, replay or any
 scientific engine. No formula, weight, threshold or numeric score is introduced,
 and legacy scoring remains isolated.
+
+## Phase 7.6.3A runtime foundation status
+
+The `wye-c14n-json-v1` serializer and the caller-transaction-owned scientific
+artifact writer are implemented and validated, pending commit. The runtime
+normalizes object keys and strings to NFC, orders keys by unsigned UTF-8 bytes,
+uses canonical escaping, preserves arrays, accepts signed 64-bit integers and
+rejects binary floats and unadapted Python-specific values. Scientific decimals
+remain schema-normalized JSON strings; typed decimal/date/time/UUID/byte adapters
+are deliberately outside this checkpoint.
+
+The allowlisted contracts are protocol definition/review v1 plus snapshot query,
+member and manifest v1. The writer builds and hashes the full canonical envelope,
+uses SHA-256/BYTEA identity, stores the parsed JSONB cache, and creates or reuses
+one verified inline location without committing the caller transaction. Existing
+identity reuse requires compatible metadata and exact authoritative inline bytes;
+missing or conflicting byte proof is an explicit integrity error.
+
+The JSONB cache remains optional and non-authoritative. PostgreSQL cannot store
+U+0000 in JSONB strings or keys, so a canonical document containing that valid
+escaped scalar is persisted with verified inline bytes and a null JSONB cache;
+its canonical bytes, length and SHA-256 identity remain unchanged.
+
+Object-storage upload, snapshot repository/builder/finalizer, snapshot row
+construction, mapping-state runtime, execution/result persistence, scoring,
+replay and scientific engines remain unimplemented.

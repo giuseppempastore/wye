@@ -1334,7 +1334,7 @@ The following are explicit later-slice prerequisites, not 0019 blockers:
 
 | Prerequisite | Required before | Owner | Deferrable after 0019? |
 |---|---|---|---|
-| Implement and fixture-test `wye-c14n-json-v1` serializer | First artifact write/runtime, not table creation | Backend/platform | Yes |
+| Implement and fixture-test `wye-c14n-json-v1` serializer | Completed in Phase 7.6.3A | Backend/platform | Implemented and validated |
 | Object-store reconciliation/GC operational job | Object-mode publication in 0021 | Platform | Yes |
 | User-scenario RLS/erasure implementation | User-specific scenario persistence | Security/privacy | Yes |
 | Scientific endpoint/dependency/form/reference policies | Scientific engine/7.7 validation | Scientific governance | Yes |
@@ -1425,3 +1425,26 @@ The implementation remains persistence-only: no canonical serializer, artifact
 writer, snapshot repository/finalizer, execution, replay or scientific engine
 has been added. Formulas, weights, thresholds and numeric scores remain absent,
 and legacy scoring remains isolated.
+
+## Phase 7.6.3A runtime foundation status
+
+The frozen serializer prerequisite is implemented and validated, pending commit.
+Runtime support is intentionally narrow: JSON objects/lists/strings/booleans/
+null and signed 64-bit integers only, NFC and deterministic UTF-8 ordering,
+canonical control escaping, no binary float and no implicit conversion of
+Decimal/date/time/UUID/bytes or Python containers.
+
+The scientific artifact writer supports the five currently frozen v1 contracts,
+computes canonical SHA-256 internally, uses database uniqueness as final
+authority, validates exact stored metadata/cache/inline bytes on reuse and
+serializes location creation on the artifact row. It never commits or rolls back
+the caller transaction. Remote object-mode upload remains deferred; the inline
+writer is the deterministic local/test and small-artifact foundation.
+
+The optional JSONB cache is omitted when canonical strings or keys contain
+U+0000, which PostgreSQL JSONB cannot represent. Verified canonical bytes remain
+the sole digest authority; no alternate cache serialization is hashed.
+
+No migration is added. Snapshot construction/sealing runtime, mapping-state
+persistence, execution/result persistence, scoring execution, replay, formulas,
+weights, thresholds and numeric scores remain outside scope.

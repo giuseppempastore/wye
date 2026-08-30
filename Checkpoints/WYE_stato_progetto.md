@@ -36,6 +36,7 @@ Fase 7.6.1  COMPLETATA — Canonicalization/schema/publication freeze
 Fase 7.6.2A IMPLEMENTATA E VALIDATA — Scientific evaluation persistence foundation
 Fase 7.6.2B-1 COMPLETATA — Scientific evidence snapshots design/freeze
 Fase 7.6.2B-2 IMPLEMENTED + VALIDATED
+Fase 7.6.3A IMPLEMENTED + VALIDATED — PENDING COMMIT
 ```
 
 ## Capacità consolidate
@@ -327,15 +328,29 @@ immutabilità, artifact binding, governance snapshot, preflight e downgrade
 fail-safe. Il repository Alembic head è 0020; il database locale resta a
 `0017_ingredient_mapping_history`.
 
-Serializer, artifact writer, snapshot repository/finalizer, execution e replay
-runtime non sono implementati. Non sono stati introdotti motori scientifici,
-formule, pesi, threshold o score numerici; lo scoring legacy resta isolato.
+Al termine della 7.6.2B serializer e artifact writer non erano implementati;
+snapshot repository/finalizer, execution e replay runtime restano tuttora non
+implementati. Non sono stati introdotti motori scientifici, formule, pesi,
+threshold o score numerici; lo scoring legacy resta isolato.
+
+## Fase 7.6.3A
+
+`wye-c14n-json-v1` e il scientific artifact writer inline sono implementati e
+validati, pending commit. Il serializer applica NFC, UTF-8, ordinamento key per
+byte, escaping canonico, signed 64-bit integer e rifiuto dei binary float e dei
+tipi Python non normalizzati. L'allowlist runtime copre `protocol_definition/1`,
+`protocol_review/1` e i tre artifact snapshot v1.
+
+Il writer calcola internamente SHA-256, inserisce o riusa l'identità canonica,
+verifica metadata/cache/byte autoritativi, crea o riusa una location inline
+verified e lascia commit/rollback al chiamante. Retry e concorrenza convergono
+sulla stessa artifact/location identity; mismatch o bytes non dimostrabili
+producono errori espliciti.
 
 ## Prossimo gate
 
-Il successivo checkpoint runtime non è iniziato e richiederà autorizzazione
-separata. Canonical serializer e artifact writer runtime, snapshot repository,
-builder/finalizer, mapping-state runtime persistence, scoring execution,
+Il successivo checkpoint non è iniziato e richiederà autorizzazione separata.
+Snapshot repository, builder/finalizer, mapping-state runtime persistence, scoring execution,
 execution/result persistence, replay/reproduce/recalculate e motore scientifico
 deterministico restano non implementati. L'upgrade del database locale resta un
 task operativo separato.

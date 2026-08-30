@@ -15,6 +15,7 @@ Fase 7.6.1 — Canonicalization / schema / publication freeze     COMPLETATA
 Fase 7.6.2A — Scientific evaluation persistence foundation      IMPLEMENTATA E VALIDATA
 Fase 7.6.2B-1 — Scientific evidence snapshots design/freeze      COMPLETATA
 Fase 7.6.2B-2 — Scientific evidence snapshots migration          IMPLEMENTED + VALIDATED
+Fase 7.6.3A — Canonical serialization / artifact writer           IMPLEMENTED + VALIDATED — PENDING COMMIT
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
@@ -279,6 +280,7 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.6.2A | Scientific evaluation persistence foundation | `0019` implementata e validata |
 | 7.6.2B-1 | Scientific evidence snapshots design/freeze | Completata; READY FOR MIGRATION IMPLEMENTATION |
 | 7.6.2B-2 | Scientific evidence snapshots migration | IMPLEMENTED + VALIDATED |
+| 7.6.3A | Canonical serialization / scientific artifact writer | IMPLEMENTED + VALIDATED; pending commit |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -314,8 +316,19 @@ DESIGN FROZEN — READY FOR MIGRATION IMPLEMENTATION
 La migration `0020_scientific_evidence_snapshots` implementa snapshot e membri,
 sealing immutabile, artifact binding, governance concreta, preflight e downgrade
 fail-safe. Il repository Alembic head è `0020_scientific_evidence_snapshots`.
-Non sono stati implementati serializer, artifact writer, snapshot repository o
-finalizer runtime, execution, replay o motori scientifici.
+La migration 7.6.2B, da sola, non implementava serializer, artifact writer,
+snapshot repository o finalizer runtime, execution, replay o motori scientifici.
+
+La Fase 7.6.3A implementa il runtime ristretto autorizzato: serializer
+`wye-c14n-json-v1`, allowlist kind/schema e writer PostgreSQL caller-transaction
+con location inline verified. Identità, SHA-256 e byte comparison sono sempre
+ricalcolati dal writer; retry e concorrenza convergono senza mutare artifact
+esistenti. I binary float restano vietati: decimal/date/time/UUID/bytes devono
+essere trasformati da futuri adapter schema-aware in valori JSON canonici.
+
+Snapshot repository/builder/finalizer, costruzione di snapshot, mapping-state
+runtime, execution/result persistence, scoring execution, replay e motori
+scientifici non sono implementati.
 
 ## Phase 7.0 exit review
 
