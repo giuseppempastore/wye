@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: 0a3d912725dcc4cafac457c6fa11cb11e242a965
-origin/ingredients_score: 0a3d912725dcc4cafac457c6fa11cb11e242a965
-Alembic repository head: 0018_scientific_batch_recovery
+HEAD: 48a0681e7e928bec47441d468c86f20784d00ea5
+origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
+Alembic repository head: 0019_scientific_evaluation_foundation
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.6.1 non modifica il database.
+`0018` e validazione. La Fase 7.6.2A non aggiorna il database locale.
 
 ## Avanzamento
 
@@ -33,7 +33,7 @@ Fase 7.4    COMPLETATA — Substance-to-ingredient projection semantics
 Fase 7.5    COMPLETATA — Exposure readiness / product assessment semantics
 Fase 7.6    COMPLETATA — Persistence, explainability & historical replay design
 Fase 7.6.1  COMPLETATA — Canonicalization/schema/publication freeze
-Fase 7.6.2A PROPOSTA, NON INIZIATA — Scientific evaluation persistence foundation
+Fase 7.6.2A IMPLEMENTATA E VALIDATA — Scientific evaluation persistence foundation
 ```
 
 ## Capacità consolidate
@@ -271,10 +271,29 @@ Non restano blocker tecnici per la foundation `0019`; i prerequisiti relativi a
 runtime artifact, object reconciliation, dati personali e regole scientifiche
 sono esplicitamente differiti alle slice che li utilizzano.
 
+## Fase 7.6.2A
+
+La foundation autorizzata è implementata e validata nella revision:
+
+```text
+0019_scientific_evaluation_foundation
+down_revision: 0018_scientific_batch_recovery
+```
+
+Sono create esclusivamente le cinque tabelle per artifact/location,
+protocol/version e governance events, con PK/FK `RESTRICT`, CHECK, UNIQUE,
+indici, trigger di immutabilità/append-only, lifecycle governato, collision
+preflight e downgrade rifiutato quando esiste storia canonica. La colonna
+metadata `alembic_version.version_num` viene ampliata a `VARCHAR(64)` per
+contenere il revision ID congelato.
+
+I test PostgreSQL dedicati validano fresh chain, `0018 → 0019`, downgrade vuoto
+e protetto, constraint, concurrency, trigger e isolamento legacy. Non sono
+implementati serializer/runtime persistence, snapshot, execution, result,
+trace, replay o motori scientifici.
+
 ## Prossimo gate
 
-Il checkpoint proposto è `Phase 7.6.2A — Scientific Evaluation Persistence
-Foundation`, con revision proposta `0019_scientific_evaluation_foundation`.
-Non è iniziato e non è stata creata alcuna migration.
-
-L'upgrade del database locale resta un task operativo separato.
+Il checkpoint successivo proposto è `Phase 7.6.2B — Scientific Evidence
+Snapshots`, revision congelata `0020_scientific_evidence_snapshots`. Non è
+iniziato. L'upgrade del database locale resta un task operativo separato.

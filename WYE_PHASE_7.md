@@ -12,20 +12,20 @@ Fase 7.4   — Substance → ingredient projection                  COMPLETATA
 Fase 7.5   — Exposure readiness / product assessment            COMPLETATA
 Fase 7.6   — Persistence / explainability / historical replay   COMPLETATA
 Fase 7.6.1 — Canonicalization / schema / publication freeze     COMPLETATA
-Fase 7.6.2A — Scientific evaluation persistence foundation      PROPOSTA, NON INIZIATA
+Fase 7.6.2A — Scientific evaluation persistence foundation      IMPLEMENTATA E VALIDATA
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline della review 7.6.1:
+Baseline dell'implementazione 7.6.2A:
 
 ```text
 branch: ingredients_score
-HEAD: 0a3d912725dcc4cafac457c6fa11cb11e242a965
-origin/ingredients_score: 0a3d912725dcc4cafac457c6fa11cb11e242a965
-Alembic repository head: 0018_scientific_batch_recovery
+HEAD: 48a0681e7e928bec47441d468c86f20784d00ea5
+origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
+Alembic repository head: 0019_scientific_evaluation_foundation
 local database wye: 0017_ingredient_mapping_history
 ```
 
@@ -274,7 +274,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.5 | Exposure readiness / ingredient → product assessment | Exposure sufficiente o `risk_not_computable` |
 | 7.6 | Persistence / explainability / historical replay | Contratto completato; migration subordinata al freeze 7.6.1 |
 | 7.6.1 | Canonicalization / schema / publication freeze | Completata; decisione READY FOR MIGRATION IMPLEMENTATION |
-| 7.6.2A | Scientific evaluation persistence foundation | Proposta `0019`, non iniziata |
+| 7.6.2A | Scientific evaluation persistence foundation | `0019` implementata e validata |
+| 7.6.2B | Scientific evidence snapshots | Prossimo checkpoint; non iniziato |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -283,8 +284,19 @@ La Fase 7.6.1 risolve il gate B della 7.6 congelando canonicalization profile,
 digest, artifact envelope, schema logico, vincoli, publication/recovery,
 retention, privacy, workload e quattro migration slice. La decisione corrente è
 `READY FOR MIGRATION IMPLEMENTATION`, limitata al checkpoint 7.6.2A e alla
-migration proposta `0019_scientific_evaluation_foundation`. Nessuna migration o
-runtime è stata creata e la Fase 7.6.2A non è iniziata.
+migration `0019_scientific_evaluation_foundation`, ora implementata e validata.
+Nessun runtime scientifico è stato creato.
+
+La Fase 7.6.2A implementa la sola foundation autorizzata: artifact registry e
+location, protocol family/version, governance append-only, vincoli/indici,
+immutabilità e lifecycle governato. La revision descrittiva richiede
+`alembic_version.version_num VARCHAR(64)` al posto del default storico a 32
+caratteri. Snapshot, execution, result, trace, publication e projection restano
+fuori scope e saranno trattati soltanto dalle slice successive. Il database
+locale resta a `0017_ingredient_mapping_history`.
+
+Il prossimo checkpoint è `Phase 7.6.2B — Scientific Evidence Snapshots`; non è
+iniziato.
 
 ## Phase 7.0 exit review
 

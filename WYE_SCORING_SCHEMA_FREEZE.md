@@ -1037,4 +1037,12 @@ Out of scope:
 - [x] Remaining prerequisites classified as non-blocking for 0019.
 - [x] Final decision recorded as READY FOR MIGRATION IMPLEMENTATION.
 
-Phase 7.6.2A is proposed but is not started by this document.
+This freeze document did not itself start Phase 7.6.2A. The separately bounded
+implementation is now complete and validated: revision
+`0019_scientific_evaluation_foundation` creates the five authorized foundation
+tables and their database protections. Because the frozen revision identifier
+is longer than Alembic's historical `VARCHAR(32)`, the migration also widens the
+Alembic metadata column to `VARCHAR(64)` before Alembic records the new head.
+The local `wye` database remains at `0017_ingredient_mapping_history`.
+Phase 7.6.2B / `0020_scientific_evidence_snapshots` is the next checkpoint and
+has not started.
