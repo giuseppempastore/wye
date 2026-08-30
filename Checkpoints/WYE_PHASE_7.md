@@ -280,7 +280,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.6.2A | Scientific evaluation persistence foundation | `0019` implementata e validata |
 | 7.6.2B-1 | Scientific evidence snapshots design/freeze | Completata; READY FOR MIGRATION IMPLEMENTATION |
 | 7.6.2B-2 | Scientific evidence snapshots migration | IMPLEMENTED + VALIDATED |
-| 7.6.3A | Canonical serialization / scientific artifact writer | IMPLEMENTED + VALIDATED; pending commit |
+| 7.6.3A | Canonical serialization / scientific artifact writer | COMPLETED + COMMITTED |
+| 7.6.3B | Evidence snapshot repository / builder / finalizer | IMPLEMENTED + VALIDATED — PENDING COMMIT |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -326,9 +327,17 @@ ricalcolati dal writer; retry e concorrenza convergono senza mutare artifact
 esistenti. I binary float restano vietati: decimal/date/time/UUID/bytes devono
 essere trasformati da futuri adapter schema-aware in valori JSON canonici.
 
-Snapshot repository/builder/finalizer, costruzione di snapshot, mapping-state
-runtime, execution/result persistence, scoring execution, replay e motori
-scientifici non sono implementati.
+La Fase 7.6.3B implementa repository e service caller-transaction-owned per
+costruire il candidate universe esplicito, materializzare artifact query/member/
+manifest, ordinare i membri deterministicamente e sigillare atomicamente
+`building -> sealed`. `status_as_of` materializza
+`scientific_assessments.assessment_status`; lo stato della release resta distinto
+nel payload provenance e lo schema corrente non inventa lifecycle per finding.
+Retry e builder concorrenti convergono soltanto dopo verifica dei root canonici;
+le race seal/member mutation sono serializzate dai lock della 0020.
+
+Mapping-state runtime, eligibility/selection, execution/result persistence,
+scoring execution, replay e motori scientifici non sono implementati.
 
 ## Phase 7.0 exit review
 

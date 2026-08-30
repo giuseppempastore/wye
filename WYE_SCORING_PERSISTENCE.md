@@ -824,7 +824,7 @@ and legacy scoring remains isolated.
 ## Phase 7.6.3A runtime foundation status
 
 The `wye-c14n-json-v1` serializer and the caller-transaction-owned scientific
-artifact writer are implemented and validated, pending commit. The runtime
+artifact writer are implemented, validated and committed. The runtime
 normalizes object keys and strings to NFC, orders keys by unsigned UTF-8 bytes,
 uses canonical escaping, preserves arrays, accepts signed 64-bit integers and
 rejects binary floats and unadapted Python-specific values. Scientific decimals
@@ -846,3 +846,40 @@ its canonical bytes, length and SHA-256 identity remain unchanged.
 Object-storage upload, snapshot repository/builder/finalizer, snapshot row
 construction, mapping-state runtime, execution/result persistence, scoring,
 replay and scientific engines remain unimplemented.
+
+## Phase 7.6.3B snapshot runtime status
+
+The protocol-independent snapshot repository, typed construction request,
+deterministic builder and explicit finalizer are
+`IMPLEMENTED + VALIDATED — PENDING COMMIT`. An explicit candidate set is
+resolved through real assessment,
+finding, ingestion-run, release, dataset and source relationships. Query,
+member and manifest documents are persisted through the 7.6.3A artifact writer;
+the manifest artifact digest is the snapshot root.
+
+Member order is the frozen bytewise `(member_kind, member_identity_digest,
+member_semantic_digest)` order. Finalization locks and reloads the authoritative
+membership, re-resolves provenance, assigns contiguous ordinals and performs the
+single `building -> sealed` transition without committing the caller
+transaction. Identical retries and concurrent builders converge only after
+query/manifest/member-root compatibility checks. Parent row locks serialize
+seal against member mutation in both lock orders.
+
+The sealing advisory lock uses PostgreSQL's transaction-scoped two-integer form
+with a dedicated WYE snapshot namespace and a digest-derived coordination key.
+It is not semantic identity: the 0020 partial UNIQUE remains final authority.
+Ordinal permutation uses a guaranteed-free slot in `[0, member_count]`, avoiding
+both immediate-UNIQUE swap collisions and INTEGER-offset overflow.
+
+For v1, `status_as_of` is materialized from
+`scientific_assessments.assessment_status`, the only authoritative assessment
+lifecycle field in the current schema. `source_dataset_releases.release_status`
+is frozen separately in member provenance; findings have no independent
+lifecycle field, so none is invented. The sealed member artifact preserves the
+captured states if current source rows later change.
+
+This runtime does not discover eligible evidence: callers provide exact
+candidate identities. Mapping state, target state, eligibility/selection,
+execution/result persistence, scoring, replay and every scientific engine remain
+outside this checkpoint. No formula, weight, threshold or numerical score is
+introduced.

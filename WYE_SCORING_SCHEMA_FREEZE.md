@@ -1428,7 +1428,7 @@ and legacy scoring remains isolated.
 
 ## Phase 7.6.3A runtime foundation status
 
-The frozen serializer prerequisite is implemented and validated, pending commit.
+The frozen serializer prerequisite is implemented, validated and committed.
 Runtime support is intentionally narrow: JSON objects/lists/strings/booleans/
 null and signed 64-bit integers only, NFC and deterministic UTF-8 ordering,
 canonical control escaping, no binary float and no implicit conversion of
@@ -1448,3 +1448,41 @@ the sole digest authority; no alternate cache serialization is hashed.
 No migration is added. Snapshot construction/sealing runtime, mapping-state
 persistence, execution/result persistence, scoring execution, replay, formulas,
 weights, thresholds and numeric scores remain outside scope.
+
+## Phase 7.6.3B runtime implementation status
+
+The 0020 contract now has a caller-transaction-owned repository and deterministic
+builder/finalizer runtime, `IMPLEMENTED + VALIDATED — PENDING COMMIT`. The typed
+request carries versioned snapshot policy, UTC `as_of`/cutoff, typed query scope
+and predicates, exact assessment/finding candidate identities and audit actors;
+it deliberately contains no mapping state or protocol decision.
+
+The runtime creates the query artifact, building header and canonical member
+artifacts, persists relational membership, then locks and reloads the parent and
+members before seal. It revalidates provenance and canonical roots, assigns the
+frozen bytewise order, creates the manifest through the 7.6.3A writer and uses
+its SHA-256 digest as `snapshot_digest`. The runtime never hashes SQL row order.
+
+`status_as_of` is concretely sourced from
+`scientific_assessments.assessment_status`; release status is a separate frozen
+provenance field and there is no finding lifecycle column to materialize. A
+change before seal fails revalidation; a change after seal cannot rewrite the
+member row or canonical artifact. This records available schema truth without
+claiming a missing bitemporal lifecycle.
+
+Two building UUIDs may coexist. A transaction-scoped digest advisory lock
+reduces contention, while the 0020 partial UNIQUE remains final authority. A
+loser returns the sealed winner only after compatible query/manifest/member-root
+verification and deletes only its own unsealed construction rows. Member trigger
+parent locks serialize both mutation-first and seal-first races.
+
+The advisory coordination key uses a dedicated WYE snapshot namespace in the
+transaction-scoped two-integer PostgreSQL lock space; digest-prefix collisions
+can only serialize unrelated snapshot seals and cannot establish identity. The
+0020 UNIQUE constraint remains authoritative. Canonical ordinal reassignment
+breaks permutations through a free value in `[0, member_count]`, so immediate
+ordinal uniqueness is respected without offset overflow.
+
+No migration changes are required. Evidence selection, mapping state, scoring
+execution, result persistence, replay, synthesis, projection, exposure/risk,
+formulas, weights, thresholds and numeric scores remain unimplemented.

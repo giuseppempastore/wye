@@ -43,3 +43,39 @@ class ArtifactBytesUnavailableError(ArtifactIntegrityError):
 
 class InvalidArtifactLocationError(ArtifactIntegrityError):
     """An existing artifact location is incompatible with verified inline reuse."""
+
+
+class SnapshotRuntimeError(ScientificArtifactError):
+    """Base error for deterministic scientific evidence snapshot construction."""
+
+
+class SnapshotRequestError(SnapshotRuntimeError, ValueError):
+    """A snapshot request is structurally invalid or noncanonical."""
+
+
+class SnapshotMemberError(SnapshotRuntimeError, ValueError):
+    """A requested evidence member has an invalid shape or identity."""
+
+
+class DuplicateSnapshotMemberError(SnapshotMemberError):
+    """The request repeats the same structural evidence candidate."""
+
+
+class SnapshotProvenanceError(SnapshotMemberError):
+    """The requested candidate cannot resolve the frozen provenance chain."""
+
+
+class SnapshotAlreadySealedError(SnapshotRuntimeError):
+    """A mutation or finalization operation targeted a sealed snapshot."""
+
+
+class CanonicalSnapshotConflictError(SnapshotRuntimeError):
+    """A canonical sealed snapshot identity already exists."""
+
+
+class IncompatibleCanonicalSnapshotError(CanonicalSnapshotConflictError):
+    """A sealed digest winner does not have the expected canonical roots."""
+
+
+class SnapshotFinalizationError(SnapshotRuntimeError):
+    """Stored building state cannot be finalized as the requested snapshot."""

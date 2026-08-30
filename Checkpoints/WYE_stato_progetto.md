@@ -335,8 +335,8 @@ threshold o score numerici; lo scoring legacy resta isolato.
 
 ## Fase 7.6.3A
 
-`wye-c14n-json-v1` e il scientific artifact writer inline sono implementati e
-validati, pending commit. Il serializer applica NFC, UTF-8, ordinamento key per
+`wye-c14n-json-v1` e il scientific artifact writer inline sono implementati,
+validati e committed. Il serializer applica NFC, UTF-8, ordinamento key per
 byte, escaping canonico, signed 64-bit integer e rifiuto dei binary float e dei
 tipi Python non normalizzati. L'allowlist runtime copre `protocol_definition/1`,
 `protocol_review/1` e i tre artifact snapshot v1.
@@ -347,10 +347,25 @@ verified e lascia commit/rollback al chiamante. Retry e concorrenza convergono
 sulla stessa artifact/location identity; mismatch o bytes non dimostrabili
 producono errori espliciti.
 
+## Fase 7.6.3B
+
+Repository, typed request model, deterministic builder e finalizer degli evidence
+snapshot sono `IMPLEMENTED + VALIDATED — PENDING COMMIT`. Il runtime riceve
+membership esplicita, risolve la provenance Phase 6, materializza query/member/
+manifest tramite il writer 7.6.3A, assegna l'ordine canonico e sigilla nello
+stesso caller-owned transaction. Snapshot vuoti, retry, builder concorrenti,
+historical status preservation e le due direzioni della race seal/mutation sono
+coperti da test PostgreSQL reali.
+
+`status_as_of` deriva dall'unico lifecycle assessment autorevole disponibile,
+`scientific_assessments.assessment_status`; il release status è congelato
+separatamente nella provenance e non viene simulato uno status finding assente
+dallo schema. Mapping state, eligibility/selection, scoring execution,
+execution/result persistence, replay/reproduce/recalculate e motori scientifici
+restano non implementati. L'upgrade del database locale resta un task operativo
+separato.
+
 ## Prossimo gate
 
-Il successivo checkpoint non è iniziato e richiederà autorizzazione separata.
-Snapshot repository, builder/finalizer, mapping-state runtime persistence, scoring execution,
-execution/result persistence, replay/reproduce/recalculate e motore scientifico
-deterministico restano non implementati. L'upgrade del database locale resta un
-task operativo separato.
+Il checkpoint successivo richiederà autorizzazione separata; la 7.6.3B non
+anticipa mapping state, execution persistence o replay.
