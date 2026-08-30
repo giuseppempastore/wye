@@ -911,7 +911,7 @@ WYE_SCORING_PERSISTENCE.md
 It establishes canonical artifacts, rebuildable query projections, separate
 execution/attempt lifecycles, atomic publication, governance events, replay
 verification and the persisted digest graph for all Phase 7.1–7.5 objects.
-Migration decision B requires a further technical freeze before schema changes.
-
-The proposed next checkpoint is Phase 7.6.1 — Canonicalization, Persistence
-Schema and Publication Protocol Freeze. It is not started by this document.
+The technical freeze is now defined in `WYE_SCORING_SCHEMA_FREEZE.md`. It
+resolves migration decision B and records `READY FOR MIGRATION IMPLEMENTATION`
+for the bounded Phase 7.6.2A foundation only. The migration and runtime are not
+started by this document.

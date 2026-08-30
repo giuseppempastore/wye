@@ -707,10 +707,10 @@ validation. No giant all-in-one migration is recommended.
 | Governance events/current views | READY FOR SCHEMA DESIGN | Append-only semantics defined |
 | Replay verifier envelope | READY FOR IMPLEMENTATION DESIGN | Inputs/outcomes defined; engine packaging policy pending |
 | Digest DAG | READY FOR IMPLEMENTATION DESIGN | Non-circular boundaries defined |
-| Exact canonicalization implementation | BLOCKED BY TECHNICAL FREEZE | Profile and cross-language fixtures required |
-| Object-store/inline artifact envelope | BLOCKED BY TECHNICAL FREEZE | Exact cutoff, encryption and reconciliation operations required |
-| Privacy persistence for user scenarios | BLOCKED BY PRIVACY DESIGN | Access, retention and erasure policy required |
-| Query projections/indexes | REQUIRES WORKLOAD VALIDATION | Canonical fields known; physical access plan not benchmarked |
+| Exact canonicalization contract | FROZEN IN 7.6.1; IMPLEMENTATION PENDING | `wye-c14n-json-v1` and fixture requirements are defined |
+| Object-store/inline artifact envelope | FROZEN IN 7.6.1; IMPLEMENTATION PENDING | Artifact identity/location split and placement policy are defined |
+| Privacy persistence for user scenarios | DEFERRED, NOT AN 0019 BLOCKER | Access/RLS/erasure is required before the later user-scenario slice |
+| Query projections/indexes | FROZEN FOR INITIAL WORKLOAD | Minimum projection generations, indexes and twelve queries defined in 7.6.1 |
 | Evidence selection/synthesis runtime | BLOCKED BY SCIENTIFIC REVIEW/DATA MODEL | Deterministic envelopes do not validate scientific rules |
 | Composition/exposure/risk runtime | BLOCKED BY DATA AND SCIENTIFIC REVIEW | Required quantities/reference semantics are absent/unapproved |
 | Numerical score | DEFERRED | Not justified for first protocol |
@@ -755,4 +755,10 @@ migration slices. A subsequent implementation checkpoint may create the
 approved persistence foundation; only then should replay fixtures and expert
 validation in Phase 7.7 rely on durable runtime artifacts.
 
-This document does not start 7.6.1 or 7.7.
+Phase 7.6.1 is now specified in `WYE_SCORING_SCHEMA_FREEZE.md`. It resolves the
+eight Decision B gaps with `wye-c14n-json-v1`, concrete table/constraint/index
+design, publication recovery, engine/privacy boundaries and a frozen migration
+sequence. The current gate is `READY FOR MIGRATION IMPLEMENTATION`, scoped only
+to Phase 7.6.2A / `0019_scientific_evaluation_foundation`. This historical 7.6
+contract and its original B decision remain the rationale; no migration or
+runtime is started here.

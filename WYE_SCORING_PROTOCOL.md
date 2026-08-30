@@ -510,3 +510,8 @@ The persistence design does not relax this acceptance gate. Its migration
 decision is B: exact canonicalization fixtures, schema/constraint design,
 object-publication operations, engine compatibility and privacy controls must be
 frozen before a migration is authorized.
+
+Phase 7.6.1 freezes those technical requirements in
+`WYE_SCORING_SCHEMA_FREEZE.md` and authorizes only the proposed foundation
+migration checkpoint. This does not relax the scientific pre-implementation
+gate above and does not authorize an evaluation engine.

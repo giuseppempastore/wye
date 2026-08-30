@@ -4,14 +4,14 @@
 
 ```text
 branch: ingredients_score
-HEAD: c042401fe57247b6fdb27c57b321a3e3bd4db5a8
-origin/ingredients_score: c042401fe57247b6fdb27c57b321a3e3bd4db5a8
+HEAD: 0a3d912725dcc4cafac457c6fa11cb11e242a965
+origin/ingredients_score: 0a3d912725dcc4cafac457c6fa11cb11e242a965
 Alembic repository head: 0018_scientific_batch_recovery
 local database wye: 0017_ingredient_mapping_history
 ```
 
 Il database locale deve essere aggiornato separatamente tramite backup, upgrade a
-`0018` e validazione. La Fase 7.6 non modifica il database.
+`0018` e validazione. La Fase 7.6.1 non modifica il database.
 
 ## Avanzamento
 
@@ -32,7 +32,8 @@ Fase 7.3    COMPLETATA — Endpoint synthesis / substance assessment semantics
 Fase 7.4    COMPLETATA — Substance-to-ingredient projection semantics
 Fase 7.5    COMPLETATA — Exposure readiness / product assessment semantics
 Fase 7.6    COMPLETATA — Persistence, explainability & historical replay design
-Fase 7.6.1  PROPOSTA, NON INIZIATA — Canonicalization/schema/publication freeze
+Fase 7.6.1  COMPLETATA — Canonicalization/schema/publication freeze
+Fase 7.6.2A PROPOSTA, NON INIZIATA — Scientific evaluation persistence foundation
 ```
 
 ## Capacità consolidate
@@ -249,10 +250,31 @@ artifact envelope, schema e vincoli, publication/reconciliation, retention
 dell'engine, privacy e access pattern. Nessuna struttura Phase 7 è ancora
 presente nel DB.
 
+## Fase 7.6.1
+
+Il freeze tecnico implementabile è definito in:
+
+- `WYE_SCORING_SCHEMA_FREEZE.md`.
+
+Sono congelati `wye-c14n-json-v1`, SHA-256/BYTEA, canonical decimal/date/time,
+artifact envelope e placement, naming e schema logico colonna per colonna,
+vincoli/trigger/FK/index, execution identity, publication transaction e failure
+recovery, workload, privacy, engine/replay levels, retention e migration slices.
+
+La decisione finale è:
+
+```text
+READY FOR MIGRATION IMPLEMENTATION
+```
+
+Non restano blocker tecnici per la foundation `0019`; i prerequisiti relativi a
+runtime artifact, object reconciliation, dati personali e regole scientifiche
+sono esplicitamente differiti alle slice che li utilizzano.
+
 ## Prossimo gate
 
-Il checkpoint proposto è `Phase 7.6.1 — Canonicalization, Persistence Schema and
-Publication Protocol Freeze`. Non è iniziato. La Fase 7.7 non deve usare runtime
-persistito finché questi gap tecnici non sono risolti.
+Il checkpoint proposto è `Phase 7.6.2A — Scientific Evaluation Persistence
+Foundation`, con revision proposta `0019_scientific_evaluation_foundation`.
+Non è iniziato e non è stata creata alcuna migration.
 
 L'upgrade del database locale resta un task operativo separato.
