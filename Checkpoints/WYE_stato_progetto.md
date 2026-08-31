@@ -4,9 +4,9 @@
 
 ```text
 branch: ingredients_score
-HEAD: f775e0e03a4cce348afc07c052d5a72a7c8568c1
+HEAD: a16c0103e648479b81fa2ded8f64377323ebfeb4
 origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
-Alembic repository head: 0020_scientific_evidence_snapshots
+Alembic repository head: 0021_scientific_evaluation_publication
 local database wye: 0017_ingredient_mapping_history
 ```
 
@@ -41,6 +41,9 @@ Fase 7.6.3B COMPLETED + COMMITTED
 Fase 7.6.4A-1 DESIGN FROZEN — READY FOR IMPLEMENTATION
 Fase 7.6.4A-1B AUTHORITY MULTIPLICITY AMENDMENT FROZEN
 Fase 7.6.4A-2 COMPLETED + COMMITTED
+Fase 7.6.4B-1  DESIGN FROZEN
+Fase 7.6.4B-1B REPLAY SEMANTICS AMENDMENT FROZEN
+Fase 7.6.4B-2  COMPLETED + COMMITTED
 ```
 
 ## Capacità consolidate
@@ -423,7 +426,32 @@ COMPLETED + COMMITTED
 
 ## Prossimo gate
 
-La Phase 7.6.4A è completata e persistita in Git. Il runtime produce target,
-mapping member/manifest e canonical evaluation input tramite l'artifact writer
-0019, senza nuove tabelle. Non sono iniziati Phase 7.6.4B, migration 0021,
-product target, execution/result persistence, replay o scoring execution.
+La Phase 7.6.4A è completata e persistita in Git nel commit
+`a16c0103e648479b81fa2ded8f64377323ebfeb4`. Il runtime produce target, mapping
+member/manifest e canonical evaluation input tramite l'artifact writer 0019,
+senza nuove tabelle.
+
+La Phase 7.6.4B-1 congela in `WYE_EXECUTION_PERSISTENCE_FREEZE.md` lo schema
+documentale di `0021_scientific_evaluation_publication`: semantic execution
+identity, attempt separati, selection/result/trace roots, publication atomica,
+governance e downgrade fail-safe. Query projections e report di riconciliazione
+estesi restano 0022; result payload scientifici restano review-gated.
+
+```text
+Phase 7.6.4B-1:
+DESIGN FROZEN — READY FOR PHASE 7.6.4B 0021 IMPLEMENTATION
+
+Phase 7.6.4B-1B:
+REPLAY SEMANTICS AMENDMENT FROZEN
+```
+
+Il gate finale ha rilevato che il modello REPLAY originario era incompatibile
+con la deduplicazione globale degli artifact 0019 e con l'ownership UNIQUE di
+result/trace/selection. La 7.6.4B-1B sceglie il modello di verifica: REPLAY
+confronta la pubblicazione storica, persiste una verification immutabile
+`matched`/`mismatch` e non crea una nuova pubblicazione scientifica. La 0021
+corretta avrà nove tabelle; il delta migration/test corrente richiede ancora la
+correzione B-2. Il repository head nel delta è 0021; il DB locale resta 0017.
+
+Execution/result runtime, selection, synthesis, replay runtime e scoring
+execution non sono stati iniziati.

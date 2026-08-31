@@ -356,12 +356,14 @@ The verifier operates without trusting query projections:
 3. Verify engine/build compatibility with protocol and canonicalization profiles.
 4. Recompute using exact frozen roots in an isolated attempt.
 5. Compare selection, result and trace semantic digests.
-6. Record an immutable verification report: `verified_identical`,
-   `semantic_mismatch`, `artifact_unavailable`, `artifact_corrupt`,
-   `engine_incompatible` or `verification_failed`.
+6. For completed recomputation, record the bounded immutable 0021 verification
+   `matched` or `mismatch`; technical inability to compare remains attempt
+   failure with no verification. Rich support-level classification may be
+   derived later by 0022 reporting.
 
-A mismatch never overwrites either result. It is a technical/integrity incident
-requiring governance review.
+A mismatch never overwrites or creates a scientific result/publication. It is
+an immutable integrity fact that may receive subsequent governance review; the
+insertion itself does not supersede or retract anything.
 
 ### Engine compatibility
 
@@ -471,7 +473,9 @@ scientifically meaningful are excluded.
 - non-null restrictive foreign keys between ownership/membership rows;
 - unique protocol semantic version within protocol family;
 - unique digest identity within algorithm/profile/artifact type;
-- one publication bundle and one canonical result root per completed execution;
+- one publication bundle and one canonical result root per completed
+  `NORMAL`/`REFRESH`/`COUNTERFACTUAL` execution; one replay verification and no
+  owned publication for completed `REPLAY`;
 - candidate membership uniqueness and one terminal decision per candidate,
   question and execution;
 - unique attempt number per execution and unique attempt execution key;
@@ -503,8 +507,9 @@ Two identities are distinct:
 
 - request idempotency: caller-supplied key scoped to owner/operation, used to
   return the same accepted request;
-- semantic identity: canonical key over protocol version, execution mode,
-  input digest and semantic configuration.
+- semantic identity: canonical key over protocol digest, sealed evidence
+  snapshot digest, input digest, execution mode, semantic configuration and
+  comparison semantic digest/null.
 
 Equivalent concurrent NORMAL/REFRESH requests may converge on one execution and
 publication. REPLAY verification attempts may be legitimately repeated and are
@@ -512,9 +517,9 @@ separate attempts/reports. COUNTERFACTUAL executions differ by protocol/config.
 
 Semantic keys are defined separately for protocol publication
 (`protocol identity + semantic version + protocol digest`), snapshot sealing
-(`protocol/scope + query definition + resolved membership digest`), execution
-creation (`protocol version + mode + input digest + semantic configuration`) and
-result publication (`execution + result digest + trace digest`). Request keys do
+(`query definition + policy/as-of/cutoff + resolved membership`), execution
+creation (`protocol + snapshot + input + mode + configuration + comparison`) and
+result publication (`execution + selection + result + trace`). Request keys do
 not enter these digests.
 
 Concurrency behavior:
@@ -579,7 +584,8 @@ Required indexed access patterns include:
 - ingredient projections by ingredient/substance/relationship/state;
 - product assessments by product/scenario/readiness/risk-computability;
 - trace traversal by artifact digest and edge role;
-- replay reports by original execution/verifier state;
+- replay verifications by comparison publication/status, with richer 0022
+  reports by original execution/verifier state;
 - governance lineage and effective current disposition.
 
 “Latest/current” views are explicitly derived from governance effective time,
@@ -928,3 +934,42 @@ therefore participate in `mapping_snapshot_digest`. No relational mapping-state
 table or migration is required. Phase 7.6.4A-2 implements and validates the
 artifact-only target/mapping/input runtime and is `COMPLETED + COMMITTED`. The
 runtime reuses verified inline 0019 artifacts and owns no transaction commit.
+
+## Phase 7.6.4B-1 execution and result persistence freeze
+
+`WYE_EXECUTION_PERSISTENCE_FREEZE.md` is authoritative for the bounded 0021
+schema. One UNIQUE semantic execution identity binds protocol, sealed evidence
+snapshot, canonical input, execution mode, semantic configuration and optional
+comparison root. Operational attempts are separate; concrete engine builds and
+failures never alter semantic identity.
+
+`0021_scientific_evaluation_publication` creates execution, attempt,
+selection-decision, generic result/component, trace, publication, replay
+verification and operational idempotency tables and extends governance with
+concrete execution/result FKs. `NORMAL`, `REFRESH` and `COUNTERFACTUAL`
+completion atomically inserts selection, result, trace and publication roots
+plus a succeeded attempt. REPLAY completion instead inserts one immutable
+verification of the historical comparison publication and creates no new
+scientific result, trace, selection-decision set or publication. Scientific
+status is distinct from technical/verification status, and canonical
+publication does not imply user visibility or scientific endorsement.
+
+The earlier preliminary bundle graph is narrowed: query projections are
+rebuildable, so `projection_manifest_digest` is not part of the scientific
+publication bundle. Projection generations and richer replay reports remain
+0022; the bounded `matched`/`mismatch` verification required by REPLAY belongs
+to 0021.
+Detailed protocol-owned scientific result schemas remain review-gated. Status:
+
+```text
+DESIGN FROZEN — READY FOR PHASE 7.6.4B 0021 IMPLEMENTATION
+
+Phase 7.6.4B-1B:
+REPLAY SEMANTICS AMENDMENT FROZEN
+```
+
+Phase 7.6.4B-2 subsequently implements and validates
+`0021_scientific_evaluation_publication`. It creates only the frozen persistence
+substrate; no execution/scoring, selection, synthesis or replay runtime exists.
+The repository head is 0021 and local `wye` remains at 0017. Phase 7.6.4B-2
+implements the nine-table amendment and is `COMPLETED + COMMITTED`.

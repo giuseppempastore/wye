@@ -751,6 +751,12 @@ input_artifact_id
 configuration_artifact_id
 ```
 
+Phase 7.6.4B-1 freezes those references and the surrounding
+execution/publication schema in `WYE_EXECUTION_PERSISTENCE_FREEZE.md`. It adds a
+canonical execution-identity artifact whose content digest is the sole
+`semantic_execution_digest`; this does not change the input artifact or fold
+protocol/evidence/mode/configuration into `input_digest`.
+
 It also stores `input_digest`, which must equal `input_artifact_id`'s content
 digest. Deferred validation must enforce artifact kind/schema, sealed snapshot,
 target-type/mapping applicability and root consistency. `mapping_state_artifact_id`
@@ -758,8 +764,9 @@ is required for ingredient targets and null for substance targets. These direct
 references avoid replay depending on parsing a digest out of an unreferenced
 document and preserve FK `ON DELETE RESTRICT` history.
 
-This is a correction to the earlier 0021 logical column list, not permission to
-create 0021 in this checkpoint.
+This was a design-time correction to the earlier 0021 logical column list. The
+later Phase 7.6.4B-2 migration implements the separately frozen execution
+persistence contract without changing this input-digest boundary.
 
 ## Golden structural payloads
 

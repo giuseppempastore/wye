@@ -397,8 +397,12 @@ same historical target identity
 
 A replay references the historical execution being verified. It may have a new
 execution/attempt ID and timestamps, but must reuse the historical semantic
-inputs and must not resolve any “current” row. A mismatch is a determinism or
-integrity failure, not a new scientific result.
+inputs and must not resolve any “current” row. The 7.6.4B-1B persistence
+amendment makes this a verification of the historical canonical publication:
+matching output records `matched`; differing output records `mismatch`. Neither
+case creates a new scientific result, trace, selection-decision set or
+publication. A mismatch is an integrity finding, not a new scientific result
+and not a technical execution failure when computation itself completed.
 
 #### `COUNTERFACTUAL`
 
@@ -450,9 +454,12 @@ technical execution failure != scientific insufficient evidence
 A database outage, digest mismatch, engine exception or incomplete write is
 `failed`. `no_eligible_evidence`, `identity_unresolved`, `insufficient_evidence`
 or `conflict_unresolved` are valid scientific outcomes in a `completed`
-execution. Partial results are never canonical. Completion requires atomic
-publication of decisions, result, trace and their digests; implementation may
-use staging/checkpoint records for recovery.
+execution. Partial results are never canonical. `NORMAL`, `REFRESH` and
+`COUNTERFACTUAL` completion requires atomic publication of decisions, result,
+trace and their digests. `REPLAY` completion instead requires an immutable
+replay verification against the comparison publication and owns no new
+scientific publication. Implementation may use staging/checkpoint records for
+recovery.
 
 ### `evaluation_result`
 
@@ -591,10 +598,9 @@ tuple, not a database `UNIQUE` decision in Phase 7.1.
 
 Two normal requests with the same tuple are semantically equivalent. Two exact
 replays of the same baseline are semantically equivalent verification requests.
-They may share one logical execution while retaining separate technical
-`execution_attempt` records, or remain separate executions linked by the same
-semantic key; persistence design must choose transaction and user-observability
-semantics.
+The 7.6.4B persistence freeze chooses one globally unique semantic execution;
+retries and repeated audit occurrences retain separate technical
+`execution_attempt` records beneath it.
 
 Separate executions are legitimate when execution type, protocol, snapshot,
 target state, semantic configuration or comparison baseline differs. A retry
@@ -813,7 +819,7 @@ vocabulary, category, formula, threshold, weight, rank, colour or score.
 | # | Scenario | Expected execution identity | Snapshot behavior | Historical/result semantics |
 |---:|---|---|---|---|
 | 1 | New normal execution | New `NORMAL` semantic key | New hybrid snapshot and target freeze | New immutable result; no numeric assumption |
-| 2 | Exact replay | `REPLAY` key references baseline; same semantic input digests | Reuses exact membership and target state | Output digests must equal baseline; mismatch is technical/integrity failure |
+| 2 | Exact replay | `REPLAY` key references baseline; same semantic input digests | Reuses exact membership and target state | Verification records `matched` or `mismatch`; neither creates a new scientific publication, and mismatch is not a technical failure when computation completed |
 | 3 | Replay after future mapping change | Same replay identity rules as #2 | Uses historical frozen mapping, never current mapping | Original result reproduced; new mapping is irrelevant to replay |
 | 4 | Counterfactual with protocol v2 | New `COUNTERFACTUAL` key with baseline and v2 digest | Reuses baseline snapshot/target | New immutable result; component diff measures rule impact only |
 | 5 | Refresh with new release | New `REFRESH` key | New cutoff and membership include eligible new release | Prior result preserved; change report separates evidence from rule changes |
@@ -936,3 +942,23 @@ does not authorize or implement execution persistence or scoring. Phase
 7.6.4A-2 now implements the bounded target/mapping/input artifact construction
 defined by that specialization and is `COMPLETED + COMMITTED`; evidence snapshot,
 protocol and execution mode remain sibling roots for a later execution runtime.
+
+Phase 7.6.4B-1 is specialized in
+`WYE_EXECUTION_PERSISTENCE_FREEZE.md`. It makes the existing execution tuple a
+canonical `scientific_evaluation_execution_identity/1` artifact whose digest is
+the sole `semantic_execution_digest`, and freezes one semantic execution with
+multiple operational attempts. Semantic engine compatibility is part of the
+configuration root; concrete build provenance belongs to each attempt.
+
+The 0021 publication bundle binds semantic execution, selection, result and
+trace roots for `NORMAL`, `REFRESH` and `COUNTERFACTUAL`. REPLAY instead binds
+expected and recomputed roots in
+`scientific_evaluation_replay_verification/1`, while reusing the global
+content-addressed artifacts and creating no new scientific publication.
+Rebuildable query projections are excluded from that canonical bundle and
+remain a later 0022 concern. This bounded correction supersedes the
+preliminary physical sketch only where that sketch mixed engine/build metadata,
+selection resolution or query projections with canonical identity. Phase
+7.6.4B-1B is the authoritative REPLAY amendment. Phase 7.6.4B-2 implements that
+amendment and is completed and committed; it creates no execution, selection,
+synthesis, scoring or replay runtime.

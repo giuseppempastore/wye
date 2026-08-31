@@ -20,6 +20,9 @@ Fase 7.6.3B — Evidence snapshot repository / builder / finalizer  COMPLETED + 
 Fase 7.6.4A-1 — Mapping state / canonical input design freeze     DESIGN FROZEN — READY FOR IMPLEMENTATION
 Fase 7.6.4A-1B — Mapping authority multiplicity amendment         AUTHORITY MULTIPLICITY AMENDMENT FROZEN
 Fase 7.6.4A-2 — Mapping state / canonical input runtime           COMPLETED + COMMITTED
+Fase 7.6.4B-1 — Execution / result persistence design freeze      DESIGN FROZEN — READY FOR 0021 IMPLEMENTATION
+Fase 7.6.4B-1B — REPLAY publication semantics amendment            REPLAY SEMANTICS AMENDMENT FROZEN
+Fase 7.6.4B-2 — Execution / result persistence migration          COMPLETED + COMMITTED
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
@@ -49,6 +52,8 @@ validation restano un task operativo separato.
   snapshot, target freeze, execution, result, trace e determinismo.
 - `WYE_MAPPING_EXECUTION_INPUT_FREEZE.md`: freeze 7.6.4A-1 di target identity,
   mapping state e canonical non-protocol execution input.
+- `WYE_EXECUTION_PERSISTENCE_FREEZE.md`: freeze 7.6.4B-1 di execution identity,
+  attempt, selection/result/trace roots, publication atomica e schema 0021.
 - `WYE_EVIDENCE_SELECTION.md`: contratto 7.2 di candidate evidence,
   eligibility, applicability, dependency, decisioni e selection digest.
 - `WYE_EVIDENCE_SYNTHESIS.md`: contratto 7.3 di evidence line, comparison
@@ -291,6 +296,7 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.6.4A-1 | Mapping state / canonical execution input design freeze | DESIGN FROZEN — READY FOR IMPLEMENTATION |
 | 7.6.4A-1B | Mapping authority multiplicity / unresolved observations | AUTHORITY MULTIPLICITY AMENDMENT FROZEN |
 | 7.6.4A-2 | Mapping state / canonical execution input runtime | COMPLETED + COMMITTED |
+| 7.6.4B-1 | Scientific execution / result persistence freeze | DESIGN FROZEN — READY FOR 0021 IMPLEMENTATION |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -373,7 +379,50 @@ deterministica fra `resolved`, `empty`, `partially_resolved` e
 `history_unavailable`. Non serve una migration. La 7.6.4A-2 implementa ora il
 runtime content-addressed di target `substance`/`ingredient`, mapping member con
 authority chain multiple, osservazioni, mapping manifest e canonical input. La
-Phase 7.6.4A è `COMPLETED + COMMITTED`; la 7.6.4B non è iniziata.
+Phase 7.6.4A è `COMPLETED + COMMITTED`; la 7.6.4B-1 congela soltanto il
+contratto documentale della futura 0021 e non implementa migration o runtime.
+
+## Phase 7.6.4B-1 execution and publication freeze
+
+`WYE_EXECUTION_PERSISTENCE_FREEZE.md` congela una sola identità semantica per
+la tupla protocollo, snapshot, input, mode, configurazione e comparison root,
+con tentativi operativi separati e append-only dopo la chiusura. La
+configurazione v1 contiene il contratto engine semantico e nessun parametro;
+il build concreto appartiene al tentativo.
+
+La `0021_scientific_evaluation_publication` crea execution, attempts, selection
+decisions, generic result/components, trace, atomic publication, replay
+verification e idempotency operativa, estendendo governance con FK concrete a
+execution e result. Query projection e replay reports estesi restano nella
+slice 0022. Il bundle canonico lega semantic execution, selection, result e
+trace; nessun projection digest è canonico.
+
+```text
+Phase 7.6.4B-1:
+DESIGN FROZEN — READY FOR PHASE 7.6.4B 0021 IMPLEMENTATION
+
+Phase 7.6.4B-1B:
+REPLAY SEMANTICS AMENDMENT FROZEN
+```
+
+Phase 7.6.4B-2 implements and validates the bounded migration without adding an
+execution engine. The repository head is now
+`0021_scientific_evaluation_publication`; the local `wye` database remains at
+`0017_ingredient_mapping_history`. Status before Git finalization:
+
+```text
+COMPLETED + COMMITTED
+```
+
+L'amendment 7.6.4B-1B mantiene l'identità globale content-addressed 0019 e
+definisce REPLAY come verifica di una pubblicazione storica. Un REPLAY concluso
+ha una verification immutabile `matched`/`mismatch`, non una nuova publication
+scientifica né nuovi result/trace/selection rows. NORMAL, REFRESH e
+COUNTERFACTUAL continuano invece a richiedere la pubblicazione canonica.
+
+Nessun execution runtime, selection, synthesis, replay runtime o scoring è
+implementato da questo amendment; la migration 0021 già presente nel delta deve
+essere corretta in un checkpoint successivo prima del commit.
 
 ## Phase 7.0 exit review
 

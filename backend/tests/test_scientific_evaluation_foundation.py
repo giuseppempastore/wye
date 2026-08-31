@@ -17,7 +17,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 REPOSITORY = BACKEND.parent
 REVISION = "0019_scientific_evaluation_foundation"
 PARENT_REVISION = "0018_scientific_batch_recovery"
-REPOSITORY_HEAD = "0020_scientific_evidence_snapshots"
+REPOSITORY_HEAD = "0021_scientific_evaluation_publication"
 FOUNDATION_TABLES = (
     "scientific_evaluation_artifacts",
     "scientific_evaluation_artifact_locations",

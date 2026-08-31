@@ -17,6 +17,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 REPOSITORY = BACKEND.parent
 REVISION = "0020_scientific_evidence_snapshots"
 PARENT_REVISION = "0019_scientific_evaluation_foundation"
+REPOSITORY_HEAD = "0021_scientific_evaluation_publication"
 SNAPSHOT_TABLES = (
     "scientific_evidence_snapshots",
     "scientific_evidence_snapshot_members",
@@ -332,7 +333,7 @@ class ScientificEvidenceSnapshotTests(unittest.TestCase):
         self.cursor = self.connection.cursor()
 
     def test_repository_head_schema_shape_and_bigint_keys(self):
-        self.assertEqual(_revision(self.database), REVISION)
+        self.assertEqual(_revision(self.database), REPOSITORY_HEAD)
         expected_columns = {
             "scientific_evidence_snapshots": {
                 "id", "snapshot_key", "snapshot_policy_key",
@@ -949,7 +950,7 @@ class ScientificEvidenceSnapshotLifecycleTests(unittest.TestCase):
     def test_fresh_chain_and_empty_downgrade(self):
         database = _create_database("empty_downgrade")
         try:
-            _alembic(database, "upgrade", "head")
+            _alembic(database, "upgrade", REVISION)
             self.assertEqual(_revision(database), REVISION)
             _alembic(database, "downgrade", PARENT_REVISION)
             self.assertEqual(_revision(database), PARENT_REVISION)
