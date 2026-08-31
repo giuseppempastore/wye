@@ -979,4 +979,74 @@ not commit or roll back. Counterfactual authorization remains a separately
 created governance fact and is never synthesized by this runtime. Scientific
 selection, synthesis, projection, scoring, product evaluation and worker
 recovery remain absent. Status: `COMPLETED + COMMITTED`. This closes the
-persistence/runtime foundation defined by Phase 7.6; Phase 7.7 is not started.
+persistence/runtime foundation defined by Phase 7.6; Phase 7.7 runtime is not
+started.
+
+## Phase 7.7.1A selection policy and runtime contract freeze
+
+The first scientifically coherent engine slice is deterministic evidence
+eligibility and selection:
+
+```text
+sealed evidence snapshot
++ published executable protocol
+-> one canonical decision per candidate
+-> canonical selection manifest
+```
+
+The entry-gate ambiguity is technically resolved in
+`WYE_SELECTION_POLICY_FREEZE.md`. `protocol_definition/1` embeds the closed
+`wye_scientific_evidence_selection_policy/1` object and therefore commits the
+policy, registries, mappings and evaluation plan under the protocol digest.
+Unknown schemas/operators/registries are fail-closed. Candidate decisions and
+the manifest bind the selection-policy sub-root and retain the existing 0021
+binary decision plus resolved/deferred model.
+
+Phase 7.7.1 is a pure non-published engine/harness. It creates no execution or
+dangling attempt and cannot fabricate result/trace payloads to satisfy 0021.
+The later synthesis/evaluation path consumes the same canonical selection
+models and supplies the real result and complete trace for atomic publication.
+
+The technical contract is frozen, but no externally reviewed policy instance
+or approved golden-case set exists. Phase 7.7.1B prepares candidate scientific
+values and authored oracles; independent approval is still required before a
+production selector is authorized.
+
+```text
+Phase 7.7.1A:
+TECHNICAL CONTRACT FROZEN
+```
+
+## Phase 7.7.1B candidate execution boundary
+
+The candidate `efsa_qps_evidence_selection/1.0.0-candidate.1` and its golden
+corpus do not change the selection-only execution boundary. They create no
+0021 execution, attempt, decision row, trace row or publication. The policy
+digest is stable candidate identity, not lifecycle approval.
+
+Until independent scientific and validation approval exists, no production
+scientific selector may execute this policy. A future technical conformance
+interpreter may exercise only synthetic fixtures outside scientific
+publication. No fake result/trace is permitted to force a selection-only run
+through the atomic publication model.
+
+```text
+Phase 7.7.1B:
+CANDIDATE POLICY FROZEN
+```
+
+## Phase 7.7.1C review-package boundary
+
+The external review package and golden-corpus manifest add governance and
+approval identity only. They do not change the selection-only harness boundary
+and do not authorize an execution, attempt, result, trace or publication. A
+production selector remains blocked until approval is recorded for the exact
+governed digests and the final publishable policy bytes are revalidated.
+
+```text
+Phase 7.7.1C:
+SCIENTIFIC REVIEW PACKAGE COMPLETED
+
+Phase 7.7.1:
+BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
+```

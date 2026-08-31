@@ -1,0 +1,660 @@
+{
+  "candidate_policy": {
+    "assessment_level": false,
+    "supported_member_kinds": [
+      "finding"
+    ]
+  },
+  "context_policy": {
+    "duration": "not_applicable",
+    "population_ontology": {
+      "canonical_keys": [
+        "not_applicable_qps_taxonomic_unit"
+      ],
+      "namespace": "wye_qps_population_context",
+      "raw_mappings": [
+        {
+          "canonical_key": "not_applicable_qps_taxonomic_unit",
+          "channel_key": "regulatory_status_and_qualification",
+          "disposition": "not_applicable",
+          "raw_value": null,
+          "review_reference": "phase_7_7_1b_review_matrix_population_qps"
+        }
+      ],
+      "version": "1-candidate.1"
+    },
+    "population_required": false,
+    "population_unknown_disposition": "deferred",
+    "route": "not_applicable"
+  },
+  "dependency_policy": {
+    "derived_disposition": "deferred",
+    "exact_reingestion": {
+      "content_digest_fields": [
+        "assessment_context",
+        "evidence_linked_substance_identity",
+        "finding_content",
+        "member_kind",
+        "status_as_of"
+      ],
+      "identity_fields": [
+        "assessment_source_record_key",
+        "dataset_key",
+        "external_release_key",
+        "finding_identity",
+        "member_kind",
+        "source_key"
+      ],
+      "representative_order": "run_key_unsigned_utf8"
+    },
+    "unknown_disposition": "contributing",
+    "vocabulary_version": "1"
+  },
+  "endpoint_ontology": {
+    "endpoint_keys": [
+      "qps_qualification",
+      "qps_recommendation_status"
+    ],
+    "namespace": "wye_qps_endpoint",
+    "raw_mappings": [
+      {
+        "canonical_key": "qps_qualification",
+        "channel_key": "regulatory_status_and_qualification",
+        "disposition": "allowed",
+        "evidence_type_key": "qps_list_entry",
+        "raw_value": "qps_qualification",
+        "review_reference": "phase_7_7_1b_review_matrix_endpoint_qps_qualification"
+      },
+      {
+        "canonical_key": "qps_recommendation_status",
+        "channel_key": "regulatory_status_and_qualification",
+        "disposition": "allowed",
+        "evidence_type_key": "qps_list_entry",
+        "raw_value": "qps_status",
+        "review_reference": "phase_7_7_1b_review_matrix_endpoint_qps_status"
+      }
+    ],
+    "required": true,
+    "unknown_disposition": "deferred",
+    "version": "1-candidate.1"
+  },
+  "evidence_vocabulary": {
+    "channel_mappings": [
+      {
+        "assessment_type": "efsa_qps_recommendation",
+        "canonical_key": "regulatory_status_and_qualification",
+        "dataset_key": "efsa_qps",
+        "disposition": "allowed",
+        "review_reference": "phase_7_7_1b_review_matrix_channel_qps",
+        "source_key": "efsa"
+      }
+    ],
+    "denied_mappings": [
+      {
+        "dataset_key": "openfoodtox_3",
+        "reason_code": "excluded_unsupported_evidence_channel",
+        "review_reference": "phase_7_7_1b_review_matrix_channel_openfoodtox_3",
+        "source_key": "openfoodtox"
+      }
+    ],
+    "evidence_type_mappings": [
+      {
+        "canonical_key": "qps_list_entry",
+        "channel_key": "regulatory_status_and_qualification",
+        "disposition": "allowed",
+        "raw_value": "efsa_qps_list",
+        "review_reference": "phase_7_7_1b_review_matrix_type_qps"
+      }
+    ],
+    "namespace": "wye_food_toxicology_evidence",
+    "version": "1-candidate.1"
+  },
+  "evaluation_plan": [
+    "candidate_shape",
+    "assessment_context",
+    "identity_resolved",
+    "provenance_complete",
+    "availability_as_of",
+    "scientific_date_cutoff",
+    "release_status",
+    "ingestion_run_status",
+    "representation_allowed",
+    "assessment_status",
+    "target_applicability",
+    "evidence_channel",
+    "evidence_type",
+    "reingestion_identity",
+    "dependency_disposition",
+    "endpoint_applicability",
+    "population_applicability",
+    "final_inclusion"
+  ],
+  "policy_key": "efsa_qps_evidence_selection",
+  "policy_version": "1.0.0-candidate.1",
+  "reason_registry": {
+    "food_tox_evidence_selection": {
+      "definitions": [
+        {
+          "code": "excluded_wrong_endpoint",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_wrong_population",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_wrong_target",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "included_applicable",
+          "compatible_outcome": "included/resolved/contributing"
+        },
+        {
+          "code": "included_applicable_unknown_optional_context",
+          "compatible_outcome": "included/resolved/contributing|context_only"
+        },
+        {
+          "code": "included_context_only_dependency_declared",
+          "compatible_outcome": "included/resolved/context_only"
+        }
+      ],
+      "version": "1"
+    },
+    "wye_selection_core": {
+      "definitions": [
+        {
+          "code": "deferred_availability_unknown",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_correction_lineage_unresolved",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_dependency_unresolved",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_endpoint_ontology_unresolved",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_evidence_channel_unmapped",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_evidence_type_unmapped",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_ingestion_incomplete",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_population_model_unresolved",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_release_not_validated",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_release_supersession_unresolved",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_scientific_date_unknown",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "deferred_scientific_review_required",
+          "compatible_outcome": "excluded/deferred/none"
+        },
+        {
+          "code": "excluded_dependent_redundant",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_exact_duplicate",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_ineligible_ingestion_run",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_ineligible_release_status",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_insufficient_provenance",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_missing_assessment_context",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_not_available_as_of",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_outside_evidence_cutoff",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_pending_review",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_reingested_representation",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_rejected",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_superseded",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_unresolved_identity",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_unsupported_candidate_kind",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_unsupported_evidence_channel",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_unsupported_evidence_type",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_unsupported_representation",
+          "compatible_outcome": "excluded/resolved/none"
+        },
+        {
+          "code": "excluded_withdrawn",
+          "compatible_outcome": "excluded/resolved/none"
+        }
+      ],
+      "version": "1"
+    }
+  },
+  "representation_policy": {
+    "allowed_representations": [
+      {
+        "acquisition_version": "zenodo-record-acquisition-1",
+        "config_checksum_algorithm": "sha256",
+        "config_checksum_value": "8ef910ea3478b3c4e561a2db489548e5e35f551db9d85228edc34a51b0369c5f",
+        "dataset_key": "efsa_qps",
+        "importer_name": "wye_scientific_ingestion",
+        "importer_version": "scientific_ingestion_service_v1",
+        "normalization_schema_version": "wye-scientific-record-1",
+        "parser_version": "efsa-qps-xlsx-parser-1",
+        "review_reference": "phase_7_7_1b_review_matrix_representation_qps",
+        "source_adapter_version": "efsa-qps-adapter-1",
+        "source_key": "efsa"
+      }
+    ],
+    "run_status_matrix": {
+      "cancelled": "excluded",
+      "failed": "excluded",
+      "pending": "deferred",
+      "running": "deferred",
+      "succeeded": "allowed"
+    }
+  },
+  "rule_registry": {
+    "definitions": [
+      {
+        "field_ref": "candidate.assessment_context",
+        "operator": "exists",
+        "operands": {
+          "required": true
+        },
+        "outcome_mappings": {
+          "missing": "excluded/resolved/none:wye_selection_core/1/excluded_missing_assessment_context",
+          "present": "continue"
+        },
+        "precedence_ordinal": 110,
+        "rule_id": "assessment_context",
+        "stage_ordinal": 10
+      },
+      {
+        "field_ref": "candidate.status_as_of",
+        "operator": "in",
+        "operands": {
+          "allowed_values": [
+            "published"
+          ]
+        },
+        "outcome_mappings": {
+          "pending_review": "excluded/resolved/none:wye_selection_core/1/excluded_pending_review",
+          "published": "continue",
+          "rejected": "excluded/resolved/none:wye_selection_core/1/excluded_rejected",
+          "superseded": "excluded/resolved/none:wye_selection_core/1/excluded_superseded",
+          "withdrawn": "excluded/resolved/none:wye_selection_core/1/excluded_withdrawn"
+        },
+        "precedence_ordinal": 700,
+        "rule_id": "assessment_status",
+        "stage_ordinal": 70
+      },
+      {
+        "field_ref": "candidate.release.acquired_at",
+        "operator": "date_lte",
+        "operands": {
+          "also_required_field": "candidate.run.completed_at",
+          "upper_bound_field": "context.as_of"
+        },
+        "outcome_mappings": {
+          "after_as_of": "excluded/resolved/none:wye_selection_core/1/excluded_not_available_as_of",
+          "missing": "excluded/deferred/none:wye_selection_core/1/deferred_availability_unknown",
+          "on_or_before_as_of": "continue"
+        },
+        "precedence_ordinal": 300,
+        "rule_id": "availability_as_of",
+        "stage_ordinal": 30
+      },
+      {
+        "field_ref": "candidate.member_kind",
+        "operator": "in",
+        "operands": {
+          "allowed_values": [
+            "finding"
+          ]
+        },
+        "outcome_mappings": {
+          "allowed": "continue",
+          "unsupported": "excluded/resolved/none:wye_selection_core/1/excluded_unsupported_candidate_kind"
+        },
+        "precedence_ordinal": 100,
+        "rule_id": "candidate_shape",
+        "stage_ordinal": 10
+      },
+      {
+        "field_ref": "derived.dependency_state",
+        "operator": "in",
+        "operands": {
+          "disposition_policy_path": "/dependency_policy"
+        },
+        "outcome_mappings": {
+          "derived": "excluded/deferred/none:wye_selection_core/1/deferred_dependency_unresolved",
+          "duplicate": "excluded/resolved/none:wye_selection_core/1/excluded_exact_duplicate",
+          "exact_reingestion_representative": "continue",
+          "independent": "continue",
+          "unknown": "continue_as_contributing"
+        },
+        "precedence_ordinal": 1010,
+        "rule_id": "dependency_disposition",
+        "stage_ordinal": 100
+      },
+      {
+        "field_ref": "candidate.finding.endpoint",
+        "operator": "canonical_equals",
+        "operands": {
+          "mapping_policy_path": "/endpoint_ontology/raw_mappings",
+          "required": true
+        },
+        "outcome_mappings": {
+          "allowed": "continue",
+          "denied": "excluded/resolved/none:food_tox_evidence_selection/1/excluded_wrong_endpoint",
+          "missing_or_unmapped": "excluded/deferred/none:wye_selection_core/1/deferred_endpoint_ontology_unresolved"
+        },
+        "precedence_ordinal": 1100,
+        "rule_id": "endpoint_applicability",
+        "stage_ordinal": 110
+      },
+      {
+        "field_ref": "candidate.assessment.assessment_type",
+        "operator": "canonical_equals",
+        "operands": {
+          "mapping_policy_path": "/evidence_vocabulary/channel_mappings",
+          "source_policy_path": "/source_release_policy/source_dataset_entries"
+        },
+        "outcome_mappings": {
+          "allowed": "continue",
+          "denied": "excluded/resolved/none:wye_selection_core/1/excluded_unsupported_evidence_channel",
+          "unmapped": "excluded/deferred/none:wye_selection_core/1/deferred_evidence_channel_unmapped"
+        },
+        "precedence_ordinal": 900,
+        "rule_id": "evidence_channel",
+        "stage_ordinal": 90
+      },
+      {
+        "field_ref": "candidate.finding.evidence_type",
+        "operator": "canonical_equals",
+        "operands": {
+          "mapping_policy_path": "/evidence_vocabulary/evidence_type_mappings",
+          "required": true
+        },
+        "outcome_mappings": {
+          "allowed": "continue",
+          "denied": "excluded/resolved/none:wye_selection_core/1/excluded_unsupported_evidence_type",
+          "missing_or_unmapped": "excluded/deferred/none:wye_selection_core/1/deferred_evidence_type_unmapped"
+        },
+        "precedence_ordinal": 910,
+        "rule_id": "evidence_type",
+        "stage_ordinal": 90
+      },
+      {
+        "field_ref": "candidate.identity",
+        "operator": "exists",
+        "operands": {
+          "required": true
+        },
+        "outcome_mappings": {
+          "missing": "excluded/resolved/none:wye_selection_core/1/excluded_unresolved_identity",
+          "present": "continue"
+        },
+        "precedence_ordinal": 200,
+        "rule_id": "identity_resolved",
+        "stage_ordinal": 20
+      },
+      {
+        "field_ref": "candidate.run.status",
+        "operator": "in",
+        "operands": {
+          "matrix_policy_path": "/representation_policy/run_status_matrix"
+        },
+        "outcome_mappings": {
+          "cancelled": "excluded/resolved/none:wye_selection_core/1/excluded_ineligible_ingestion_run",
+          "failed": "excluded/resolved/none:wye_selection_core/1/excluded_ineligible_ingestion_run",
+          "pending": "excluded/deferred/none:wye_selection_core/1/deferred_ingestion_incomplete",
+          "running": "excluded/deferred/none:wye_selection_core/1/deferred_ingestion_incomplete",
+          "succeeded": "continue"
+        },
+        "precedence_ordinal": 600,
+        "rule_id": "ingestion_run_status",
+        "stage_ordinal": 60
+      },
+      {
+        "field_ref": "candidate.finding.population_context",
+        "operator": "canonical_equals",
+        "operands": {
+          "mapping_policy_path": "/context_policy/population_ontology/raw_mappings",
+          "required": false
+        },
+        "outcome_mappings": {
+          "allowed_or_not_applicable": "continue",
+          "denied": "excluded/resolved/none:food_tox_evidence_selection/1/excluded_wrong_population",
+          "unmapped": "excluded/deferred/none:wye_selection_core/1/deferred_population_model_unresolved"
+        },
+        "precedence_ordinal": 1200,
+        "rule_id": "population_applicability",
+        "stage_ordinal": 120
+      },
+      {
+        "field_ref": "candidate.provenance",
+        "operator": "exists",
+        "operands": {
+          "required_roots": [
+            "assessment",
+            "dataset",
+            "finding",
+            "release",
+            "run",
+            "source"
+          ]
+        },
+        "outcome_mappings": {
+          "complete": "continue",
+          "incomplete": "excluded/resolved/none:wye_selection_core/1/excluded_insufficient_provenance"
+        },
+        "precedence_ordinal": 210,
+        "rule_id": "provenance_complete",
+        "stage_ordinal": 20
+      },
+      {
+        "field_ref": "derived.reingestion_identity",
+        "operator": "equals",
+        "operands": {
+          "policy_path": "/dependency_policy/exact_reingestion"
+        },
+        "outcome_mappings": {
+          "divergent_content": "continue_as_distinct",
+          "non_representative_equivalent": "excluded/resolved/none:wye_selection_core/1/excluded_reingested_representation",
+          "representative_or_unique": "continue"
+        },
+        "precedence_ordinal": 1000,
+        "rule_id": "reingestion_identity",
+        "stage_ordinal": 100
+      },
+      {
+        "field_ref": "candidate.release.status",
+        "operator": "in",
+        "operands": {
+          "matrix_policy_path": "/source_release_policy/release_status_matrix"
+        },
+        "outcome_mappings": {
+          "acquired": "excluded/deferred/none:wye_selection_core/1/deferred_release_not_validated",
+          "declared": "excluded/deferred/none:wye_selection_core/1/deferred_release_not_validated",
+          "rejected": "excluded/resolved/none:wye_selection_core/1/excluded_ineligible_release_status",
+          "superseded": "excluded/deferred/none:wye_selection_core/1/deferred_release_supersession_unresolved",
+          "validated": "continue"
+        },
+        "precedence_ordinal": 500,
+        "rule_id": "release_status",
+        "stage_ordinal": 50
+      },
+      {
+        "field_ref": "candidate.run.representation_tuple",
+        "operator": "in",
+        "operands": {
+          "allowlist_policy_path": "/representation_policy/allowed_representations"
+        },
+        "outcome_mappings": {
+          "allowed": "continue",
+          "unlisted": "excluded/resolved/none:wye_selection_core/1/excluded_unsupported_representation"
+        },
+        "precedence_ordinal": 610,
+        "rule_id": "representation_allowed",
+        "stage_ordinal": 60
+      },
+      {
+        "field_ref": "candidate.assessment.published_at",
+        "operator": "date_lte",
+        "operands": {
+          "boundary": "inclusive",
+          "fallback_field": "candidate.release.released_at",
+          "timezone": "UTC",
+          "upper_bound_field": "context.evidence_cutoff"
+        },
+        "outcome_mappings": {
+          "after_cutoff": "excluded/resolved/none:wye_selection_core/1/excluded_outside_evidence_cutoff",
+          "missing_all_sources": "excluded/deferred/none:wye_selection_core/1/deferred_scientific_date_unknown",
+          "on_or_before_cutoff": "continue"
+        },
+        "precedence_ordinal": 400,
+        "rule_id": "scientific_date_cutoff",
+        "stage_ordinal": 40
+      },
+      {
+        "field_ref": "candidate.target_identity_projection",
+        "operator": "canonical_equals",
+        "operands": {
+          "expected_field": "context.target_artifact_digest",
+          "query_scope_field": "context.snapshot_query_target_artifact_digest"
+        },
+        "outcome_mappings": {
+          "match": "continue",
+          "mismatch": "excluded/resolved/none:food_tox_evidence_selection/1/excluded_wrong_target",
+          "root_mismatch": "input_integrity_error"
+        },
+        "precedence_ordinal": 800,
+        "rule_id": "target_applicability",
+        "stage_ordinal": 80
+      },
+      {
+        "field_ref": "candidate.member_kind",
+        "operator": "in",
+        "operands": {
+          "required_prior_gate_state": "all_reachable_gates_passed"
+        },
+        "outcome_mappings": {
+          "passed": "included/resolved/contributing:food_tox_evidence_selection/1/included_applicable"
+        },
+        "precedence_ordinal": 1400,
+        "rule_id": "final_inclusion",
+        "stage_ordinal": 140
+      }
+    ],
+    "namespace": "wye_selection_rules",
+    "version": "1"
+  },
+  "schema_id": "wye_scientific_evidence_selection_policy",
+  "schema_version": "1",
+  "source_release_policy": {
+    "release_status_matrix": {
+      "acquired": "deferred",
+      "declared": "deferred",
+      "rejected": "excluded",
+      "superseded": "deferred",
+      "validated": "allowed"
+    },
+    "source_dataset_entries": [
+      {
+        "dataset_key": "efsa_qps",
+        "disposition": "allowed",
+        "review_reference": "phase_7_7_1b_review_matrix_source_qps",
+        "source_key": "efsa"
+      },
+      {
+        "dataset_key": "openfoodtox_3",
+        "disposition": "denied",
+        "review_reference": "phase_7_7_1b_review_matrix_source_openfoodtox_3",
+        "source_key": "openfoodtox"
+      }
+    ],
+    "unmapped_disposition": "deferred"
+  },
+  "target_policy": {
+    "identity_projection_fields": [
+      "normalized_name",
+      "preferred_name",
+      "scientific_name",
+      "status",
+      "substance_type"
+    ],
+    "query_scope_binding": "target_artifact_digest",
+    "target_type": "substance"
+  },
+  "temporal_policy": {
+    "availability_fields": [
+      "release_acquired_at",
+      "run_completed_at"
+    ],
+    "cutoff_boundary": "inclusive",
+    "cutoff_timezone": "UTC",
+    "scientific_date_source_order": [
+      "assessment_published_date",
+      "release_released_at"
+    ]
+  }
+}

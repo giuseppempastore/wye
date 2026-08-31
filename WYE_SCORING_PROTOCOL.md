@@ -515,3 +515,62 @@ Phase 7.6.1 freezes those technical requirements in
 `WYE_SCORING_SCHEMA_FREEZE.md` and authorizes only the proposed foundation
 migration checkpoint. This does not relax the scientific pre-implementation
 gate above and does not authorize an evaluation engine.
+
+## Phase 7.7.1A executable selection-policy specialization
+
+`WYE_SELECTION_POLICY_FREEZE.md` freezes the technical machine contract for
+evidence selection. A published `protocol_definition/1` embeds one closed
+`wye_scientific_evidence_selection_policy/1` object. The protocol digest commits
+its reason/rule registries, exact mappings, representation allowlist,
+evaluation order and fail-closed behavior. No Python-only default is a
+scientific rule.
+
+This specialization does not supply a scientific policy instance. Permitted
+evidence channels/types, source/dataset and representation entries, endpoint
+and population mappings, unknown/dependency dispositions and expected golden
+decisions still require independent domain review. Phase 7.7.1B prepares a
+candidate instance and oracle corpus; until independent reviewers approve those
+values for the exact policy digest, the protocol is not selection-executable
+and production selector implementation remains unauthorized.
+
+```text
+Phase 7.7.1A:
+TECHNICAL CONTRACT FROZEN
+```
+
+## Phase 7.7.1B candidate protocol instance
+
+The first candidate policy is
+`efsa_qps_evidence_selection/1.0.0-candidate.1`, digest
+`d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615`.
+It is a narrow substance/finding/QPS selection policy, not a generic chemical
+toxicology protocol. It preserves QPS qualifications, makes no product-safety
+claim and does not rank sources.
+
+The machine bytes and 28 authored golden cases are technically frozen, but no
+independent scientific reviewer, validation owner or release approver has
+approved them. The policy remains a draft candidate and MUST NOT be embedded
+in a published protocol version. Source references prepare review; they do not
+authorize WYE's endpoint, population or dependency choices.
+
+```text
+Phase 7.7.1B:
+CANDIDATE POLICY FROZEN
+```
+
+## Phase 7.7.1C approval package
+
+`WYE_SELECTION_POLICY_SCIENTIFIC_REVIEW_PACKAGE.md` is the controlled review
+surface for the candidate policy and its 28 golden cases. Approval is bound to
+the exact candidate and corpus digests and requires separate scientific,
+validation and release roles. Any amendment changes the governed subject and
+requires regeneration and re-review; the package itself grants no lifecycle
+transition and cannot publish a protocol.
+
+```text
+Phase 7.7.1C:
+SCIENTIFIC REVIEW PACKAGE COMPLETED
+
+Phase 7.7.1:
+BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
+```

@@ -981,6 +981,92 @@ Classification does not authorize implementation.
 | Evidence agreement/conflict resolution | BLOCKED BY SCIENTIFIC REVIEW | Phase 7.3 defines states and trace; concrete criteria remain unvalidated |
 | Endpoint-specific conclusions/hazard profile | BLOCKED BY SCIENTIFIC REVIEW | Phase 7.3 defines the envelope; scientific rules remain unvalidated |
 
+## Phase 7.7.1A machine-contract freeze
+
+`WYE_SELECTION_POLICY_FREEZE.md` is now authoritative for the typed embedded
+selection-policy schema, executable-protocol validation, actual assessment,
+release and run status matrices, exact representation allowlists, endpoint and
+population mapping contracts, target restriction, reingestion identity,
+dependency boundary, closed reason/rule registries, canonical decision and
+manifest payloads, and structured trace events.
+
+The selection-only integration decision is also frozen: Phase 7.7.1 is a pure
+engine and validation harness. It creates no 0021 execution or publication and
+uses no fake result or trace. A later synthesis/evaluation slice supplies the
+real non-numeric result and complete trace for atomic publication.
+
+No reviewed machine-executable scientific policy instance currently exists.
+Phase 7.7.1B prepares a concrete candidate source/dataset and representation
+allowlist, channel/type and endpoint/population mappings, dependency disposition
+and golden expected decisions. Those values remain the authority of an
+independent scientific review, not software architecture or AI assistance.
+
+```text
+Phase 7.7.1A:
+TECHNICAL CONTRACT FROZEN
+
+Next:
+Phase 7.7.1B — Initial Selection Protocol Scientific Review & Golden Cases
+```
+
+## Phase 7.7.1B candidate policy and golden oracle
+
+Phase 7.7.1B defines the first concrete candidate instance without claiming
+scientific approval:
+
+```text
+policy: efsa_qps_evidence_selection / 1.0.0-candidate.1
+schema: wye_scientific_evidence_selection_policy / 1
+selection_policy_digest:
+  d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615
+status: CANDIDATE — AWAITING EXTERNAL SCIENTIFIC APPROVAL
+```
+
+The candidate is intentionally limited to finding-level EFSA QPS list evidence
+for substance targets. It does not admit OpenFoodTox 3: the current v1 evidence
+member does not expose governed route/duration fields and the real adapter
+combines species, sex and route in free `population_context`. That fail-closed
+decision is not a provider-quality judgement and establishes no precedence.
+
+Exact QPS channel/type/endpoint/population mappings, the representation tuple,
+date precedence, dependency disposition and claims are frozen in
+`WYE_SELECTION_POLICY_FREEZE.md` and the canonical candidate JSON. Their
+scientific-policy values remain review-gated. `WYE_SELECTION_GOLDEN_CASES.md`
+authors 28 independent oracle cases, each classified as `TECHNICAL` or
+`SCIENTIFIC-REVIEW-REQUIRED`; none is self-labelled approved.
+
+Production selector publication and scientific selector implementation remain
+blocked until the exact policy digest and mandatory scientific oracles receive
+independent reviewer, validation-owner and release-approver sign-off. A later
+technical conformance interpreter may use synthetic policies only in a
+non-production harness and may not create 0021 scientific publications.
+
+```text
+Phase 7.7.1B:
+CANDIDATE POLICY FROZEN
+```
+
+## Phase 7.7.1C external scientific review gate
+
+The candidate is now accompanied by
+`WYE_SELECTION_POLICY_SCIENTIFIC_REVIEW_PACKAGE.md` and the digest-bound
+`WYE_SELECTION_GOLDEN_CORPUS_MANIFEST.json`. The package classifies every
+candidate decision as structural, source-derived, scientific-review-required
+or fail-closed; it supplies dedicated review cards and a case-by-case approval
+matrix for all 28 golden cases. It records no approval itself.
+
+Production selection remains unauthorized until the exact candidate policy
+and golden corpus receive independent scientific review, validation-owner
+sign-off and release approval under the documented change-control rule.
+
+```text
+Phase 7.7.1C:
+SCIENTIFIC REVIEW PACKAGE COMPLETED
+
+Phase 7.7.1:
+BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
+```
+
 ## Phase 7.2 exit criteria
 
 - [x] Evidence-object taxonomy defined.

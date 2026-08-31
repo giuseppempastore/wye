@@ -447,7 +447,35 @@ score numerici.
 
 Con questa foundation, tutti i deliverable di persistenza e orchestrazione
 previsti dalla Phase 7.6 sono disponibili. `PHASE 7.6 COMPLETED`; gli algoritmi
-scientifici restano nel perimetro successivo e la Phase 7.7 non è iniziata.
+scientifici restano nel perimetro successivo e il runtime Phase 7.7 non è
+iniziato.
+
+## Phase 7.7.1A deterministic selection-policy freeze
+
+Il primo slice scientifico corretto resta la selezione deterministica dei
+candidati di uno snapshot sealed. `WYE_SELECTION_POLICY_FREEZE.md` congela il
+contratto tipizzato `wye_scientific_evidence_selection_policy/1`, embedded in
+`protocol_definition/1`: executability fail-closed, candidate/status/time/run e
+representation gates, mapping esatti per vocabulary/endpoint/context, reason e
+rule registry chiusi, precedence, decision/manifest/trace canonici.
+
+Il selector 7.7.1 è congelato come pure engine/validation harness: non crea
+execution o publication 0021 e non inventa result/trace. I valori scientifici
+concreti — allowlist, mapping, disposition per unknown/dependency e golden
+expected decisions — non sono stati inventati dal freeze tecnico. Il checkpoint
+7.7.1B prepara una policy candidata; l'approvazione resta un gate scientifico
+esterno e indipendente.
+
+```text
+Phase 7.7.1A:
+TECHNICAL CONTRACT FROZEN
+
+Next:
+Phase 7.7.1B — Initial Selection Protocol Scientific Review & Golden Cases
+```
+
+Nessun runtime Phase 7.7, policy scientifica, formula, peso, threshold o score
+numerico è stato introdotto da questo freeze.
 
 ## Phase 7.0 exit review
 
@@ -477,4 +505,53 @@ Conclusione del gate:
 architecture defined and frozen
 scientific validation not yet completed
 runtime implementation not authorised by Phase 7.0.1
+```
+
+## Phase 7.7.1B initial selection policy candidate
+
+Il checkpoint 7.7.1B materializza una prima istanza candidata, senza
+auto-approvazione scientifica:
+
+```text
+policy: efsa_qps_evidence_selection / 1.0.0-candidate.1
+selection_policy_digest:
+  d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615
+scope: substance + finding + EFSA QPS only
+status: CANDIDATE — AWAITING EXTERNAL SCIENTIFIC APPROVAL
+```
+
+La policy nega OpenFoodTox 3 in questa istanza perché endpoint, route,
+duration e population non sono ancora normalizzati in modo governato; non è
+un giudizio di qualità o una precedence fra provider. Il corpus
+`WYE_SELECTION_GOLDEN_CASES.md` contiene 28 oracle author-written, distinti fra
+meccanica `TECHNICAL` e decisioni `SCIENTIFIC-REVIEW-REQUIRED`. Nessun caso è
+marcato `SCIENTIFIC-APPROVED`.
+
+Mancano reviewer scientifico indipendente, validation-owner sign-off e release
+approval sul digest esatto. Il selector di produzione resta quindi bloccato;
+un eventuale interpreter tecnico successivo potrà usare soltanto policy
+sintetiche in harness non produttivo, senza publication 0021.
+
+```text
+Phase 7.7.1B:
+CANDIDATE POLICY FROZEN
+```
+
+## Phase 7.7.1C scientific review package
+
+Il checkpoint 7.7.1C organizza il gate esterno senza auto-approvare la policy.
+`WYE_SELECTION_POLICY_SCIENTIFIC_REVIEW_PACKAGE.md` contiene la matrice
+esaustiva A/B/C/D, le review card, la source-evidence table, la matrice dei 28
+golden case, i ruoli e il record di approvazione vincolato ai digest esatti.
+`WYE_SELECTION_GOLDEN_CORPUS_MANIFEST.json` identifica il corpus sottoposto a
+review. Policy e corpus restano candidati; nessun protocollo è pubblicabile
+finché scientific reviewer, validation owner e release approver non completano
+il gate documentato.
+
+```text
+Phase 7.7.1C:
+SCIENTIFIC REVIEW PACKAGE COMPLETED
+
+Phase 7.7.1:
+BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 ```

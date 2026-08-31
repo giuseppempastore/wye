@@ -458,8 +458,76 @@ pubblica atomicamente output canonici già calcolati dal caller e persiste la
 verifica REPLAY. Stato: `COMPLETED + COMMITTED`.
 
 La foundation di persistenza/orchestrazione prevista dalla Phase 7.6 è quindi
-completa: `PHASE 7.6 COMPLETED`. La Phase 7.7 non è iniziata.
+completa: `PHASE 7.6 COMPLETED`. Il runtime Phase 7.7 non è iniziato.
 
 Restano non implementati l'algoritmo di evidence selection, synthesis, scoring,
 worker/recovery, replay scientifico e product target. Nessuna formula, peso,
 threshold o score numerico è stato introdotto.
+
+La Phase 7.7.1A congela in `WYE_SELECTION_POLICY_FREEZE.md` il contratto
+tecnico machine-executable per la selezione: policy embedded nel protocollo,
+validation fail-closed, matrici sugli stati realmente presenti, confini
+temporali e di provenance, exact mapping per vocabulary/endpoint/context,
+reingestion/dependency boundary, registry reason/rule, precedence e payload
+canonici di decision, manifest e trace.
+
+Il confine selection-only è un pure engine/validation harness: nessuna execution
+o publication 0021 viene creata e non sono ammessi result/trace fittizi. Il
+freeze 7.7.1A non includeva un'istanza scientificamente approvata; 7.7.1B
+prepara la policy candidata e i golden expected decisions descritti sotto, ma
+non sostituisce la review indipendente.
+
+```text
+Phase 7.7.1A:
+TECHNICAL CONTRACT FROZEN
+
+Next:
+Phase 7.7.1B — Initial Selection Protocol Scientific Review & Golden Cases
+```
+
+Il freeze è solo documentale: nessun runtime, test, migration, scoring o replay
+scientifico è stato implementato.
+
+La Phase 7.7.1B aggiunge la policy candidata canonica
+`efsa_qps_evidence_selection/1.0.0-candidate.1` e 28 golden case scritti come
+oracle indipendenti dall'implementazione. Il perimetro è volutamente limitato a
+substance/finding/EFSA QPS; OpenFoodTox 3 resta fail-closed finché endpoint e
+contesto non hanno mapping scientifici governati.
+
+Il digest candidato è
+`d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615`.
+Non esiste nel repository un'approvazione nominale di scientific reviewer,
+validation owner e release approver. Nessun caso scientifico è quindi
+auto-approvato e nessun protocollo viene pubblicato.
+
+```text
+Phase 7.7.1B:
+CANDIDATE POLICY FROZEN
+
+Next mandatory gate:
+independent scientific review + validation-owner approval of the exact policy
+digest and mandatory golden oracles
+```
+
+Non sono stati creati selector runtime, test eseguibili, migration, synthesis o
+scoring. Legacy scoring e database locale restano invariati.
+
+La Phase 7.7.1C prepara il pacchetto di review esterna in
+`WYE_SELECTION_POLICY_SCIENTIFIC_REVIEW_PACKAGE.md`. La review è vincolata al
+digest candidato
+`d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615`
+e al corpus di 28 golden case identificato da
+`WYE_SELECTION_GOLDEN_CORPUS_MANIFEST.json`. La completezza tecnica del
+pacchetto non costituisce approvazione scientifica o autorizzazione alla
+pubblicazione.
+
+```text
+Phase 7.7.1C:
+SCIENTIFIC REVIEW PACKAGE COMPLETED
+
+Phase 7.7.1:
+BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
+
+Next mandatory gate:
+external scientific review + validation-owner sign-off + release approval
+```
