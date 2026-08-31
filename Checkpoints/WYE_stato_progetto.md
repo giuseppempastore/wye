@@ -45,6 +45,11 @@ Fase 7.6.4B-1  DESIGN FROZEN
 Fase 7.6.4B-1B REPLAY SEMANTICS AMENDMENT FROZEN
 Fase 7.6.4B-2  COMPLETED + COMMITTED
 Fase 7.6.4C    COMPLETED + COMMITTED
+Fase 7.7.1A   TECHNICAL CONTRACT FROZEN
+Fase 7.7.1B   CANDIDATE POLICY FROZEN
+Fase 7.7.1C   SCIENTIFIC REVIEW PACKAGE COMPLETED
+Fase 7.7.2    COMPLETED + COMMITTED
+Fase 7.7.3    HANDOFF READY — HUMAN REVIEW REQUIRED
 ```
 
 ## Capacità consolidate
@@ -544,4 +549,25 @@ APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 
 Next:
 obtain a governed external scientific-review record for the frozen package
+```
+
+La Phase 7.7.3 aggiunge
+`WYE_SELECTION_POLICY_EXTERNAL_REVIEW_HANDOFF.md`, un unico punto di ingresso
+human-facing per il revisore esterno. Il documento identifica candidate e
+corpus tramite i digest congelati, espone scope e fuori-scope, presenta le
+undici Category C senza modificarne identità o ordine, spiega la review dei 28
+golden case e include una dichiarazione compilabile. Rinvia al review package
+e agli artifact canonici per il dettaglio, senza copiarne una nuova fonte
+semantica.
+
+La review umana non è ancora avvenuta. Il form non è
+`WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json`, non sblocca il gate e non
+pubblica o promuove il candidate.
+
+```text
+Phase 7.7.3:
+HANDOFF READY — HUMAN REVIEW REQUIRED
+
+Current gate:
+EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 ```

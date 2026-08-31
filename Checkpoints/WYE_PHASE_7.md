@@ -24,6 +24,11 @@ Fase 7.6.4B-1 — Execution / result persistence design freeze      DESIGN FROZE
 Fase 7.6.4B-1B — REPLAY publication semantics amendment            REPLAY SEMANTICS AMENDMENT FROZEN
 Fase 7.6.4B-2 — Execution / result persistence migration          COMPLETED + COMMITTED
 Fase 7.6.4C — Scientific evaluation execution runtime              COMPLETED + COMMITTED
+Fase 7.7.1A — Deterministic selection policy technical freeze      TECHNICAL CONTRACT FROZEN
+Fase 7.7.1B — Initial selection policy candidate                   CANDIDATE POLICY FROZEN
+Fase 7.7.1C — Scientific review package                            SCIENTIFIC REVIEW PACKAGE COMPLETED
+Fase 7.7.2 — External scientific approval gate                     COMPLETED + COMMITTED
+Fase 7.7.3 — External scientific review handoff                    HANDOFF READY — HUMAN REVIEW REQUIRED
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
@@ -57,6 +62,9 @@ validation restano un task operativo separato.
   attempt, selection/result/trace roots, publication atomica e schema 0021.
 - `WYE_EVIDENCE_SELECTION.md`: contratto 7.2 di candidate evidence,
   eligibility, applicability, dependency, decisioni e selection digest.
+- `WYE_SELECTION_POLICY_EXTERNAL_REVIEW_HANDOFF.md`: punto di ingresso
+  human-facing per la review scientifica esterna del candidate 7.7.1, con
+  scope, checklist, istruzioni sul golden corpus e dichiarazione compilabile.
 - `WYE_EVIDENCE_SYNTHESIS.md`: contratto 7.3 di evidence line, comparison
   group, endpoint synthesis e substance hazard profile multidimensionale.
 - `WYE_INGREDIENT_PROJECTION.md`: contratto 7.4 di mapping snapshot,
@@ -570,4 +578,25 @@ reali `0`. Il candidato resta invariato e bloccato.
 ```text
 Phase 7.7.2:
 APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```
+
+## Phase 7.7.3 external scientific review handoff
+
+`WYE_SELECTION_POLICY_EXTERNAL_REVIEW_HANDOFF.md` è il punto di ingresso
+neutrale e non tecnico per il revisore scientifico esterno. Rinvia agli
+artifact congelati invece di duplicarne la semantica, presenta le undici
+Category C nello stesso ordine canonico, distingue i 18 golden case tecnici dai
+10 scientific-review-required e fornisce una dichiarazione human-fillable.
+
+Il documento non costituisce review, non inventa un reviewer e non crea
+`WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json`. Candidate, corpus e manifest
+restano invariati; approvazioni esterne reali `0`, publication e selector
+runtime restano bloccati.
+
+```text
+Phase 7.7.3:
+HANDOFF READY — HUMAN REVIEW REQUIRED
+
+Gate:
+EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 ```
