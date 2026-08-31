@@ -4,7 +4,7 @@ import sys
 import threading
 import unittest
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import psycopg2
@@ -14,6 +14,10 @@ from app.services.ingredient_substance_mapping import (
     IngredientSubstanceMappingError,
     IngredientSubstanceMappingService,
 )
+
+
+def utc_today():
+    return datetime.now(timezone.utc).date()
 
 
 def seed_pair(active=True):
@@ -65,14 +69,14 @@ class IngredientSubstanceMappingHistoryTests(unittest.TestCase):
         self.assertIsNone(result["materialization"]); self.assertEqual(self.service.current_mappings(ingredient),())
         ingredient,inactive=seed_pair(active=False); proposal=self.proposal(ingredient,inactive)
         with self.assertRaisesRegex(IngredientSubstanceMappingError,"active substance"):
-            self.service.review_proposal(proposal["id"],"accept","reviewer:test","approve",effective_from=date.today(),materialized_by="worker")
+            self.service.review_proposal(proposal["id"],"accept","reviewer:test","approve",effective_from=utc_today(),materialized_by="worker")
 
     def test_release_run_coherence_is_enforced(self):
         ingredient,substance=seed_pair(); _,release_a,release_b,run_id=seed_context()
         with self.assertRaisesRegex(IngredientSubstanceMappingError,"another release"):
             self.proposal(ingredient,substance,mapping_method="dataset",release_id=release_b,run_id=run_id)
         proposal=self.proposal(ingredient,substance,mapping_method="dataset",release_id=release_a,run_id=run_id)
-        accepted=self.service.review_proposal(proposal["id"],"accept","reviewer","source verified",effective_from=date.today(),materialized_by="worker")
+        accepted=self.service.review_proposal(proposal["id"],"accept","reviewer","source verified",effective_from=utc_today(),materialized_by="worker")
         self.assertIsNotNone(accepted["materialization"])
 
     def test_close_then_historical_reacceptance(self):
@@ -91,7 +95,7 @@ class IngredientSubstanceMappingHistoryTests(unittest.TestCase):
         ingredient,x=seed_pair(); other_ingredient,y=seed_pair()
         for ing,sub,relationship in ((ingredient,x,"represents"),(ingredient,y,"contains"),(other_ingredient,x,"contains"),(ingredient,x,"equivalent_to")):
             proposal=self.proposal(ing,sub,relationship_type=relationship)
-            self.service.review_proposal(proposal["id"],"accept","r","approved",effective_from=date.today(),materialized_by="m")
+            self.service.review_proposal(proposal["id"],"accept","r","approved",effective_from=utc_today(),materialized_by="m")
         self.assertEqual(len(self.service.current_mappings(ingredient)),3)
 
     def test_proposal_key_idempotency_and_conflict(self):
@@ -107,7 +111,7 @@ class IngredientSubstanceMappingHistoryTests(unittest.TestCase):
         barrier=threading.Barrier(2); results=[]; errors=[]
         def worker(proposal):
             try:
-                barrier.wait(); results.append(IngredientSubstanceMappingService().review_proposal(proposal["id"],"accept","r","approved",effective_from=date.today(),materialized_by="m"))
+                barrier.wait(); results.append(IngredientSubstanceMappingService().review_proposal(proposal["id"],"accept","r","approved",effective_from=utc_today(),materialized_by="m"))
             except Exception as exc: errors.append(exc)
         threads=[threading.Thread(target=worker,args=(proposal,)) for proposal in proposals]
         for thread in threads: thread.start()
@@ -119,7 +123,7 @@ class IngredientSubstanceMappingHistoryTests(unittest.TestCase):
         ingredient,substance=seed_pair(); proposal=self.proposal(ingredient,substance); barrier=threading.Barrier(2); outcomes=[]
         def worker(decision):
             try:
-                barrier.wait(); kwargs={"effective_from":date.today(),"materialized_by":"m"} if decision=="accept" else {}
+                barrier.wait(); kwargs={"effective_from":utc_today(),"materialized_by":"m"} if decision=="accept" else {}
                 IngredientSubstanceMappingService().review_proposal(proposal["id"],decision,"r",decision,**kwargs); outcomes.append("ok")
             except IngredientSubstanceMappingError: outcomes.append("conflict")
         threads=[threading.Thread(target=worker,args=(decision,)) for decision in ("accept","reject")]
@@ -150,7 +154,7 @@ class IngredientSubstanceMappingLifecycleTests(unittest.TestCase):
             connection.commit()
         finally: connection.close()
         proposal=self.proposal(ingredient,substance,mapping_method="dataset",release_id=release_id,run_id=run_id)
-        self.service.review_proposal(proposal["id"],"accept","reviewer","verified bridge",effective_from=date.today(),materialized_by="worker")
+        self.service.review_proposal(proposal["id"],"accept","reviewer","verified bridge",effective_from=utc_today(),materialized_by="worker")
         connection=get_connection()
         try:
             with connection.cursor() as cursor:

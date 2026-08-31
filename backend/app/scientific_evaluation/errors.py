@@ -79,3 +79,55 @@ class IncompatibleCanonicalSnapshotError(CanonicalSnapshotConflictError):
 
 class SnapshotFinalizationError(SnapshotRuntimeError):
     """Stored building state cannot be finalized as the requested snapshot."""
+
+
+class MappingInputRuntimeError(ScientificArtifactError):
+    """Base error for canonical target, mapping-state and input construction."""
+
+
+class MappingInputRequestError(MappingInputRuntimeError, ValueError):
+    """A target or canonical input request is structurally invalid."""
+
+
+class UnsupportedEvaluationTargetError(MappingInputRequestError):
+    """The requested evaluation target is outside the frozen v1 vocabulary."""
+
+
+class EvaluationTargetNotFoundError(MappingInputRuntimeError):
+    """The requested target does not exist in the authoritative registry."""
+
+
+class HistoricalTargetStateUnavailableError(MappingInputRuntimeError):
+    """The target row cannot truthfully represent the requested historical view."""
+
+
+class MappingStateInconsistentError(MappingInputRuntimeError):
+    """Stored mapping history violates the frozen structural contract."""
+
+
+class MappingHistoryUnavailableError(MappingInputRuntimeError):
+    """Mapping history cannot provide the required canonical reconstruction."""
+
+
+class AuthorityChainInconsistentError(MappingStateInconsistentError):
+    """A proposal/decision/materialization chain is structurally inconsistent."""
+
+
+class TargetMappingMismatchError(MappingStateInconsistentError):
+    """Mapping state contains a relationship outside the requested target."""
+
+
+class UnsealedEvidenceSnapshotError(MappingInputRuntimeError):
+    """An execution prerequisite references a non-sealed evidence snapshot."""
+
+
+class InvalidProtocolLifecycleError(MappingInputRuntimeError):
+    """The protocol lifecycle is not executable for the requested mode."""
+
+
+class CounterfactualAuthorizationUnavailableError(MappingInputRuntimeError):
+    """Governed counterfactual authorization cannot be proven by current runtime."""
+
+
+class CanonicalInputIntegrityError(MappingInputRuntimeError):
+    """Canonical target, mapping or input roots are internally inconsistent."""

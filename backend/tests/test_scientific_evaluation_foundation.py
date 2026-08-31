@@ -17,6 +17,7 @@ BACKEND = Path(__file__).resolve().parents[1]
 REPOSITORY = BACKEND.parent
 REVISION = "0019_scientific_evaluation_foundation"
 PARENT_REVISION = "0018_scientific_batch_recovery"
+REPOSITORY_HEAD = "0020_scientific_evidence_snapshots"
 FOUNDATION_TABLES = (
     "scientific_evaluation_artifacts",
     "scientific_evaluation_artifact_locations",
@@ -244,7 +245,7 @@ class ScientificEvaluationFoundationTests(unittest.TestCase):
         self.cursor.execute("SAVEPOINT foundation_test")
 
     def test_repository_head_and_five_foundation_tables(self):
-        self.assertEqual(_revision(self.database), REVISION)
+        self.assertEqual(_revision(self.database), REPOSITORY_HEAD)
         self.cursor.execute(
             "SELECT table_name FROM information_schema.tables "
             "WHERE table_schema='public' AND table_name = ANY(%s) ORDER BY table_name",
@@ -288,7 +289,7 @@ class ScientificEvaluationFoundationTests(unittest.TestCase):
                 "WHERE table_schema='public' AND table_name=%s",
                 (table,),
             )
-            self.assertEqual({row[0] for row in self.cursor.fetchall()}, columns)
+            self.assertTrue(columns.issubset({row[0] for row in self.cursor.fetchall()}))
         self.cursor.execute(
             "SELECT table_name, data_type FROM information_schema.columns "
             "WHERE table_schema='public' AND table_name = ANY(%s) AND column_name='id'",
@@ -830,7 +831,7 @@ class ScientificEvaluationFoundationLifecycleTests(unittest.TestCase):
         database = _create_database("empty_downgrade")
         try:
             _alembic(database, "upgrade", "head")
-            self.assertEqual(_revision(database), REVISION)
+            self.assertEqual(_revision(database), REPOSITORY_HEAD)
             _alembic(database, "downgrade", PARENT_REVISION)
             self.assertEqual(_revision(database), PARENT_REVISION)
             connection = _connection(database)

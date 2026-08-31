@@ -4,7 +4,7 @@
 
 ```text
 branch: ingredients_score
-HEAD: 0ea3a26283f617e5cc07e7ad83c04c7fa20a67af
+HEAD: f775e0e03a4cce348afc07c052d5a72a7c8568c1
 origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
 Alembic repository head: 0020_scientific_evidence_snapshots
 local database wye: 0017_ingredient_mapping_history
@@ -36,7 +36,11 @@ Fase 7.6.1  COMPLETATA — Canonicalization/schema/publication freeze
 Fase 7.6.2A IMPLEMENTATA E VALIDATA — Scientific evaluation persistence foundation
 Fase 7.6.2B-1 COMPLETATA — Scientific evidence snapshots design/freeze
 Fase 7.6.2B-2 IMPLEMENTED + VALIDATED
-Fase 7.6.3A IMPLEMENTED + VALIDATED — PENDING COMMIT
+Fase 7.6.3A COMPLETED + COMMITTED
+Fase 7.6.3B COMPLETED + COMMITTED
+Fase 7.6.4A-1 DESIGN FROZEN — READY FOR IMPLEMENTATION
+Fase 7.6.4A-1B AUTHORITY MULTIPLICITY AMENDMENT FROZEN
+Fase 7.6.4A-2 COMPLETED + COMMITTED
 ```
 
 ## Capacità consolidate
@@ -328,9 +332,10 @@ immutabilità, artifact binding, governance snapshot, preflight e downgrade
 fail-safe. Il repository Alembic head è 0020; il database locale resta a
 `0017_ingredient_mapping_history`.
 
-Al termine della 7.6.2B serializer e artifact writer non erano implementati;
-snapshot repository/finalizer, execution e replay runtime restano tuttora non
-implementati. Non sono stati introdotti motori scientifici, formule, pesi,
+Al termine della 7.6.2B serializer, artifact writer e snapshot
+repository/finalizer non erano implementati; sono stati aggiunti nei successivi
+checkpoint 7.6.3A/7.6.3B. Execution e replay runtime restano non implementati.
+Non sono stati introdotti motori scientifici, formule, pesi,
 threshold o score numerici; lo scoring legacy resta isolato.
 
 ## Fase 7.6.3A
@@ -350,7 +355,8 @@ producono errori espliciti.
 ## Fase 7.6.3B
 
 Repository, typed request model, deterministic builder e finalizer degli evidence
-snapshot sono `IMPLEMENTED + VALIDATED — PENDING COMMIT`. Il runtime riceve
+snapshot sono `COMPLETED + COMMITTED` nel commit
+`f775e0e03a4cce348afc07c052d5a72a7c8568c1`. Il runtime riceve
 membership esplicita, risolve la provenance Phase 6, materializza query/member/
 manifest tramite il writer 7.6.3A, assegna l'ordine canonico e sigilla nello
 stesso caller-owned transaction. Snapshot vuoti, retry, builder concorrenti,
@@ -365,7 +371,59 @@ execution/result persistence, replay/reproduce/recalculate e motori scientifici
 restano non implementati. L'upgrade del database locale resta un task operativo
 separato.
 
+## Fase 7.6.4A-1
+
+Il mapping state e il canonical non-protocol execution input sono congelati in
+`WYE_MAPPING_EXECUTION_INPUT_FREEZE.md`. V1 supporta soltanto target
+`substance` e `ingredient`; `product` resta subordinato a un successivo freeze
+di composition/scenario storicamente riproducibile. Il mapping ingredient è
+autorevole soltanto quando accept, bridge e materialization sono controllati,
+visibili a `as_of` ed efficaci nel giorno UTC inclusivo. Stati legacy,
+ambigui/pending/rejected/deferred restano provenance e non diventano membri.
+
+Il freeze definisce gli artifact `scientific_evaluation_target/1`,
+`scientific_mapping_state_member/1`,
+`scientific_mapping_state_manifest/1` e `scientific_evaluation_input/1`.
+`input_digest` lega target e mapping-state root; evidence snapshot, protocollo,
+mode e configuration restano root separati del futuro
+`semantic_execution_digest`. Il substrate 0019/0020 è sufficiente al runtime
+7.6.4A; la futura 0021 dovrà includere FK esplicite ai root canonici.
+
+Stato:
+
+```text
+DESIGN FROZEN — READY FOR IMPLEMENTATION
+```
+
+## Fase 7.6.4A-1B
+
+L'emendamento in `WYE_MAPPING_EXECUTION_INPUT_FREEZE.md` congela la cardinalità
+reale Phase 6: un bridge `ingredient_substances` produce un mapping member e può
+avere zero o più authority chain; un member incluso richiede almeno una chain
+accept/materialization valida e contiene tutte quelle visibili a `as_of` in
+ordine canonico. `applied` e `already_current` confermano lo stesso bridge senza
+precedence o duplicazione scientifica. Una adozione controllata
+`already_current` può rendere autorevole un bridge accepted pre-workflow solo
+dal relativo viewpoint registrato, senza retroattività.
+
+Sono congelati anche `non_member_observations`, identity/payload/digest, closed
+reason vocabulary, order, impact e decision table degli stati. Una violazione
+storica invalida produce `history_unavailable`; una candidate uncertainty con
+subset autorevole non vuoto produce `partially_resolved`; senza subset produce
+`history_unavailable`; nessun blocker produce `resolved` o `empty` secondo il
+member count.
+
+```text
+Phase 7.6.4A-1B:
+AUTHORITY MULTIPLICITY AMENDMENT FROZEN
+
+Phase 7.6.4A-2:
+COMPLETED + COMMITTED
+```
+
 ## Prossimo gate
 
-Il checkpoint successivo richiederà autorizzazione separata; la 7.6.3B non
-anticipa mapping state, execution persistence o replay.
+La Phase 7.6.4A è completata e persistita in Git. Il runtime produce target,
+mapping member/manifest e canonical evaluation input tramite l'artifact writer
+0019, senza nuove tabelle. Non sono iniziati Phase 7.6.4B, migration 0021,
+product target, execution/result persistence, replay o scoring execution.

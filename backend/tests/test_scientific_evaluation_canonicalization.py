@@ -132,6 +132,10 @@ class ScientificEvaluationCanonicalizationTests(unittest.TestCase):
                 ("scientific_evidence_snapshot_query", "1"),
                 ("scientific_evidence_snapshot_member", "1"),
                 ("scientific_evidence_snapshot_manifest", "1"),
+                ("scientific_evaluation_target", "1"),
+                ("scientific_mapping_state_member", "1"),
+                ("scientific_mapping_state_manifest", "1"),
+                ("scientific_evaluation_input", "1"),
             },
         )
         envelope = build_artifact_envelope(

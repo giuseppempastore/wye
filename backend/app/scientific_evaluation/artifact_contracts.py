@@ -36,6 +36,18 @@ _CONTRACTS = {
     ("scientific_evidence_snapshot_manifest", "1"): ArtifactContract(
         "scientific_evidence_snapshot_manifest", "1", "object"
     ),
+    ("scientific_evaluation_target", "1"): ArtifactContract(
+        "scientific_evaluation_target", "1", "inline"
+    ),
+    ("scientific_mapping_state_member", "1"): ArtifactContract(
+        "scientific_mapping_state_member", "1", "object"
+    ),
+    ("scientific_mapping_state_manifest", "1"): ArtifactContract(
+        "scientific_mapping_state_manifest", "1", "object"
+    ),
+    ("scientific_evaluation_input", "1"): ArtifactContract(
+        "scientific_evaluation_input", "1", "inline"
+    ),
 }
 
 ARTIFACT_CONTRACTS: Mapping[tuple[str, str], ArtifactContract] = MappingProxyType(

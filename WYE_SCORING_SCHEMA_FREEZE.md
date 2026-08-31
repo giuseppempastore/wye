@@ -11,6 +11,11 @@ FINAL DECISION: READY FOR MIGRATION IMPLEMENTATION
 first checkpoint: Phase 7.6.2A / 0019_scientific_evaluation_foundation
 snapshot checkpoint: Phase 7.6.2B-1 design frozen
 snapshot implementation: Phase 7.6.2B-2 IMPLEMENTED + VALIDATED
+canonical artifact runtime: Phase 7.6.3A COMPLETED + COMMITTED
+snapshot runtime: Phase 7.6.3B COMPLETED + COMMITTED
+mapping/input checkpoint: Phase 7.6.4A-1 DESIGN FROZEN — READY FOR IMPLEMENTATION
+authority amendment: Phase 7.6.4A-1B AUTHORITY MULTIPLICITY AMENDMENT FROZEN
+mapping/input runtime: Phase 7.6.4A-2 COMPLETED + COMMITTED
 ```
 
 Each decision authorizes only its bounded migration checkpoint. The 7.6.2B-1
@@ -160,11 +165,15 @@ canonical JSON are lowercase hex strings.
 ```text
 protocol_digest
 
-member payload digests + query-definition digest + identity/mapping roots
+member payload digests + query-definition digest + frozen evidence provenance
     -> snapshot_digest
 
-target + snapshot + mapping/composition/scenario roots
+target artifact + mapping/composition/scenario roots
     -> input_digest
+
+protocol_digest + snapshot_digest + input_digest + execution_type
+    + configuration artifact + comparison semantic digest/null
+    -> semantic_execution_digest
 
 snapshot members + protocol_digest + question/context
     -> selection_digest
@@ -204,13 +213,13 @@ potential cycle.
 | Digest | Canonical input and children | Excluded | Purpose |
 |---|---|---|---|
 | `protocol_digest` | Published protocol-version artifact including policy/vocabulary references | DB id, publish audit time | Executable rule identity |
-| `snapshot_digest` | Query definition, as-of/cutoff, ordered member payload digests and frozen identity roots | DB ids except stable logical keys, build time | Exact candidate universe |
-| `input_digest` | Target artifact, snapshot and mapping/composition/scenario artifacts applicable to execution | protocol, configuration, mode, request key, worker/time | Frozen domain input root |
+| `snapshot_digest` | Query definition, as-of/cutoff, ordered evidence-member payload digests and frozen evidence provenance | Mapping state, target state, protocol, DB ids except stable evidence keys, build time | Exact candidate universe |
+| `input_digest` | Target artifact and mapping/composition/scenario artifacts applicable to execution; v1 is target plus mapping state | Evidence snapshot, protocol, configuration, mode, request key, worker/time | Frozen non-protocol, non-evidence domain input root |
 | `selection_digest` | Protocol, snapshot, question/context and canonically ordered decision digests | presentation text, row order | Exact selected/excluded universe |
 | `comparison_group_digest` | Group identity, evidence-line/dependency digests | query projection ids | Comparable line identity |
 | `endpoint_synthesis_digest` | Endpoint identity, group roots, multidimensional synthesis payload | UI labels | Endpoint result proof |
 | `substance_profile_digest` | Ordered endpoint roots plus substance identity/context | current substance name | Substance profile proof |
-| `mapping_snapshot_digest` | Frozen accepted/rejected/unresolved mapping state and validity payload | current mapping state | Historical mapping proof |
+| `mapping_snapshot_digest` | Frozen authoritative effective members plus canonical empty/partial/unavailable observations and validity/provenance | Current mapping state, scoring interpretation | Historical mapping proof |
 | `ingredient_projection_digest` | Ingredient/relationship/mapping root, substance profile roots and projection decisions | product state | Ingredient projection proof |
 | `product_composition_snapshot_digest` | Frozen product identity, ingredients/order, quantities, serving/label provenance | current product row | Product input proof |
 | `exposure_scenario_digest` | Scenario scientific fields, provenance class and explicit assumptions | user identity and secret configuration | Scenario identity |
@@ -798,19 +807,23 @@ No 0020 test may require a scientific selection, execution, result or score.
 
 ### Target identity freeze
 
-No dedicated target table is required. An execution stores:
+No dedicated target table is required. The initial execution persistence stores:
 
 ```text
 target_type
 target_logical_key
 target_current_row_id (nullable traversal hint, no polymorphic FK)
 target_snapshot_artifact_id
+mapping_state_artifact_id (nullable only for substance)
+input_artifact_id
 ```
 
-The artifact is authoritative and supports substance, ingredient and product
-without nullable target-specific columns or a fragile polymorphic FK. The
-current row id is excluded from `input_digest`; query validation uses
-`target_type` plus logical key.
+The target artifact is authoritative. Phase 7.6.4A-1 v1 supports exactly
+`substance` and `ingredient`; `product` requires a later replay-safe
+composition/scenario freeze and a new artifact schema version. The current row
+id is excluded from `input_digest`; it is only a traversal hint. Mapping state
+is a separate canonical root and is never embedded in the target or evidence
+snapshot artifact.
 
 ### `scientific_evaluation_executions`
 
@@ -820,14 +833,16 @@ current row id is excluded from `input_digest`; query validation uses
 | `execution_key` | `UUID NOT NULL UNIQUE` |
 | `protocol_version_id` | NOT NULL FK published protocol version |
 | `snapshot_id` | NOT NULL FK sealed snapshot |
-| `target_type` | CHECK initially `substance, ingredient, product` |
+| `target_type` | CHECK initially `substance, ingredient`; product deferred to a later schema checkpoint |
 | `target_logical_key` | `VARCHAR(255) NOT NULL` |
 | `target_current_row_id` | nullable `BIGINT`, traversal hint without polymorphic FK |
 | `target_snapshot_artifact_id` | NOT NULL FK artifact |
+| `mapping_state_artifact_id` | FK artifact; required for ingredient, null for substance |
+| `input_artifact_id` | NOT NULL FK `scientific_evaluation_input/1` artifact |
 | `execution_type` | CHECK `NORMAL, REPLAY, COUNTERFACTUAL, REFRESH` |
 | `comparison_execution_id` | nullable self-FK RESTRICT; required except NORMAL |
 | `configuration_artifact_id` | NOT NULL FK artifact |
-| `input_digest` | NOT NULL 32 bytes |
+| `input_digest` | NOT NULL 32 bytes and equal to `input_artifact_id.content_digest` |
 | `semantic_execution_digest` | NOT NULL 32 bytes UNIQUE |
 | `engine_semantic_version` | `VARCHAR(100) NOT NULL` |
 | `engine_source_revision` | `VARCHAR(100) NOT NULL` |
@@ -1445,14 +1460,16 @@ The optional JSONB cache is omitted when canonical strings or keys contain
 U+0000, which PostgreSQL JSONB cannot represent. Verified canonical bytes remain
 the sole digest authority; no alternate cache serialization is hashed.
 
-No migration is added. Snapshot construction/sealing runtime, mapping-state
-persistence, execution/result persistence, scoring execution, replay, formulas,
-weights, thresholds and numeric scores remain outside scope.
+No migration was added by 7.6.3A. Snapshot construction/sealing runtime was
+subsequently implemented in committed Phase 7.6.3B. Mapping-state persistence,
+execution/result persistence, scoring execution, replay, formulas, weights,
+thresholds and numeric scores remain outside scope.
 
 ## Phase 7.6.3B runtime implementation status
 
 The 0020 contract now has a caller-transaction-owned repository and deterministic
-builder/finalizer runtime, `IMPLEMENTED + VALIDATED — PENDING COMMIT`. The typed
+builder/finalizer runtime, `COMPLETED + COMMITTED` in
+`f775e0e03a4cce348afc07c052d5a72a7c8568c1`. The typed
 request carries versioned snapshot policy, UTC `as_of`/cutoff, typed query scope
 and predicates, exact assessment/finding candidate identities and audit actors;
 it deliberately contains no mapping state or protocol decision.
@@ -1486,3 +1503,47 @@ ordinal uniqueness is respected without offset overflow.
 No migration changes are required. Evidence selection, mapping state, scoring
 execution, result persistence, replay, synthesis, projection, exposure/risk,
 formulas, weights, thresholds and numeric scores remain unimplemented.
+
+## Phase 7.6.4A-1 target, mapping and input design freeze
+
+`WYE_MAPPING_EXECUTION_INPUT_FREEZE.md` is authoritative for the exact artifact
+payloads and status matrix. It freezes:
+
+```text
+scientific_evaluation_target / 1
+scientific_mapping_state_member / 1
+scientific_mapping_state_manifest / 1
+scientific_evaluation_input / 1
+```
+
+Target v1 is limited to `substance` and `ingredient`. Product is excluded until
+a replay-safe composition/scenario contract exists. The ingredient mapping
+manifest contains only controlled accepted/materialized members effective on
+the inclusive UTC `mapping_day` and recorded by `as_of`; canonical empty,
+partial and unavailable states preserve the difference between absence and
+unreconstructible history.
+
+`input_digest` is the `scientific_evaluation_input/1` content digest and binds
+the target root plus mapping-state root/not-applicable state. Evidence snapshot,
+protocol, execution mode and configuration are excluded and combine later in
+`semantic_execution_digest`. This section supersedes older shorthand that put
+mapping state inside an evidence snapshot or evidence snapshot inside
+`input_digest`.
+
+The 0019 artifact registry is sufficient for the bounded future 7.6.4A runtime;
+no migration is required. Future 0021 execution persistence must include
+restrictive FKs for protocol version, sealed evidence snapshot, target artifact,
+mapping-state artifact when applicable, input artifact and configuration
+artifact. This freeze creates no runtime allowlist, repository, service, table
+or migration.
+
+Phase 7.6.4A-1B amends mapping member v1 before publication: one member is one
+`ingredient_substances` bridge and contains an ordered `authority_chains[]` array
+with every valid visible proposal/accept/materialization chain. Multiple
+`applied`/`already_current` chains do not create duplicate members. Canonical
+non-member observations, their closed reason/impact vocabulary and deterministic
+resolution precedence are defined in `WYE_MAPPING_EXECUTION_INPUT_FREEZE.md`.
+This remains artifact payload design over existing Phase 6 history and requires
+no schema migration. Phase 7.6.4A-2 implements the four frozen runtime artifact
+contracts, historical mapping reconstruction and prerequisite validation and is
+`COMPLETED + COMMITTED`.

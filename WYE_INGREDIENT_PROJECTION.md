@@ -781,3 +781,22 @@ Phase 7.6 now defines the canonical mapping-snapshot and ingredient-projection
 artifact envelopes in `WYE_SCORING_PERSISTENCE.md`. Historical mappings and
 separate substance projections are digest-bound and immutable; physical query
 projections remain rebuildable. Composition/form scientific gaps are unchanged.
+
+Phase 7.6.4A-1 further specializes the pre-projection mapping input in
+`WYE_MAPPING_EXECUTION_INPUT_FREEZE.md`. V1 uses the inclusive UTC calendar date
+derived from `as_of` and includes only controlled accepted/materialized
+relationships visible by that timestamp. Pending, ambiguous, rejected, deferred,
+legacy-unreviewed and uncontrolled accepted rows remain provenance observations;
+they may yield `empty`, `partially_resolved` or `history_unavailable`, but never
+an invented accepted relationship. The five relationship types remain distinct
+canonical data and receive no projection rule, equivalence, weight or score at
+mapping-state construction time.
+
+The 7.6.4A-1B amendment further freezes that one mapping member is one bridge,
+while all valid visible `applied`/`already_current` authority chains are retained
+as ordered provenance inside that member. Repeated authority does not strengthen,
+duplicate or weight the relationship for projection.
+
+Phase 7.6.4A-2 now implements and validates this pre-projection canonical input
+runtime. It preserves relationship types and unresolved observations without
+executing any substance-to-ingredient projection, aggregation or score.

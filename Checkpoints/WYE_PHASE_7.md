@@ -15,18 +15,22 @@ Fase 7.6.1 — Canonicalization / schema / publication freeze     COMPLETATA
 Fase 7.6.2A — Scientific evaluation persistence foundation      IMPLEMENTATA E VALIDATA
 Fase 7.6.2B-1 — Scientific evidence snapshots design/freeze      COMPLETATA
 Fase 7.6.2B-2 — Scientific evidence snapshots migration          IMPLEMENTED + VALIDATED
-Fase 7.6.3A — Canonical serialization / artifact writer           IMPLEMENTED + VALIDATED — PENDING COMMIT
+Fase 7.6.3A — Canonical serialization / artifact writer           COMPLETED + COMMITTED
+Fase 7.6.3B — Evidence snapshot repository / builder / finalizer  COMPLETED + COMMITTED
+Fase 7.6.4A-1 — Mapping state / canonical input design freeze     DESIGN FROZEN — READY FOR IMPLEMENTATION
+Fase 7.6.4A-1B — Mapping authority multiplicity amendment         AUTHORITY MULTIPLICITY AMENDMENT FROZEN
+Fase 7.6.4A-2 — Mapping state / canonical input runtime           COMPLETED + COMMITTED
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
 metodo scientificamente validato e non autorizza l'implementazione di formule,
 threshold, source weights, migration, API o runtime scoring.
 
-Baseline di implementazione 7.6.2B-2:
+Baseline del freeze 7.6.4A-1:
 
 ```text
 branch: ingredients_score
-HEAD: 0ea3a26283f617e5cc07e7ad83c04c7fa20a67af
+HEAD: f775e0e03a4cce348afc07c052d5a72a7c8568c1
 origin/ingredients_score: 48a0681e7e928bec47441d468c86f20784d00ea5
 Alembic repository head: 0020_scientific_evidence_snapshots
 local database wye: 0017_ingredient_mapping_history
@@ -43,6 +47,8 @@ validation restano un task operativo separato.
   riproducibilità, explainability e test vector concettuali.
 - `WYE_SCORING_EXECUTION_MODEL.md`: modello logico 7.1 di protocollo/versione,
   snapshot, target freeze, execution, result, trace e determinismo.
+- `WYE_MAPPING_EXECUTION_INPUT_FREEZE.md`: freeze 7.6.4A-1 di target identity,
+  mapping state e canonical non-protocol execution input.
 - `WYE_EVIDENCE_SELECTION.md`: contratto 7.2 di candidate evidence,
   eligibility, applicability, dependency, decisioni e selection digest.
 - `WYE_EVIDENCE_SYNTHESIS.md`: contratto 7.3 di evidence line, comparison
@@ -281,7 +287,10 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.6.2B-1 | Scientific evidence snapshots design/freeze | Completata; READY FOR MIGRATION IMPLEMENTATION |
 | 7.6.2B-2 | Scientific evidence snapshots migration | IMPLEMENTED + VALIDATED |
 | 7.6.3A | Canonical serialization / scientific artifact writer | COMPLETED + COMMITTED |
-| 7.6.3B | Evidence snapshot repository / builder / finalizer | IMPLEMENTED + VALIDATED — PENDING COMMIT |
+| 7.6.3B | Evidence snapshot repository / builder / finalizer | COMPLETED + COMMITTED (`f775e0e03a4cce348afc07c052d5a72a7c8568c1`) |
+| 7.6.4A-1 | Mapping state / canonical execution input design freeze | DESIGN FROZEN — READY FOR IMPLEMENTATION |
+| 7.6.4A-1B | Mapping authority multiplicity / unresolved observations | AUTHORITY MULTIPLICITY AMENDMENT FROZEN |
+| 7.6.4A-2 | Mapping state / canonical execution input runtime | COMPLETED + COMMITTED |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -338,6 +347,33 @@ le race seal/member mutation sono serializzate dai lock della 0020.
 
 Mapping-state runtime, eligibility/selection, execution/result persistence,
 scoring execution, replay e motori scientifici non sono implementati.
+
+La Fase 7.6.4A-1 congela in
+`WYE_MAPPING_EXECUTION_INPUT_FREEZE.md` il primo target vocabulary
+(`substance`, `ingredient`), il mapping state autorevole/materializzato con
+`mapping_day = DATE(as_of UTC)`, gli artifact target/member/manifest/input e il
+digest graph non ambiguo. `input_digest` copre target e mapping state, ma non
+snapshot evidence, protocollo, mode o configuration; questi root si combinano
+solo nel futuro `semantic_execution_digest`. `product` resta escluso finché una
+composition/scenario snapshot replay-safe non sarà congelata e implementata.
+
+Il runtime 7.6.4A può usare l'artifact registry 0019 senza una nuova migration.
+La futura 0021 dovrà invece referenziare esplicitamente protocol version,
+evidence snapshot, target artifact, mapping-state artifact, input artifact e
+configuration artifact. Nessun runtime 7.6.4A e nessuna 0021 sono implementati
+da questo freeze.
+
+La Fase 7.6.4A-1B corregge il presupposto di cardinalità emerso al primo gate
+runtime: un mapping member rappresenta un solo bridge `ingredient_substances`,
+mentre `authority_chains[]` conserva tutte le chain proposal/accept/
+materialization valide e visibili. `applied` e `already_current` sono provenance
+senza precedence; più chain non duplicano il bridge member. Il freeze definisce
+inoltre observation identity/payload/reason codes, ordinamenti e la precedence
+deterministica fra `resolved`, `empty`, `partially_resolved` e
+`history_unavailable`. Non serve una migration. La 7.6.4A-2 implementa ora il
+runtime content-addressed di target `substance`/`ingredient`, mapping member con
+authority chain multiple, osservazioni, mapping manifest e canonical input. La
+Phase 7.6.4A è `COMPLETED + COMMITTED`; la 7.6.4B non è iniziata.
 
 ## Phase 7.0 exit review
 

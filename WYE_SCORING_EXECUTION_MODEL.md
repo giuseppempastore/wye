@@ -347,8 +347,9 @@ relevance dimensions and their review boundaries are defined by Phase 7.2 in
 
 ### `scientific_evaluation_execution`
 
-An execution is one immutable application of a published protocol version to a
-frozen target identity and evidence snapshot.
+An execution is one immutable application of a governed protocol version to a
+frozen target identity, independent evidence snapshot and, where applicable,
+frozen mapping/domain-input roots.
 
 Minimum contract:
 
@@ -364,7 +365,7 @@ Minimum contract:
 | `engine_name`, `engine_build_version` | Deterministic implementation identity |
 | `semantic_engine_compatibility_version` | Declared behavioral contract |
 | `configuration` and `configuration_digest` | Canonical semantic configuration |
-| `canonical_input_digest` | Target and non-snapshot semantic inputs |
+| `canonical_input_digest` | Target and non-protocol, non-evidence domain inputs |
 | `semantic_execution_key` | Derived idempotency identity |
 | `status` | Technical lifecycle state |
 | `created_at`, `started_at`, `completed_at` | Audit timestamps |
@@ -543,15 +544,16 @@ Six boundary digests are retained because each proves a different invariant:
 | Digest | Includes | Excludes |
 |---|---|---|
 | `protocol_digest` | Canonical effective declaration, rules, policies, vocabularies and version references | Markdown, comments, audit dates, signatures, surrogate IDs |
-| `snapshot_digest` | Canonical query definition/version, cutoff/as-of semantics, sorted resolved members, content digests, frozen identity/mapping state | Snapshot ID, creation time, physical row order, mutable URLs |
-| `input_digest` | Target identity digest, semantic configuration, execution-mode comparison references and other non-snapshot canonical inputs | Execution ID, worker, timestamps, retries |
+| `snapshot_digest` | Canonical query definition/version, cutoff/as-of semantics, sorted resolved evidence members, content digests and evidence provenance | Target/mapping state, protocol, snapshot ID, creation time, physical row order, mutable URLs |
+| `input_digest` | Target identity digest and non-protocol, non-evidence domain roots; v1 is target plus mapping state/not-applicable | Evidence snapshot, protocol, semantic configuration, execution mode/comparison, execution ID, worker, timestamps, retries |
 | `selection_digest` | Canonically ordered decisions, reason/rule references, relevance values and dependency edges | Decision row IDs, audit timestamps, localized prose |
 | `result_digest` | Result status, ordered/typed components, conclusions, dimensions, conflicts and canonical references | Presentation, colours, localized/AI prose, storage IDs |
 | `trace_digest` | Canonical trace nodes, edges, rule steps, assumptions and uncertainty references | Later verbalization, UI layout, generated timestamps |
 
-`configuration_digest` and `target_identity_digest` may be stored for local
-verification but are components of `input_digest`, not additional mandatory
-top-level proof boundaries. A future `output_bundle_digest` may combine the
+`target_identity_digest` is a component of `input_digest`.
+`configuration_digest`, evidence snapshot and protocol are sibling roots of the
+future semantic execution identity and are not folded into `input_digest`. A
+future `output_bundle_digest` may combine the
 selection, result and trace digests for publication convenience; it is
 derivable and therefore not required by this logical minimum.
 
@@ -579,12 +581,13 @@ protocol_digest
 + snapshot_digest
 + input_digest
 + execution_type
-+ comparison execution semantic key when required
++ configuration_artifact_digest
++ comparison execution semantic digest or null
 ```
 
-`input_digest` already commits to the target identity and configuration digest,
-so they are not duplicated as additional key terms. This is an identity tuple,
-not a database `UNIQUE` decision in Phase 7.1.
+`input_digest` commits to target identity and domain roots only. Configuration is
+included exactly once as the independent term shown above. This is an identity
+tuple, not a database `UNIQUE` decision in Phase 7.1.
 
 Two normal requests with the same tuple are semantically equivalent. Two exact
 replays of the same baseline are semantically equivalent verification requests.
@@ -915,3 +918,21 @@ The technical freeze is now defined in `WYE_SCORING_SCHEMA_FREEZE.md`. It
 resolves migration decision B and records `READY FOR MIGRATION IMPLEMENTATION`
 for the bounded Phase 7.6.2A foundation only. The migration and runtime are not
 started by this document.
+
+The later Phase 7.6.4A-1 specialization is defined in:
+
+```text
+WYE_MAPPING_EXECUTION_INPUT_FREEZE.md
+```
+
+It narrows v1 target support to `substance` and `ingredient`, keeps the evidence
+snapshot independent from target and mapping state, defines UTC-date historical
+mapping semantics, and resolves the digest graph. `input_digest` is the target
+plus non-protocol/non-evidence domain roots; protocol, sealed evidence snapshot,
+execution type and configuration combine with it only in the future
+`semantic_execution_digest`. Product is deferred until historical composition
+and scenario inputs can be frozen. The specialization is documentation only and
+does not authorize or implement execution persistence or scoring. Phase
+7.6.4A-2 now implements the bounded target/mapping/input artifact construction
+defined by that specialization and is `COMPLETED + COMMITTED`; evidence snapshot,
+protocol and execution mode remain sibling roots for a later execution runtime.

@@ -1016,3 +1016,16 @@ scenario-specific readiness/assessment results to immutable publication bundles.
 User-specific scenarios require a distinct privacy boundary. Migration decision
 B requires a canonicalization/schema/publication freeze before implementation.
 The proposed Phase 7.6.1 checkpoint is not started by this document.
+
+## Phase 7.6.4A-1 product boundary
+
+`WYE_MAPPING_EXECUTION_INPUT_FREEZE.md` excludes `product` from target artifact
+schema version 1. The current model does not provide replay-safe historical
+formulation, ingredient quantity, serving and preparation state, so a current
+product row cannot be presented as a historical canonical input. Product support
+requires a separately frozen and implemented composition/scenario checkpoint and
+a later artifact schema version. This exclusion does not change the Phase 7.5
+logical assessment contract and does not imply any risk or safety conclusion.
+Phase 7.6.4A-2 enforces this exclusion at runtime: `product` is rejected by the
+v1 target contract. No product composition, exposure, risk or product-score
+runtime is introduced.

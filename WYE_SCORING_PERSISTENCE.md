@@ -455,8 +455,11 @@ trace_digest
 ```
 
 Domain-specific digests are component roots beneath `result_digest`. The
-`input_digest` commits to target identity plus all domain input roots and
-semantic configuration. The semantic result does not include `trace_digest`;
+Phase 7.6.4A-1 specialization in `WYE_MAPPING_EXECUTION_INPUT_FREEZE.md`
+resolves `input_digest` as target identity plus non-protocol, non-evidence
+domain-input roots. In v1 that means target plus mapping state; semantic
+configuration, evidence snapshot, protocol and execution mode are separate
+siblings in `semantic_execution_digest`. The semantic result does not include `trace_digest`;
 the trace may include `result_digest`, and the bundle commits to both. This
 prevents circular hashing. DB ids, physical object keys and timestamps not
 scientifically meaningful are excluded.
@@ -715,7 +718,7 @@ validation. No giant all-in-one migration is recommended.
 | Governance events/current views | READY FOR SCHEMA DESIGN | Append-only semantics defined |
 | Replay verifier envelope | READY FOR IMPLEMENTATION DESIGN | Inputs/outcomes defined; engine packaging policy pending |
 | Digest DAG | READY FOR IMPLEMENTATION DESIGN | Non-circular boundaries defined |
-| Exact canonicalization contract | IMPLEMENTED + VALIDATED IN 7.6.3A; PENDING COMMIT | `wye-c14n-json-v1`, golden fixture and boundary tests are implemented |
+| Exact canonicalization contract | COMPLETED + COMMITTED IN 7.6.3A | `wye-c14n-json-v1`, golden fixture and boundary tests are implemented |
 | Object-store/inline artifact envelope | INLINE WRITER IMPLEMENTED; OBJECT UPLOAD DEFERRED | Artifact identity/location split is frozen; verified inline persistence is implemented in 7.6.3A |
 | Privacy persistence for user scenarios | DEFERRED, NOT AN 0019 BLOCKER | Access/RLS/erasure is required before the later user-scenario slice |
 | Query projections/indexes | FROZEN FOR INITIAL WORKLOAD | Minimum projection generations, indexes and twelve queries defined in 7.6.1 |
@@ -843,15 +846,17 @@ U+0000 in JSONB strings or keys, so a canonical document containing that valid
 escaped scalar is persisted with verified inline bytes and a null JSONB cache;
 its canonical bytes, length and SHA-256 identity remain unchanged.
 
-Object-storage upload, snapshot repository/builder/finalizer, snapshot row
-construction, mapping-state runtime, execution/result persistence, scoring,
-replay and scientific engines remain unimplemented.
+Object-storage upload was not implemented by 7.6.3A. Snapshot
+repository/builder/finalizer and snapshot row construction were subsequently
+implemented in committed Phase 7.6.3B. Mapping-state runtime, execution/result
+persistence, scoring, replay and scientific engines remain unimplemented.
 
 ## Phase 7.6.3B snapshot runtime status
 
 The protocol-independent snapshot repository, typed construction request,
 deterministic builder and explicit finalizer are
-`IMPLEMENTED + VALIDATED — PENDING COMMIT`. An explicit candidate set is
+`COMPLETED + COMMITTED` in
+`f775e0e03a4cce348afc07c052d5a72a7c8568c1`. An explicit candidate set is
 resolved through real assessment,
 finding, ingestion-run, release, dataset and source relationships. Query,
 member and manifest documents are persisted through the 7.6.3A artifact writer;
@@ -883,3 +888,43 @@ candidate identities. Mapping state, target state, eligibility/selection,
 execution/result persistence, scoring, replay and every scientific engine remain
 outside this checkpoint. No formula, weight, threshold or numerical score is
 introduced.
+
+## Phase 7.6.4A-1 mapping and canonical-input freeze
+
+`WYE_MAPPING_EXECUTION_INPUT_FREEZE.md` is the authoritative specialization for
+target identity, ingredient-to-substance mapping state and canonical execution
+input. V1 supports only `substance` and `ingredient`; product requires a later
+composition/scenario freeze. It defines content-addressed target, mapping-member,
+mapping-manifest and input artifact contracts without introducing a new table.
+
+The mapping state contains only effective, controlled accepted/materialized
+relationships visible at `as_of`; the validity day is the inclusive UTC calendar
+date. Pending, ambiguous, rejected, deferred, legacy-unreviewed and uncontrolled
+accepted rows remain provenance observations and can make history partial or
+unavailable. Relationship types remain unweighted and uninterpreted.
+
+The frozen digest boundary is:
+
+```text
+target artifact + mapping-state manifest/not_applicable
+    -> input_digest
+
+protocol_digest + sealed snapshot_digest + input_digest + execution_type
+    + configuration_artifact_digest + comparison semantic digest/null
+    -> semantic_execution_digest
+```
+
+The existing 0019 artifact registry and 0020 sealed evidence root are sufficient
+for the later bounded runtime implementation. Future 0021 execution persistence
+must add explicit restrictive references to protocol version, evidence snapshot,
+target artifact, mapping-state artifact where applicable, input artifact and
+configuration artifact. This design freeze implements none of them.
+
+Phase 7.6.4A-1B freezes authority multiplicity without changing persistence
+topology: one canonical mapping member is one bridge and embeds every valid
+visible authority chain in deterministic `authority_chains[]`. Non-member
+observations and resolution-state precedence are canonical manifest content and
+therefore participate in `mapping_snapshot_digest`. No relational mapping-state
+table or migration is required. Phase 7.6.4A-2 implements and validates the
+artifact-only target/mapping/input runtime and is `COMPLETED + COMMITTED`. The
+runtime reuses verified inline 0019 artifacts and owns no transaction commit.
