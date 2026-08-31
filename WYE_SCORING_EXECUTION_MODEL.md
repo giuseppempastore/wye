@@ -1050,3 +1050,16 @@ SCIENTIFIC REVIEW PACKAGE COMPLETED
 Phase 7.7.1:
 BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 ```
+
+## Phase 7.7.2 governance-only gate
+
+Approval validation is deliberately outside execution orchestration. It reads
+repository artifacts, recalculates their canonical roots and validates an
+external approval record without creating an execution, attempt, selection,
+result, trace or publication. Approval and later policy promotion remain
+separate checkpoints.
+
+```text
+Phase 7.7.2:
+APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```

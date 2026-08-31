@@ -1067,6 +1067,21 @@ Phase 7.7.1:
 BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 ```
 
+## Phase 7.7.2 external approval gate
+
+The repository now has a pure, fail-closed validator for the external
+`wye_selection_policy_approval_record/1` JSON artifact. It recomputes the exact
+candidate and corpus identities and derives approval-required, valid, rejected
+or changes-requested state from a closed record with reviewer/audit provenance.
+It does not evaluate scientific evidence and cannot create an approval record.
+
+No real record currently exists, so the scientific selection boundary remains:
+
+```text
+Phase 7.7.2:
+APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```
+
 ## Phase 7.2 exit criteria
 
 - [x] Evidence-object taxonomy defined.

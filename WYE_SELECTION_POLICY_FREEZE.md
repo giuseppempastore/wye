@@ -1137,3 +1137,27 @@ SCIENTIFIC REVIEW PACKAGE COMPLETED
 Phase 7.7.1:
 BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 ```
+
+## 34. Phase 7.7.2 repository approval gate
+
+Phase 7.7.2 implements only mechanical governance validation in
+`backend/app/scientific_evaluation/selection_approval.py`. The reserved external
+record is `WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json`; it is intentionally
+absent until supplied through governed external review. Runtime code, tests,
+fixtures, CI and AI must never create it.
+
+The validator recomputes the frozen candidate and corpus identities, validates
+the closed `wye_selection_policy_approval_record/1` shape documented in the
+review package, requires external reviewer and audit references, and fails
+closed on every mismatch. `approved` is the only decision capable of producing
+`EXTERNAL SCIENTIFIC APPROVAL VALID`; `rejected` and `changes_requested` have
+their own blocking states. Mechanical conformance is not scientific authority,
+and this gate does not publish or promote the candidate.
+
+Current repository state:
+
+```text
+real external approval records: 0
+Phase 7.7.2:
+APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```

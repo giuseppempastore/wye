@@ -574,3 +574,17 @@ SCIENTIFIC REVIEW PACKAGE COMPLETED
 Phase 7.7.1:
 BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 ```
+
+## Phase 7.7.2 approval validation boundary
+
+The repository-side gate validates, but never issues, a digest-bound external
+scientific-review record. Only a mechanically valid `approved` decision from
+the `scientific_reviewer` role can advance this review gate. Validation-owner
+and release-approver responsibilities remain separate publication conditions.
+Rejected, changes-requested, absent or invalid records remain blocking, and no
+decision promotes or publishes `1.0.0-candidate.1` in this checkpoint.
+
+```text
+Phase 7.7.2:
+APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```

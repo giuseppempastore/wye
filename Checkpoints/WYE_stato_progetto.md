@@ -531,3 +531,17 @@ BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 Next mandatory gate:
 external scientific review + validation-owner sign-off + release approval
 ```
+
+La Phase 7.7.2 aggiunge il gate meccanico fail-closed per ricevere un record
+scientifico esterno legato ai digest esatti. Il modulo non crea record, non
+attribuisce autorità all'AI e non usa il database. Il percorso riservato
+`WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json` non esiste nel repository;
+pertanto il numero di approvazioni scientifiche reali resta `0`.
+
+```text
+Phase 7.7.2:
+APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+
+Next:
+obtain a governed external scientific-review record for the frozen package
+```

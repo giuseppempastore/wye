@@ -555,3 +555,19 @@ SCIENTIFIC REVIEW PACKAGE COMPLETED
 Phase 7.7.1:
 BLOCKED ON EXTERNAL SCIENTIFIC APPROVAL
 ```
+
+## Phase 7.7.2 external scientific approval gate
+
+È implementato il validatore repository-native del record esterno
+`wye_selection_policy_approval_record/1`. Il gate ricalcola i digest congelati,
+richiede identità reviewer, timestamp UTC, conferme esplicite, scope completo,
+Category C complete per `approved`, audit reference e digest del record. Non
+crea approval artifact, non usa il DB e non pubblica la policy.
+
+`WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json` è assente: approvazioni esterne
+reali `0`. Il candidato resta invariato e bloccato.
+
+```text
+Phase 7.7.2:
+APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```

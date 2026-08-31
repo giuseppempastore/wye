@@ -450,34 +450,93 @@ more than one role. No names are fabricated here.
 
 ## 16. Approval record format
 
-Each decision must be recorded using this closed logical template:
+The repository accepts one externally supplied JSON record at the reserved path
+`WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json`. The path is currently absent and
+must never be populated by code, tests, fixtures, CI, AI or bootstrap logic.
+The closed v1 shape is:
 
-```yaml
-approval_schema: wye_selection_policy_approval_record
-approval_schema_version: "1"
-approval_key: <stable external key>
-policy_key: efsa_qps_evidence_selection
-policy_version: 1.0.0-candidate.1
-selection_policy_digest: d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615
-role: scientific_reviewer | validation_owner | release_approver
-reviewer_identity: <governed person/role identity>
-decision: approved | rejected | changes_requested
-reviewed_at: <RFC3339 UTC timestamp>
-scope: <closed list of reviewed cards/categories>
-approved_category_C_items: []
-golden_case_set_reference:
-  schema: wye_selection_golden_corpus_manifest/1
-  digest: db535148ece59c222eaac2004594ae19a1e00a2e65448c42a4804dd8cefd8b15
-notes_reference: <immutable document/artifact reference or null>
-governed_audit_reference: <signature/audit-system reference or null>
-approval_record_digest: <sha256 or null before finalization>
+```json
+{
+  "approval_schema": "wye_selection_policy_approval_record",
+  "approval_schema_version": "1",
+  "approval_key": "<stable external key>",
+  "policy_key": "efsa_qps_evidence_selection",
+  "policy_version": "1.0.0-candidate.1",
+  "selection_policy_digest": "d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615",
+  "role": "scientific_reviewer",
+  "reviewer_identity": "<governed external person/reference>",
+  "decision": "approved | rejected | changes_requested",
+  "reviewed_at": "<RFC3339 UTC timestamp>",
+  "scope": [
+    "phase_7_7_1_candidate_policy",
+    "phase_7_7_1_golden_corpus"
+  ],
+  "approved_category_C_items": [
+    "efsa_qps_channel_admission",
+    "qps_evidence_channel_mapping",
+    "qps_status_endpoint_mapping",
+    "qps_qualification_endpoint_mapping",
+    "population_null_not_applicable_qps_taxonomic_unit",
+    "scientific_date_precedence",
+    "route_duration_not_applicable",
+    "dependency_unknown_contributing",
+    "scientific_contribution_role",
+    "scientific_claims_and_non_claims",
+    "scientific_golden_oracles"
+  ],
+  "candidate_review_confirmed": true,
+  "golden_corpus_review_confirmed": true,
+  "golden_case_set_reference": {
+    "schema": "wye_selection_golden_corpus_manifest/1",
+    "digest": "db535148ece59c222eaac2004594ae19a1e00a2e65448c42a4804dd8cefd8b15"
+  },
+  "notes_reference": null,
+  "governed_audit_reference": "<signature or immutable audit-system reference>",
+  "approval_record_digest": "<wye-c14n-json-v1 SHA-256>"
+}
 ```
 
+Placeholders are explanatory and are rejected by the validator. An `approved`
+scientific-review record must list every Category C identity above in exactly
+that canonical order. `rejected` and `changes_requested` may retain an empty or
+partial subset, but never unlock the next gate. `notes_reference` is the only
+optional field; every other field is required and unknown fields are rejected.
+
 `approval_record_digest` is SHA-256 over `wye-c14n-json-v1` bytes of the record
-excluding `approval_record_digest`. Before publication, reviewer identity must
-be authenticated either by a digital signature or by a governed immutable audit
-system referenced in `governed_audit_reference`. This checkpoint creates no DB
-table and no approval record.
+excluding `approval_record_digest`. It proves record integrity, not reviewer
+authority. `governed_audit_reference` is mandatory, and the external process
+must authenticate the reviewer identity through the referenced signature or
+immutable audit system. A `validation_owner` or `release_approver` record does
+not substitute for the `scientific_reviewer` decision at this gate.
+
+The pure validator lives in
+`backend/app/scientific_evaluation/selection_approval.py`. It reads but never
+creates or changes repository artifacts, and it uses no database.
+
+### 16.1 Mechanical gate states
+
+The gate derives exactly one state from current repository bytes and the
+external record:
+
+```text
+missing, malformed, mismatched or incomplete record
+  -> EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+
+valid approved scientific-review record
+  -> EXTERNAL SCIENTIFIC APPROVAL VALID
+
+valid rejected scientific-review record
+  -> EXTERNAL SCIENTIFIC APPROVAL REJECTED
+
+valid changes-requested scientific-review record
+  -> EXTERNAL SCIENTIFIC CHANGES REQUESTED
+```
+
+The validator recomputes the candidate, golden document and golden manifest
+roots on every evaluation. It also requires both review confirmations, the
+complete scope, full Category C coverage for approval, UTC review time, a
+non-placeholder external reviewer identity, governed audit provenance and the
+record's own canonical digest. There is no editable approval boolean.
 
 ## 17. Digest-bound approval rule
 
