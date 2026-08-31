@@ -1,0 +1,46 @@
+{
+  "case_count": 28,
+  "document": {
+    "canonicalization": "utf8-lf-nfc-v1",
+    "canonicalized_byte_length": 17040,
+    "sha256": "d05f6c8832df5111f3ad93611a088b86fd5b5853831bc6892966f06ace7e0e60",
+    "specification_file": "WYE_SELECTION_GOLDEN_CASES.md"
+  },
+  "ordered_case_keys": [
+    "GC-AFTER-CUTOFF",
+    "GC-ASSESSMENT-PENDING",
+    "GC-ASSESSMENT-REJECTED",
+    "GC-ASSESSMENT-SUPERSEDED",
+    "GC-ASSESSMENT-WITHDRAWN",
+    "GC-CONFLICT-RETAINED",
+    "GC-CUTOFF-INCLUSIVE",
+    "GC-DATE-MISSING",
+    "GC-DEPENDENCY-UNKNOWN",
+    "GC-ELIGIBLE-QPS",
+    "GC-ENDPOINT-MAPPED",
+    "GC-ENDPOINT-UNKNOWN",
+    "GC-EXACT-REINGESTION",
+    "GC-INPUT-ORDER-INVARIANT",
+    "GC-MULTI-FAILURE-PRECEDENCE",
+    "GC-NO-ELIGIBLE",
+    "GC-POLICY-VERSION-SENSITIVE",
+    "GC-POPULATION-NOT-APPLICABLE",
+    "GC-POPULATION-UNKNOWN",
+    "GC-RELEASE-NOT-VALIDATED",
+    "GC-RELEASE-REJECTED",
+    "GC-RELEASE-VALIDATED",
+    "GC-REPRESENTATION-UNSUPPORTED",
+    "GC-RUN-FAILED",
+    "GC-RUN-SUCCEEDED",
+    "GC-SELECTION-DEFERRED",
+    "GC-SOURCE-UNMAPPED",
+    "GC-TARGET-MISMATCH"
+  ],
+  "policy": {
+    "policy_key": "efsa_qps_evidence_selection",
+    "policy_version": "1.0.0-candidate.1",
+    "selection_policy_digest": "d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615"
+  },
+  "schema_id": "wye_selection_golden_corpus_manifest",
+  "schema_version": "1"
+}

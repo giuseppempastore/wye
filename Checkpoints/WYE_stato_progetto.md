@@ -50,6 +50,7 @@ Fase 7.7.1B   CANDIDATE POLICY FROZEN
 Fase 7.7.1C   SCIENTIFIC REVIEW PACKAGE COMPLETED
 Fase 7.7.2    COMPLETED + COMMITTED
 Fase 7.7.3    HANDOFF READY — HUMAN REVIEW REQUIRED
+Fase 7.7.4    PACKAGE READY — HUMAN REVIEW REQUIRED
 ```
 
 ## Capacità consolidate
@@ -567,6 +568,29 @@ pubblica o promuove il candidate.
 ```text
 Phase 7.7.3:
 HANDOFF READY — HUMAN REVIEW REQUIRED
+
+Current gate:
+EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```
+
+La Phase 7.7.4 prepara il package consegnabile
+`external_review/selection_policy_1.0.0-candidate.1/`. Il set chiuso contiene
+gli artifact richiesti dal handoff, un solo freeze tecnico di supporto, un
+README neutrale e un manifest canonico con source path, size e SHA-256.
+
+Il validatore puro
+`backend/app/scientific_evaluation/review_delivery.py` confronta copie e
+sorgenti byte-per-byte, verifica il manifest e ricalcola le identità congelate
+del candidate e del golden corpus. I test di corruzione operano soltanto su
+copie temporanee. Non sono coinvolti database, rete, selector o scoring.
+
+Il package è pronto per la consegna, non scientificamente approvato. Approval
+artifact reali restano `0`, il candidate resta `1.0.0-candidate.1` e la
+publication resta bloccata.
+
+```text
+Phase 7.7.4:
+EXTERNAL SCIENTIFIC REVIEW DELIVERY PACKAGE READY — HUMAN REVIEW REQUIRED
 
 Current gate:
 EXTERNAL SCIENTIFIC APPROVAL REQUIRED

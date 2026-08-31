@@ -29,6 +29,7 @@ Fase 7.7.1B — Initial selection policy candidate                   CANDIDATE P
 Fase 7.7.1C — Scientific review package                            SCIENTIFIC REVIEW PACKAGE COMPLETED
 Fase 7.7.2 — External scientific approval gate                     COMPLETED + COMMITTED
 Fase 7.7.3 — External scientific review handoff                    HANDOFF READY — HUMAN REVIEW REQUIRED
+Fase 7.7.4 — External scientific review delivery package           PACKAGE READY — HUMAN REVIEW REQUIRED
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
@@ -596,6 +597,33 @@ runtime restano bloccati.
 ```text
 Phase 7.7.3:
 HANDOFF READY — HUMAN REVIEW REQUIRED
+
+Gate:
+EXTERNAL SCIENTIFIC APPROVAL REQUIRED
+```
+
+## Phase 7.7.4 external scientific review delivery package
+
+Il package chiuso e deterministico in
+`external_review/selection_policy_1.0.0-candidate.1/` raccoglie il handoff, il
+candidate, il golden corpus e manifest, il review package e il solo technical
+freeze di supporto necessari al revisore esterno. `README.md` definisce ordine
+di lettura e confine di autorità; `DELIVERY_MANIFEST.json` lega composizione,
+source path, byte size e SHA-256 alla baseline Git dichiarata.
+
+`backend/app/scientific_evaluation/review_delivery.py` verifica set chiuso,
+manifest canonico, byte identity delle copie rispetto ai sorgenti repository e
+root congelati di candidate/corpus. La validazione è tecnica: non valuta
+correttezza scientifica, competenza/autenticità del reviewer o approvazione e
+non usa database o rete.
+
+Il package non contiene
+`WYE_SELECTION_POLICY_EXTERNAL_APPROVAL.json`; review umana e publication
+restano pendenti.
+
+```text
+Phase 7.7.4:
+EXTERNAL SCIENTIFIC REVIEW DELIVERY PACKAGE READY — HUMAN REVIEW REQUIRED
 
 Gate:
 EXTERNAL SCIENTIFIC APPROVAL REQUIRED

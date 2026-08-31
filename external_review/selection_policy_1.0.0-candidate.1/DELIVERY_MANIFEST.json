@@ -1,0 +1,102 @@
+{
+  "canonicalization_version": "wye-c14n-json-v1",
+  "closed_set": true,
+  "files": [
+    {
+      "artifact_role": "reviewer_readme",
+      "byte_size": 2431,
+      "dependency_class": "generated",
+      "frozen": false,
+      "original_repository_path": null,
+      "path": "README.md",
+      "scientifically_reviewed": false,
+      "sha256": "e7ccb1af1759c109f4c1ecb20d155b9faef85f2f01e14b93a890b04199b599ec",
+      "supporting_only": true
+    },
+    {
+      "artifact_role": "golden_corpus_document",
+      "byte_size": 17040,
+      "dependency_class": "required",
+      "frozen": true,
+      "original_repository_path": "WYE_SELECTION_GOLDEN_CASES.md",
+      "path": "WYE_SELECTION_GOLDEN_CASES.md",
+      "scientifically_reviewed": false,
+      "sha256": "d05f6c8832df5111f3ad93611a088b86fd5b5853831bc6892966f06ace7e0e60",
+      "supporting_only": false
+    },
+    {
+      "artifact_role": "golden_corpus_manifest",
+      "byte_size": 1379,
+      "dependency_class": "required",
+      "frozen": true,
+      "original_repository_path": "WYE_SELECTION_GOLDEN_CORPUS_MANIFEST.json",
+      "path": "WYE_SELECTION_GOLDEN_CORPUS_MANIFEST.json",
+      "scientifically_reviewed": false,
+      "sha256": "a9950273164c610a7d88f62d731a650d708ccc62fe95b376c043c16a29f0e756",
+      "supporting_only": false
+    },
+    {
+      "artifact_role": "selection_policy_candidate",
+      "byte_size": 22321,
+      "dependency_class": "required",
+      "frozen": true,
+      "original_repository_path": "WYE_SELECTION_POLICY_CANDIDATE_V1.json",
+      "path": "WYE_SELECTION_POLICY_CANDIDATE_V1.json",
+      "scientifically_reviewed": false,
+      "sha256": "df283a53d2cfa5cef7ec0b32526fdf0c6140b231d79a424fa926745ea84ef7cb",
+      "supporting_only": false
+    },
+    {
+      "artifact_role": "external_review_handoff",
+      "byte_size": 14009,
+      "dependency_class": "required",
+      "frozen": false,
+      "original_repository_path": "WYE_SELECTION_POLICY_EXTERNAL_REVIEW_HANDOFF.md",
+      "path": "WYE_SELECTION_POLICY_EXTERNAL_REVIEW_HANDOFF.md",
+      "scientifically_reviewed": false,
+      "sha256": "36a372607f6010590175c5aa310f81a25c931629c60cf08590a2def6780debaf",
+      "supporting_only": false
+    },
+    {
+      "artifact_role": "selection_policy_technical_freeze",
+      "byte_size": 49725,
+      "dependency_class": "supporting",
+      "frozen": true,
+      "original_repository_path": "WYE_SELECTION_POLICY_FREEZE.md",
+      "path": "WYE_SELECTION_POLICY_FREEZE.md",
+      "scientifically_reviewed": false,
+      "sha256": "01f62f55a0814d05aa7ee01cba7bf12bd9803a9063e6b926358e4f4f30030c50",
+      "supporting_only": true
+    },
+    {
+      "artifact_role": "scientific_review_package",
+      "byte_size": 33098,
+      "dependency_class": "required",
+      "frozen": false,
+      "original_repository_path": "WYE_SELECTION_POLICY_SCIENTIFIC_REVIEW_PACKAGE.md",
+      "path": "WYE_SELECTION_POLICY_SCIENTIFIC_REVIEW_PACKAGE.md",
+      "scientifically_reviewed": false,
+      "sha256": "29276c1a96d44f0d4a51e2f370a75eee50b4cd2ff6fe07f7b8c32e17c45430ee",
+      "supporting_only": false
+    }
+  ],
+  "manifest_path": "DELIVERY_MANIFEST.json",
+  "package_content_digest": "0430725210a2857c92f0c3d78a6f1f4c11b96be891030205808d0e422126dec1",
+  "package_content_digest_algorithm": "sha256",
+  "package_key": "selection_policy_1.0.0-candidate.1",
+  "package_phase": "7.7.4",
+  "package_purpose": "External scientific review delivery for the frozen Phase 7.7.1 selection-policy candidate and golden corpus",
+  "review_subject": {
+    "candidate_version": "1.0.0-candidate.1",
+    "golden_case_count": 28,
+    "golden_corpus_digest": "db535148ece59c222eaac2004594ae19a1e00a2e65448c42a4804dd8cefd8b15",
+    "scientific_approval_present": false,
+    "selection_policy_digest": "d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615"
+  },
+  "schema_id": "wye_external_scientific_review_delivery_manifest",
+  "schema_version": "1",
+  "source_repository": {
+    "branch": "ingredients_score",
+    "head": "15c2ae425c9a11fb3c39e703a958a653a1e5f6e3"
+  }
+}
