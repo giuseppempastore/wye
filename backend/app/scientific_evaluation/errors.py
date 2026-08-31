@@ -131,3 +131,55 @@ class CounterfactualAuthorizationUnavailableError(MappingInputRuntimeError):
 
 class CanonicalInputIntegrityError(MappingInputRuntimeError):
     """Canonical target, mapping or input roots are internally inconsistent."""
+
+
+class ExecutionRuntimeError(ScientificArtifactError):
+    """Base error for Phase 7.6.4C execution persistence orchestration."""
+
+
+class ExecutionRequestError(ExecutionRuntimeError, ValueError):
+    """The typed execution request or supplied canonical output is invalid."""
+
+
+class ExecutionConflictError(ExecutionRuntimeError):
+    """A semantic execution identity exists with incompatible frozen roots."""
+
+
+class ExecutionIdempotencyConflictError(ExecutionConflictError):
+    """An operational idempotency key is bound to another semantic request."""
+
+
+class ExecutionNotStartableError(ExecutionRuntimeError):
+    """The execution lifecycle does not permit a new attempt."""
+
+
+class ActiveExecutionAttemptError(ExecutionNotStartableError):
+    """The execution already owns a running attempt."""
+
+
+class InvalidExecutionAttemptTransitionError(ExecutionRuntimeError):
+    """The requested attempt transition is outside the frozen lifecycle."""
+
+
+class NonRetryableExecutionError(ExecutionNotStartableError):
+    """A non-retryable failure cannot return the execution to pending."""
+
+
+class IncompleteSelectionCoverageError(ExecutionRuntimeError):
+    """Caller-supplied decisions do not exactly cover the snapshot candidates."""
+
+
+class ExecutionPublicationConflictError(ExecutionConflictError):
+    """An existing publication disagrees with supplied canonical output roots."""
+
+
+class ReplayComparisonUnavailableError(ExecutionRuntimeError):
+    """The REPLAY comparison execution lacks an authoritative publication."""
+
+
+class ReplayVerificationConflictError(ExecutionConflictError):
+    """An existing REPLAY verification disagrees with recomputed roots."""
+
+
+class IncompatibleCanonicalOutputError(ExecutionConflictError):
+    """A supplied output artifact is incompatible with its frozen role or root."""

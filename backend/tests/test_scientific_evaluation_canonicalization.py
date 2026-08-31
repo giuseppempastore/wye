@@ -136,6 +136,17 @@ class ScientificEvaluationCanonicalizationTests(unittest.TestCase):
                 ("scientific_mapping_state_member", "1"),
                 ("scientific_mapping_state_manifest", "1"),
                 ("scientific_evaluation_input", "1"),
+                ("scientific_evaluation_configuration", "1"),
+                ("scientific_evaluation_execution_identity", "1"),
+                ("scientific_evaluation_engine_build", "1"),
+                ("scientific_evaluation_attempt_error", "1"),
+                ("scientific_evidence_selection_decision", "1"),
+                ("scientific_evidence_selection_manifest", "1"),
+                ("scientific_evaluation_result_component", "1"),
+                ("scientific_evaluation_result", "1"),
+                ("scientific_evaluation_trace", "1"),
+                ("scientific_evaluation_publication_bundle", "1"),
+                ("scientific_evaluation_replay_verification", "1"),
             },
         )
         envelope = build_artifact_envelope(

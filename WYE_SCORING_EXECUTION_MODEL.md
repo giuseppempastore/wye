@@ -962,3 +962,21 @@ selection resolution or query projections with canonical identity. Phase
 7.6.4B-1B is the authoritative REPLAY amendment. Phase 7.6.4B-2 implements that
 amendment and is completed and committed; it creates no execution, selection,
 synthesis, scoring or replay runtime.
+
+## Phase 7.6.4C runtime boundary
+
+Phase 7.6.4C implements the provider-neutral persistence orchestration above
+0021. It builds the frozen configuration and semantic-execution artifacts,
+creates/reuses executions and operational idempotency bindings, manages attempt
+start/heartbeat/failure, and atomically persists caller-supplied canonical
+selection/result/trace/publication outputs. REPLAY recomputed payloads are
+comparison material: matching bytes reuse global artifact IDs, while one
+immutable `matched` or `mismatch` verification completes the REPLAY execution
+without new scientific output ownership.
+
+The service is transaction-participating: repositories and artifact writer do
+not commit or roll back. Counterfactual authorization remains a separately
+created governance fact and is never synthesized by this runtime. Scientific
+selection, synthesis, projection, scoring, product evaluation and worker
+recovery remain absent. Status: `COMPLETED + COMMITTED`. This closes the
+persistence/runtime foundation defined by Phase 7.6; Phase 7.7 is not started.

@@ -44,6 +44,7 @@ Fase 7.6.4A-2 COMPLETED + COMMITTED
 Fase 7.6.4B-1  DESIGN FROZEN
 Fase 7.6.4B-1B REPLAY SEMANTICS AMENDMENT FROZEN
 Fase 7.6.4B-2  COMPLETED + COMMITTED
+Fase 7.6.4C    COMPLETED + COMMITTED
 ```
 
 ## Capacità consolidate
@@ -445,13 +446,20 @@ Phase 7.6.4B-1B:
 REPLAY SEMANTICS AMENDMENT FROZEN
 ```
 
-Il gate finale ha rilevato che il modello REPLAY originario era incompatibile
-con la deduplicazione globale degli artifact 0019 e con l'ownership UNIQUE di
-result/trace/selection. La 7.6.4B-1B sceglie il modello di verifica: REPLAY
-confronta la pubblicazione storica, persiste una verification immutabile
-`matched`/`mismatch` e non crea una nuova pubblicazione scientifica. La 0021
-corretta avrà nove tabelle; il delta migration/test corrente richiede ancora la
-correzione B-2. Il repository head nel delta è 0021; il DB locale resta 0017.
+Il modello REPLAY corretto è stato implementato e committato con la Phase
+7.6.4B nel commit `af2b381a4b50223573c9d600bfcae81c6f8402ac`.
+REPLAY confronta la pubblicazione storica, persiste una verification immutabile
+`matched`/`mismatch` e non crea una nuova pubblicazione scientifica. Il
+repository head è 0021; il DB locale resta 0017.
 
-Execution/result runtime, selection, synthesis, replay runtime e scoring
-execution non sono stati iniziati.
+Phase 7.6.4C aggiunge il runtime di persistenza/orchestrazione: crea o riusa
+l'identità semantica, lega idempotency key, gestisce attempt/heartbeat/failure,
+pubblica atomicamente output canonici già calcolati dal caller e persiste la
+verifica REPLAY. Stato: `COMPLETED + COMMITTED`.
+
+La foundation di persistenza/orchestrazione prevista dalla Phase 7.6 è quindi
+completa: `PHASE 7.6 COMPLETED`. La Phase 7.7 non è iniziata.
+
+Restano non implementati l'algoritmo di evidence selection, synthesis, scoring,
+worker/recovery, replay scientifico e product target. Nessuna formula, peso,
+threshold o score numerico è stato introdotto.

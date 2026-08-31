@@ -23,6 +23,7 @@ Fase 7.6.4A-2 — Mapping state / canonical input runtime           COMPLETED + 
 Fase 7.6.4B-1 — Execution / result persistence design freeze      DESIGN FROZEN — READY FOR 0021 IMPLEMENTATION
 Fase 7.6.4B-1B — REPLAY publication semantics amendment            REPLAY SEMANTICS AMENDMENT FROZEN
 Fase 7.6.4B-2 — Execution / result persistence migration          COMPLETED + COMMITTED
+Fase 7.6.4C — Scientific evaluation execution runtime              COMPLETED + COMMITTED
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
@@ -297,6 +298,8 @@ cambiarne l'ordine; ha rafforzato il gate fra hazard profiling ed exposure.
 | 7.6.4A-1B | Mapping authority multiplicity / unresolved observations | AUTHORITY MULTIPLICITY AMENDMENT FROZEN |
 | 7.6.4A-2 | Mapping state / canonical execution input runtime | COMPLETED + COMMITTED |
 | 7.6.4B-1 | Scientific execution / result persistence freeze | DESIGN FROZEN — READY FOR 0021 IMPLEMENTATION |
+| 7.6.4B-2 | Scientific execution / result persistence migration | COMPLETED + COMMITTED (`af2b381a4b50223573c9d600bfcae81c6f8402ac`) |
+| 7.6.4C | Scientific evaluation execution runtime foundation | COMPLETED + COMMITTED |
 | 7.7 | Validation / expert review / sensitivity analysis | Validazione esterna prima di claim o numeri |
 | 7.8 | API shadow mode / legacy comparison | Nessuna sostituzione silenziosa del legacy |
 | 7.9 | Governed rollout / legacy retirement | Rollout, monitoraggio e ritiro auditabile |
@@ -420,9 +423,31 @@ ha una verification immutabile `matched`/`mismatch`, non una nuova publication
 scientifica né nuovi result/trace/selection rows. NORMAL, REFRESH e
 COUNTERFACTUAL continuano invece a richiedere la pubblicazione canonica.
 
-Nessun execution runtime, selection, synthesis, replay runtime o scoring è
-implementato da questo amendment; la migration 0021 già presente nel delta deve
-essere corretta in un checkpoint successivo prima del commit.
+La migration corretta è stata completata e committata come Phase 7.6.4B nel
+commit `af2b381a4b50223573c9d600bfcae81c6f8402ac`.
+
+## Phase 7.6.4C execution runtime foundation
+
+Phase 7.6.4C implementa l'orchestrazione provider-neutral sopra 0021: identità
+semantica e idempotenza, attempt e lease, persistenza atomica di output canonici
+forniti esplicitamente dal caller e REPLAY verification-only `matched` /
+`mismatch`. Tutti gli artifact usano `ScientificArtifactWriter`; repository e
+service non eseguono commit o rollback nascosti. NORMAL, REFRESH e
+COUNTERFACTUAL producono publication; REPLAY riusa gli artifact globali e non
+crea result/trace/selection/publication propri.
+
+```text
+Phase 7.6.4C:
+COMPLETED + COMMITTED
+```
+
+Il runtime non contiene algoritmo di evidence selection, synthesis, scoring,
+worker/recovery o product target. Non introduce formule, pesi, threshold o
+score numerici.
+
+Con questa foundation, tutti i deliverable di persistenza e orchestrazione
+previsti dalla Phase 7.6 sono disponibili. `PHASE 7.6 COMPLETED`; gli algoritmi
+scientifici restano nel perimetro successivo e la Phase 7.7 non è iniziata.
 
 ## Phase 7.0 exit review
 

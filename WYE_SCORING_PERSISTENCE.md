@@ -973,3 +973,25 @@ Phase 7.6.4B-2 subsequently implements and validates
 substrate; no execution/scoring, selection, synthesis or replay runtime exists.
 The repository head is 0021 and local `wye` remains at 0017. Phase 7.6.4B-2
 implements the nine-table amendment and is `COMPLETED + COMMITTED`.
+
+## Phase 7.6.4C execution persistence runtime
+
+Phase 7.6.4C implements the bounded runtime over the nine 0021 tables. It uses
+the existing content-addressed artifact writer for all 11 newly allowlisted
+contracts, creates/reuses one canonical semantic execution, binds operational
+idempotency keys, preserves append-only attempts, and persists caller-supplied
+selection/result/component/trace output in the same transaction as publication.
+REPLAY derives expected roots from the comparison publication and persists only
+a `matched`/`mismatch` verification; it owns no new scientific output rows.
+
+Transaction ownership remains with the caller. The runtime does not calculate
+eligibility, selection, synthesis, hazard, exposure, risk or scores and does not
+support product targets or background recovery. Status:
+
+```text
+COMPLETED + COMMITTED
+```
+
+The Phase 7.6 persistence and provider-neutral orchestration foundation is now
+complete: `PHASE 7.6 COMPLETED`. Scientific evaluation algorithms remain later
+work, and Phase 7.7 is not started by this checkpoint.

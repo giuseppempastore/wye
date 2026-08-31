@@ -19,6 +19,7 @@ Implementation status:
 ```text
 Phase 7.6.4B-1B: REPLAY SEMANTICS AMENDMENT FROZEN
 Phase 7.6.4B-2: COMPLETED + COMMITTED
+Phase 7.6.4C: COMPLETED + COMMITTED
 repository head: 0021_scientific_evaluation_publication
 local wye:       0017_ingredient_mapping_history
 ```
@@ -828,17 +829,22 @@ Future PostgreSQL tests cover:
 26. replay-verification downgrade/preflight/FK/immutability coverage;
 27. legacy scoring isolation.
 
-## Future runtime test plan
+## Phase 7.6.4C runtime realization
 
-Future runtime tests cover fixed identity/configuration vectors; root
-sensitivity; operational-field insensitivity; retry/concurrent convergence;
-attempt history and lease recovery; failed attempt then retry; atomic
+The provider-neutral Phase 7.6.4C runtime realizes this persistence contract
+without adding schema. Its tests cover fixed identity/configuration vectors;
+root sensitivity; operational-field insensitivity; retry/concurrent convergence;
+attempt history and heartbeat/lease primitives; failed attempt then retry; atomic
 selection/result/trace/bundle publication; completed-result reuse after byte/root
 verification; stale/building prerequisite rejection; REPLAY matched/mismatch/
 error behavior and global artifact reuse without a new scientific publication;
 COUNTERFACTUAL fail-closed authorization; REFRESH root change; valid non-numeric
 insufficiency/conflict/not-computable output; historical preservation; offline
 operation; and legacy isolation.
+
+All canonical scientific outputs are supplied explicitly by the caller. This
+runtime does not implement the scientific algorithms that produce them, nor a
+background worker/recovery service.
 
 ## Legacy and scientific boundaries
 
