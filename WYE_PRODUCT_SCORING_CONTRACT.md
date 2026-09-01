@@ -801,9 +801,9 @@ corpus, not an in-place change to `1.0.0-candidate.1`.
 
 ## 16. Decision matrix
 
-`PSC-OD-001` and `PSC-OD-002` are `DECIDED` through explicit product-owner
-approval recorded on `2026-09-01`. The remaining 20 decisions, `PSC-OD-003`
-through `PSC-OD-022`, remain `OPEN`.
+`PSC-OD-001`, `PSC-OD-002` and `PSC-OD-021` are `DECIDED` through explicit
+product-owner approval recorded on `2026-09-01`. The remaining 19 decisions,
+`PSC-OD-003` through `PSC-OD-020` and `PSC-OD-022`, remain `OPEN`.
 
 | Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Current status |
 |---|---|---|---|---|---|---|---|
@@ -827,7 +827,7 @@ through `PSC-OD-022`, remain `OPEN`.
 | `PSC-OD-018` | Freeze integer precision, intermediate arithmetic, rounding, boundary and canonical serialization rules. | Determinism/technical | Approved formulas, canonicalization compatibility analysis | Data/model steward + validation owner | Numeric execution profile | BLOCKING | `OPEN` |
 | `PSC-OD-019` | Define golden corpus, external benchmarks, sensitivity, monotonicity, robustness and comprehension validation. | Validation | All policy candidates, representative product corpus | Independent validation owner + external scientific reviewers | Product-scoring validation plan and corpus | BLOCKING | `OPEN` |
 | `PSC-OD-020` | Approve user-facing language, bands, colors, limitations and non-misleading interpretation. | Communication/claims | Final scale behavior, endpoint study, accessibility and comprehension tests | Product communication reviewer + scientific reviewer + legal reviewer | User communication and claims package | BLOCKING FOR USER RELEASE | `OPEN` |
-| `PSC-OD-021` | Freeze internal source-register schema, source hierarchy, update cadence, cutoff and supersession procedure. | Provenance/governance | Benchmark register, source ingestion capabilities | Scientific governance owner + data steward | Source governance RFC | BLOCKING | `OPEN` |
+| `PSC-OD-021` | Option B: source register domain-scoped with immutable acquired artifacts and provenance linked to WYE decisions. | Provenance/governance | Reviewed Source Governance RFC, source ingestion capabilities | Product owner for governance-model and product-traceability boundary; scientific, regulatory, legal and data-governance reviews remain downstream | Source Governance decision record | RESOLVED FOR GOVERNANCE MODEL DECISION | `DECIDED` |
 | `PSC-OD-022` | Define the legal and scientific boundary between general product information and future personalized recommendations. | Premium/privacy | Intended use, GDPR analysis, medical-device and consumer-law screening | Privacy counsel + legal reviewer + clinical governance reviewer | Premium boundary and DPIA pre-assessment | NON-BLOCKING FOR BASE CANDIDATE; BLOCKING FOR PREMIUM | `OPEN` |
 
 ### 16.1 `PSC-OD-001` decision record
@@ -886,6 +886,43 @@ does not constitute external scientific validation or scientific, clinical,
 legal or regulatory certification. Method validation, internal scientific
 governance and all applicable downstream decision gates remain required.
 
+### 16.3 `PSC-OD-021` decision record
+
+```text
+decision_id: PSC-OD-021
+decision_status: DECIDED
+decision_owner: Product owner
+decision: Option B
+decision_date: 2026-09-01
+authority_source: Explicit product-owner approval
+decision_text: Source register domain-scoped con artefatti immutabili e provenienza collegata alle decisioni WYE.
+decision_scope: internal source-governance model and product traceability boundary only
+scientific_validation_status: not performed or approved
+legal_or_regulatory_status: no compliance or approval implied
+operational_source_selection: not approved
+implementation_status: no database, migration, API, runtime or code approved
+release_or_publication_status: not approved
+```
+
+Option B approves a domain-scoped source register, immutable acquired artifacts
+with checksum and provenance, links between bounded source use and WYE
+decisions, and separate coexisting `issuer_lifecycle_status`,
+`artifact_integrity_status` and `wye_use_disposition` axes. Source hierarchy and
+precedence remain conditional on the question, domain, jurisdiction, date and
+applicability. Source, release/version, acquired artifact, acquisition,
+extraction or translation, synthesis, WYE decision use and future
+implementation remain distinct.
+
+This product-owner decision closes only `PSC-OD-021` and does not establish
+external scientific authority; scientific, clinical, legal or regulatory
+validation; WYE regulatory compliance; operational scoring sources; a
+universal source hierarchy; formulas, weights, thresholds, scoring, caps,
+floors or rankings; criticality, coverage, evaluability, confidence or
+missing-data policy; UI content, premium features or personalization; an API,
+runtime, database, migration or code; or a release or publication. All
+applicable downstream scientific, regulatory, legal, data-governance,
+implementation and release gates remain required.
+
 ## 17. Acceptance checklist
 
 - [x] The tri-score domain is limited to applicable food products, and the
@@ -920,9 +957,13 @@ governance and all applicable downstream decision gates remain required.
 - [x] Sources remain internal provenance without a required user-facing
   bibliography feature.
 - [x] The benchmark register does not select a base model.
-- [x] `PSC-OD-001` and `PSC-OD-002` are `DECIDED` through explicit
-  product-owner approval; `PSC-OD-003` through `PSC-OD-022` are exactly 20
-  decisions and remain `OPEN`.
+- [x] `PSC-OD-001`, `PSC-OD-002` and `PSC-OD-021` are `DECIDED` through
+  explicit product-owner approval; `PSC-OD-003` through `PSC-OD-020` and
+  `PSC-OD-022` are exactly 19 decisions and remain `OPEN`.
+- [x] The Option B source-governance decision approves only the internal
+  governance model and product-traceability boundary; it selects no operational
+  source and grants no scientific, regulatory, implementation or release
+  authority.
 
 ## 18. Exit state
 
@@ -931,7 +972,8 @@ food-product tri-score semantic contract: DRAFT
 scientific approval: NOT PRESENT
 PSC-OD-001: DECIDED — OPTION A — PRODUCT OWNER APPROVED
 PSC-OD-002: DECIDED — OPTION B — PRODUCT OWNER APPROVED
-PSC-OD-003 through PSC-OD-022: OPEN
+PSC-OD-021: DECIDED — OPTION B — PRODUCT OWNER APPROVED
+PSC-OD-003 through PSC-OD-020 and PSC-OD-022: OPEN
 legal/regulatory review of external wording: REQUIRED
 published scoring policy: NOT PRESENT
 product-scoring candidate: NOT PRESENT
