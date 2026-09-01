@@ -801,17 +801,17 @@ corpus, not an in-place change to `1.0.0-candidate.1`.
 
 ## 16. Decision matrix
 
-`PSC-OD-001`, `PSC-OD-002`, `PSC-OD-003` and `PSC-OD-021` are `DECIDED`
-through explicit product-owner approval recorded on `2026-09-01`. The
-remaining 18 decisions, `PSC-OD-004` through `PSC-OD-020` and `PSC-OD-022`,
-remain `OPEN`.
+`PSC-OD-001`, `PSC-OD-002`, `PSC-OD-003`, `PSC-OD-004` and `PSC-OD-021` are
+`DECIDED` through explicit product-owner approval recorded on `2026-09-01`.
+The remaining 17 decisions, `PSC-OD-005` through `PSC-OD-020` and
+`PSC-OD-022`, remain `OPEN`.
 
 | Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Current status |
 |---|---|---|---|---|---|---|---|
 | `PSC-OD-001` | First-release intended use, general reference population and permitted product-claims boundary: Option A. | Cross-domain/product | Claims inventory, user scenarios and completed internal RFC review; external wording reviews remain separate gates | Product owner; scientific and legal/regulatory review remain downstream release gates | Intended-use and claims decision record | RESOLVED FOR PRODUCT DECISION | `DECIDED` |
 | `PSC-OD-002` | Goodness is a transparent, versioned methodological assessment of compositional and nutritional favourability under declared WYE criteria, not personal health or clinical risk. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Product owner for semantic/product boundary; multidisciplinary scientific validation remains a downstream gate | Goodness Construct decision record | RESOLVED FOR SEMANTIC/PRODUCT DECISION | `DECIDED` |
 | `PSC-OD-003` | Option B: domain-scoped, layered and source-backed WYE ontology separating regulatory and methodological categories without scoring or operational authority. | Ingredient/regulatory | Reviewed Regulatory Ontology RFC and decided source-governance model | Product owner for vocabulary/governance boundary; regulatory, legal, scientific and data/model reviews remain downstream | Regulatory Ontology decision record | RESOLVED FOR CONCEPTUAL ONTOLOGY DECISION | `DECIDED` |
-| `PSC-OD-004` | Freeze non-numeric ingredient-state resolution, coexistence and primary-state precedence. | Ingredient | Regulatory ontology, evidence/applicability vocabularies | Toxicology reviewer + regulatory specialist | Ingredient-state policy candidate | BLOCKING | `OPEN` |
+| `PSC-OD-004` | Option B: multi-label category coexistence with contextual precedence, preserved secondary assertions and no universal primary category. | Ingredient/governance | Reviewed Category Coexistence and Precedence RFC; decided Regulatory Ontology and Source Governance models | Product owner for conceptual product/governance boundary; regulatory, scientific, data/model and validation reviews remain downstream | Category Coexistence and Precedence decision record | RESOLVED FOR CONCEPTUAL GOVERNANCE DECISION | `DECIDED` |
 | `PSC-OD-005` | Map approved ingredient states and dimensions to a 0..100 ingredient scale without conflating missingness or uncertainty with risk. | Ingredient/numeric | Approved state policy, reference judgments, calibration corpus | Scientific review panel + validation owner | Ingredient numerical-mapping candidate | BLOCKING | `OPEN` |
 | `PSC-OD-006` | Select and validate product-level aggregation across multiple ingredients, relationships and quantities. | Ingredient/aggregation | Ingredient mapping, QUID/order semantics, adversarial cases | Scientific review panel + validation owner | Ingredient aggregation candidate | BLOCKING | `OPEN` |
 | `PSC-OD-007` | Select the base nutrient-profile construct or justified WYE-specific combination. | Nutrition | Benchmark comparison, intended use, WYE data audit | Nutrition-science panel + public-health reviewer | Nutrient-profile selection RFC | BLOCKING | `OPEN` |
@@ -925,7 +925,46 @@ sources cited by the Regulatory Ontology RFC support the conceptual boundary
 only and do not become WYE scoring authorities. All applicable downstream
 review and decision gates remain required.
 
-### 16.4 `PSC-OD-021` decision record
+### 16.4 `PSC-OD-004` decision record
+
+```text
+decision_id: PSC-OD-004
+decision_status: DECIDED
+approval_status: DECIDED — PRODUCT OWNER APPROVED
+decision_owner: Product owner
+decision: Option B
+decision_date: 2026-09-01
+authority_source: Explicit product-owner approval
+decision_text: Modello multi-label con precedence contestuale e nessuna categoria primaria universale, senza introdurre scoring, penalità, cap/floor, ranking o claim UI.
+decision_scope: conceptual category-coexistence and contextual-precedence boundary only
+scientific_validation_status: not performed or approved
+clinical_validation_status: not performed or approved
+legal_or_regulatory_status: no legal determination, compliance or approval implied
+operational_source_selection: not approved
+implementation_status: no API, runtime, database, migration or code approved
+release_or_publication_status: not approved
+```
+
+Option B approves a conceptual multi-label model in which regulatory and
+methodological category assertions may coexist, precedence is contextual and
+there is no universal primary category. Secondary assertions and provenance
+remain preserved; ambiguity, conflict and non-applicability remain explicit.
+Every future contextual-precedence decision must record its question, scope,
+source, domain, jurisdiction, date, applicability and rationale. Source
+prestige, recency, row order and AI cannot automatically select precedence or
+resolve a conflict.
+
+This product-owner decision closes only `PSC-OD-004`. It does not approve any
+specific category assignment or legal conclusion; scoring, penalties, formulas,
+weights, thresholds, caps, floors or ranking; an operational source for
+ingredient scoring or nutrient profiling; a runtime classification; criticality,
+coverage, confidence, evaluability or missing-data policy; final UI claims,
+premium features or personalization; scientific, clinical, legal or regulatory
+validation or WYE compliance; an API, runtime, database, migration or code; or a
+release or publication. All applicable downstream reviews and decision gates
+remain required.
+
+### 16.5 `PSC-OD-021` decision record
 
 ```text
 decision_id: PSC-OD-021
@@ -996,9 +1035,9 @@ implementation and release gates remain required.
 - [x] Sources remain internal provenance without a required user-facing
   bibliography feature.
 - [x] The benchmark register does not select a base model.
-- [x] `PSC-OD-001`, `PSC-OD-002`, `PSC-OD-003` and `PSC-OD-021` are `DECIDED`
-  through explicit product-owner approval; `PSC-OD-004` through `PSC-OD-020`
-  and `PSC-OD-022` are exactly 18 decisions and remain `OPEN`.
+- [x] `PSC-OD-001`, `PSC-OD-002`, `PSC-OD-003`, `PSC-OD-004` and `PSC-OD-021`
+  are `DECIDED` through explicit product-owner approval; `PSC-OD-005` through
+  `PSC-OD-020` and `PSC-OD-022` are exactly 17 decisions and remain `OPEN`.
 - [x] The Option B regulatory-ontology decision approves only the conceptual
   vocabulary and governance boundary; it selects no operational source and
   grants no scientific, regulatory, scoring, implementation or release
@@ -1007,6 +1046,9 @@ implementation and release gates remain required.
   governance model and product-traceability boundary; it selects no operational
   source and grants no scientific, regulatory, implementation or release
   authority.
+- [x] The Option B category-coexistence decision approves only a conceptual
+  multi-label and contextual-precedence boundary; it defines no universal
+  primary category, operational classification, score effect or UI claim.
 
 ## 18. Exit state
 
@@ -1016,8 +1058,9 @@ scientific approval: NOT PRESENT
 PSC-OD-001: DECIDED — OPTION A — PRODUCT OWNER APPROVED
 PSC-OD-002: DECIDED — OPTION B — PRODUCT OWNER APPROVED
 PSC-OD-003: DECIDED — OPTION B — PRODUCT OWNER APPROVED
+PSC-OD-004: DECIDED — OPTION B — PRODUCT OWNER APPROVED
 PSC-OD-021: DECIDED — OPTION B — PRODUCT OWNER APPROVED
-PSC-OD-004 through PSC-OD-020 and PSC-OD-022: OPEN
+PSC-OD-005 through PSC-OD-020 and PSC-OD-022: OPEN
 legal/regulatory review of external wording: REQUIRED
 published scoring policy: NOT PRESENT
 product-scoring candidate: NOT PRESENT
