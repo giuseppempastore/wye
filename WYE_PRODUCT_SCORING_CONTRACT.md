@@ -801,13 +801,14 @@ corpus, not an in-place change to `1.0.0-candidate.1`.
 
 ## 16. Decision matrix
 
-Only `PSC-OD-001` is `DECIDED`, through explicit product-owner approval recorded
-on `2026-09-01`. All other decisions in this matrix remain `OPEN`.
+`PSC-OD-001` and `PSC-OD-002` are `DECIDED` through explicit product-owner
+approval recorded on `2026-09-01`. The remaining 20 decisions, `PSC-OD-003`
+through `PSC-OD-022`, remain `OPEN`.
 
 | Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Current status |
 |---|---|---|---|---|---|---|---|
 | `PSC-OD-001` | First-release intended use, general reference population and permitted product-claims boundary: Option A. | Cross-domain/product | Claims inventory, user scenarios and completed internal RFC review; external wording reviews remain separate gates | Product owner; scientific and legal/regulatory review remain downstream release gates | Intended-use and claims decision record | RESOLVED FOR PRODUCT DECISION | `DECIDED` |
-| `PSC-OD-002` | Define the scientific construct represented by “goodness” and its relationship to product quality rather than health probability. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Multidisciplinary scientific review panel | Construct-definition RFC | BLOCKING | `OPEN` |
+| `PSC-OD-002` | Goodness is a transparent, versioned methodological assessment of compositional and nutritional favourability under declared WYE criteria, not personal health or clinical risk. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Product owner for semantic/product boundary; multidisciplinary scientific validation remains a downstream gate | Goodness Construct decision record | RESOLVED FOR SEMANTIC/PRODUCT DECISION | `DECIDED` |
 | `PSC-OD-003` | Define jurisdiction-, date-, category- and condition-aware regulatory-status ontology. | Ingredient/regulatory | Source inventory, legal mappings, temporal model | Regulatory specialist + data steward | Regulatory ontology candidate | BLOCKING | `OPEN` |
 | `PSC-OD-004` | Freeze non-numeric ingredient-state resolution, coexistence and primary-state precedence. | Ingredient | Regulatory ontology, evidence/applicability vocabularies | Toxicology reviewer + regulatory specialist | Ingredient-state policy candidate | BLOCKING | `OPEN` |
 | `PSC-OD-005` | Map approved ingredient states and dimensions to a 0..100 ingredient scale without conflating missingness or uncertainty with risk. | Ingredient/numeric | Approved state policy, reference judgments, calibration corpus | Scientific review panel + validation owner | Ingredient numerical-mapping candidate | BLOCKING | `OPEN` |
@@ -856,6 +857,35 @@ subject to scientific, communication and legal/regulatory review. The ordinary
 UI requires no bibliography, and premium personalization remains deferred to a
 separate future Wave.
 
+### 16.2 `PSC-OD-002` decision record
+
+```text
+decision_id: PSC-OD-002
+decision_status: DECIDED
+decision_owner: Product owner
+decision: Option B
+decision_date: 2026-09-01
+source_of_authority: Explicit product-owner approval
+decision_scope: semantic and product boundary of the construct
+scientific_status: internal evidence-informed methodology; no external scientific validation performed
+legal_or_regulatory_status: no legal or regulatory approval implied
+implementation_status: no formulas, scales or runtime approved
+```
+
+For WYE, goodness is a transparent, versioned methodological assessment of the
+compositional and nutritional favourability of a packaged food or beverage
+against declared and applicable WYE criteria for adults in the general
+population. It does not represent personal health, absolute healthiness,
+universal safety, probability of clinical benefit or harm, exposure, dose,
+clinical risk, regulatory compliance or individual suitability.
+
+This product-owner decision closes only the semantic and product boundary in
+`PSC-OD-002`. It does not approve a formula, weight, threshold, nutrient-profile
+model, ingredient rule, aggregation method, runtime, release or publication. It
+does not constitute external scientific validation or scientific, clinical,
+legal or regulatory certification. Method validation, internal scientific
+governance and all applicable downstream decision gates remain required.
+
 ## 17. Acceptance checklist
 
 - [x] The tri-score domain is limited to applicable food products, and the
@@ -890,8 +920,9 @@ separate future Wave.
 - [x] Sources remain internal provenance without a required user-facing
   bibliography feature.
 - [x] The benchmark register does not select a base model.
-- [x] `PSC-OD-001` alone is `DECIDED` through explicit product-owner approval;
-  `PSC-OD-002` through `PSC-OD-022` remain `OPEN`.
+- [x] `PSC-OD-001` and `PSC-OD-002` are `DECIDED` through explicit
+  product-owner approval; `PSC-OD-003` through `PSC-OD-022` are exactly 20
+  decisions and remain `OPEN`.
 
 ## 18. Exit state
 
@@ -899,7 +930,8 @@ separate future Wave.
 food-product tri-score semantic contract: DRAFT
 scientific approval: NOT PRESENT
 PSC-OD-001: DECIDED — OPTION A — PRODUCT OWNER APPROVED
-PSC-OD-002 through PSC-OD-022: OPEN
+PSC-OD-002: DECIDED — OPTION B — PRODUCT OWNER APPROVED
+PSC-OD-003 through PSC-OD-022: OPEN
 legal/regulatory review of external wording: REQUIRED
 published scoring policy: NOT PRESENT
 product-scoring candidate: NOT PRESENT
@@ -907,7 +939,7 @@ numeric runtime authority: BLOCKED
 personalized_assessment_v1: false
 ```
 
-The recorded product decision must pass its dedicated review before downstream
-use. Subsequent work must resolve one bounded `OPEN` decision through its
-declared authority and artifact. It must not implement numerical scoring,
+The recorded product decisions must pass their dedicated reviews before
+downstream use. Subsequent work must resolve one bounded `OPEN` decision through
+its declared authority and artifact. It must not implement numerical scoring,
 persistence or runtime from this draft.
