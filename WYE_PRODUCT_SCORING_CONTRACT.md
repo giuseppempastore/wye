@@ -30,7 +30,8 @@ version, digest, scientific review and validation corpus.
 ## 1. Scope and authority boundary
 
 This contract is documentation only. It establishes vocabulary, intended use,
-non-claims, mandatory future output fields, invariants and open decisions.
+non-claims, mandatory future output fields, invariants and governed decision
+states.
 
 It has no authority to:
 
@@ -44,7 +45,7 @@ It has no authority to:
 - authorize a migration, schema change, API, worker or user-facing rollout.
 
 Runtime numerical scoring remains blocked until all blocking decisions in the
-open-decision matrix are resolved through governed artifacts and the resulting
+decision matrix are resolved through governed artifacts and the resulting
 candidate has completed scientific review, validation and publication.
 
 ### 1.1 Immediate document audience
@@ -59,8 +60,9 @@ The immediate audience of this contract is internal to the WYE project:
 
 These are readers and users of the document, not the final target population of
 the WYE application. This document does not authorize them to make diagnoses,
-prescriptions or clinical assessments. The final target population, intended
-users and user-facing claims remain open under `PSC-OD-001`.
+prescriptions or clinical assessments. The first-release target population,
+intended users and claims boundary are decided under `PSC-OD-001`; exact final
+user-facing language and release approval remain governed separately.
 
 ## 2. Intended use and non-claims
 
@@ -80,9 +82,11 @@ For a food that is lawfully exempt from a nutrition declaration, this contract
 does not invent a number. A future evaluability and missing-data policy must
 determine the result while preserving the possibility of `not_computable`.
 
-This food-domain boundary does not define the final target population, final
-intended users or permitted user-facing claims and does not close
-`PSC-OD-001`.
+This food-domain boundary did not by itself define the final target population,
+intended users or permitted claims. Those first-release product decisions are
+now recorded under `PSC-OD-001`; exact external wording remains subject to
+`PSC-OD-020` and the applicable scientific, communication and legal/regulatory
+review gates.
 
 The product promise is:
 
@@ -795,13 +799,14 @@ Current limitations remain binding:
 A future implementation must begin with a new product-scoring candidate and
 corpus, not an in-place change to `1.0.0-candidate.1`.
 
-## 16. Open-decision matrix
+## 16. Decision matrix
 
-No decision in this matrix is approved or closed by this document.
+Only `PSC-OD-001` is `DECIDED`, through explicit product-owner approval recorded
+on `2026-09-01`. All other decisions in this matrix remain `OPEN`.
 
-| Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Initial status |
+| Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Current status |
 |---|---|---|---|---|---|---|---|
-| `PSC-OD-001` | Freeze the exact intended use, general reference population and permitted product claims. | Cross-domain/product | Claims inventory, regulatory review, user scenarios | Product owner + scientific reviewer + legal reviewer | Intended-use and claims RFC | BLOCKING | `OPEN` |
+| `PSC-OD-001` | First-release intended use, general reference population and permitted product-claims boundary: Option A. | Cross-domain/product | Claims inventory, user scenarios and completed internal RFC review; external wording reviews remain separate gates | Product owner; scientific and legal/regulatory review remain downstream release gates | Intended-use and claims decision record | RESOLVED FOR PRODUCT DECISION | `DECIDED` |
 | `PSC-OD-002` | Define the scientific construct represented by “goodness” and its relationship to product quality rather than health probability. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Multidisciplinary scientific review panel | Construct-definition RFC | BLOCKING | `OPEN` |
 | `PSC-OD-003` | Define jurisdiction-, date-, category- and condition-aware regulatory-status ontology. | Ingredient/regulatory | Source inventory, legal mappings, temporal model | Regulatory specialist + data steward | Regulatory ontology candidate | BLOCKING | `OPEN` |
 | `PSC-OD-004` | Freeze non-numeric ingredient-state resolution, coexistence and primary-state precedence. | Ingredient | Regulatory ontology, evidence/applicability vocabularies | Toxicology reviewer + regulatory specialist | Ingredient-state policy candidate | BLOCKING | `OPEN` |
@@ -824,10 +829,38 @@ No decision in this matrix is approved or closed by this document.
 | `PSC-OD-021` | Freeze internal source-register schema, source hierarchy, update cadence, cutoff and supersession procedure. | Provenance/governance | Benchmark register, source ingestion capabilities | Scientific governance owner + data steward | Source governance RFC | BLOCKING | `OPEN` |
 | `PSC-OD-022` | Define the legal and scientific boundary between general product information and future personalized recommendations. | Premium/privacy | Intended use, GDPR analysis, medical-device and consumer-law screening | Privacy counsel + legal reviewer + clinical governance reviewer | Premium boundary and DPIA pre-assessment | NON-BLOCKING FOR BASE CANDIDATE; BLOCKING FOR PREMIUM | `OPEN` |
 
+### 16.1 `PSC-OD-001` decision record
+
+```text
+decision_id: PSC-OD-001
+decision_status: DECIDED
+decision_owner: Product owner
+decision: Option A
+decision_date: 2026-09-01
+source_of_authority: Explicit product-owner approval
+```
+
+The first WYE product-scoring release is a general informational tool for adults
+in the general population consulting packaged foods and beverages within this
+contract's domain. Its outputs are methodological and versioned. Numeric scores
+may be shown only when `evaluability_status = computable`; `not_computable` is a
+valid non-numeric outcome and is not score zero.
+
+The decision authorizes no personal, professional, clinical, therapeutic or
+dietary assessment; dose, portion, frequency or individual recommendation;
+scientific or clinical approval; legal/regulatory approval; scoring formula;
+runtime; or user-facing release. Pregnancy, minors, allergies, diseases,
+medicines, specifically regulated supplements and non-food domains are outside
+the supported use or require a separate policy. External wording remains
+subject to scientific, communication and legal/regulatory review. The ordinary
+UI requires no bibliography, and premium personalization remains deferred to a
+separate future Wave.
+
 ## 17. Acceptance checklist
 
-- [x] The tri-score domain is limited to applicable food products without
-  closing the target-population and claims decision in `PSC-OD-001`.
+- [x] The tri-score domain is limited to applicable food products, and the
+  first-release target population and claims boundary are decided separately in
+  `PSC-OD-001`.
 - [x] Immediate internal document audiences are identified separately from
   final intended users.
 - [x] Non-claims are explicit.
@@ -857,20 +890,24 @@ No decision in this matrix is approved or closed by this document.
 - [x] Sources remain internal provenance without a required user-facing
   bibliography feature.
 - [x] The benchmark register does not select a base model.
-- [x] All identified scientific, numerical, validation, communication and
-  governance decisions remain `OPEN`.
+- [x] `PSC-OD-001` alone is `DECIDED` through explicit product-owner approval;
+  `PSC-OD-002` through `PSC-OD-022` remain `OPEN`.
 
 ## 18. Exit state
 
 ```text
 food-product tri-score semantic contract: DRAFT
 scientific approval: NOT PRESENT
+PSC-OD-001: DECIDED — OPTION A — PRODUCT OWNER APPROVED
+PSC-OD-002 through PSC-OD-022: OPEN
+legal/regulatory review of external wording: REQUIRED
 published scoring policy: NOT PRESENT
 product-scoring candidate: NOT PRESENT
 numeric runtime authority: BLOCKED
 personalized_assessment_v1: false
 ```
 
-The next work must resolve one bounded open decision through its declared
-authority and artifact. It must not implement numerical scoring, persistence or
-runtime from this draft.
+The recorded product decision must pass its dedicated review before downstream
+use. Subsequent work must resolve one bounded `OPEN` decision through its
+declared authority and artifact. It must not implement numerical scoring,
+persistence or runtime from this draft.
