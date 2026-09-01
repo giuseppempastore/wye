@@ -801,15 +801,16 @@ corpus, not an in-place change to `1.0.0-candidate.1`.
 
 ## 16. Decision matrix
 
-`PSC-OD-001`, `PSC-OD-002` and `PSC-OD-021` are `DECIDED` through explicit
-product-owner approval recorded on `2026-09-01`. The remaining 19 decisions,
-`PSC-OD-003` through `PSC-OD-020` and `PSC-OD-022`, remain `OPEN`.
+`PSC-OD-001`, `PSC-OD-002`, `PSC-OD-003` and `PSC-OD-021` are `DECIDED`
+through explicit product-owner approval recorded on `2026-09-01`. The
+remaining 18 decisions, `PSC-OD-004` through `PSC-OD-020` and `PSC-OD-022`,
+remain `OPEN`.
 
 | Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Current status |
 |---|---|---|---|---|---|---|---|
 | `PSC-OD-001` | First-release intended use, general reference population and permitted product-claims boundary: Option A. | Cross-domain/product | Claims inventory, user scenarios and completed internal RFC review; external wording reviews remain separate gates | Product owner; scientific and legal/regulatory review remain downstream release gates | Intended-use and claims decision record | RESOLVED FOR PRODUCT DECISION | `DECIDED` |
 | `PSC-OD-002` | Goodness is a transparent, versioned methodological assessment of compositional and nutritional favourability under declared WYE criteria, not personal health or clinical risk. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Product owner for semantic/product boundary; multidisciplinary scientific validation remains a downstream gate | Goodness Construct decision record | RESOLVED FOR SEMANTIC/PRODUCT DECISION | `DECIDED` |
-| `PSC-OD-003` | Define jurisdiction-, date-, category- and condition-aware regulatory-status ontology. | Ingredient/regulatory | Source inventory, legal mappings, temporal model | Regulatory specialist + data steward | Regulatory ontology candidate | BLOCKING | `OPEN` |
+| `PSC-OD-003` | Option B: domain-scoped, layered and source-backed WYE ontology separating regulatory and methodological categories without scoring or operational authority. | Ingredient/regulatory | Reviewed Regulatory Ontology RFC and decided source-governance model | Product owner for vocabulary/governance boundary; regulatory, legal, scientific and data/model reviews remain downstream | Regulatory Ontology decision record | RESOLVED FOR CONCEPTUAL ONTOLOGY DECISION | `DECIDED` |
 | `PSC-OD-004` | Freeze non-numeric ingredient-state resolution, coexistence and primary-state precedence. | Ingredient | Regulatory ontology, evidence/applicability vocabularies | Toxicology reviewer + regulatory specialist | Ingredient-state policy candidate | BLOCKING | `OPEN` |
 | `PSC-OD-005` | Map approved ingredient states and dimensions to a 0..100 ingredient scale without conflating missingness or uncertainty with risk. | Ingredient/numeric | Approved state policy, reference judgments, calibration corpus | Scientific review panel + validation owner | Ingredient numerical-mapping candidate | BLOCKING | `OPEN` |
 | `PSC-OD-006` | Select and validate product-level aggregation across multiple ingredients, relationships and quantities. | Ingredient/aggregation | Ingredient mapping, QUID/order semantics, adversarial cases | Scientific review panel + validation owner | Ingredient aggregation candidate | BLOCKING | `OPEN` |
@@ -886,7 +887,45 @@ does not constitute external scientific validation or scientific, clinical,
 legal or regulatory certification. Method validation, internal scientific
 governance and all applicable downstream decision gates remain required.
 
-### 16.3 `PSC-OD-021` decision record
+### 16.3 `PSC-OD-003` decision record
+
+```text
+decision_id: PSC-OD-003
+decision_status: DECIDED
+approval_status: DECIDED — PRODUCT OWNER APPROVED
+decision_owner: Product owner
+decision: Option B
+decision_date: 2026-09-01
+authority_source: Explicit product-owner approval
+decision_text: Ontologia WYE domain-scoped, multilivello e source-backed per distinguere categorie regolatorie e metodologiche senza introdurre scoring, formule o autorità operativa.
+decision_scope: conceptual regulatory-ontology vocabulary and governance boundary for the decided WYE food domain only
+scientific_validation_status: not performed or approved
+clinical_validation_status: not performed or approved
+legal_or_regulatory_status: no legal determination, compliance or approval implied
+operational_source_selection: not approved
+implementation_status: no API, runtime, database, migration or code approved
+release_or_publication_status: not approved
+```
+
+Option B approves a domain-scoped, layered and source-backed conceptual
+ontology for the already decided WYE food domain. It permits regulatory and
+methodological category assertions to coexist and requires label declaration,
+regulatory category, authorization status, hazard identification, risk
+characterization, exposure/dose, WYE score relevance and user-facing
+communication to remain separate. Source use remains governed by `PSC-OD-021`.
+
+This product-owner decision closes only `PSC-OD-003`. It does not approve a
+specific entity or product classification; an operational source for ingredient
+scoring or nutrient profiling; scoring, formulas, weights, thresholds, caps,
+floors or ranking; criticality, coverage, confidence, evaluability or
+missing-data policy; final UI claims, premium features or personalization;
+scientific, clinical, legal or regulatory validation or WYE compliance; an API,
+runtime, database, migration or code; or a release or publication. The 12
+sources cited by the Regulatory Ontology RFC support the conceptual boundary
+only and do not become WYE scoring authorities. All applicable downstream
+review and decision gates remain required.
+
+### 16.4 `PSC-OD-021` decision record
 
 ```text
 decision_id: PSC-OD-021
@@ -957,9 +996,13 @@ implementation and release gates remain required.
 - [x] Sources remain internal provenance without a required user-facing
   bibliography feature.
 - [x] The benchmark register does not select a base model.
-- [x] `PSC-OD-001`, `PSC-OD-002` and `PSC-OD-021` are `DECIDED` through
-  explicit product-owner approval; `PSC-OD-003` through `PSC-OD-020` and
-  `PSC-OD-022` are exactly 19 decisions and remain `OPEN`.
+- [x] `PSC-OD-001`, `PSC-OD-002`, `PSC-OD-003` and `PSC-OD-021` are `DECIDED`
+  through explicit product-owner approval; `PSC-OD-004` through `PSC-OD-020`
+  and `PSC-OD-022` are exactly 18 decisions and remain `OPEN`.
+- [x] The Option B regulatory-ontology decision approves only the conceptual
+  vocabulary and governance boundary; it selects no operational source and
+  grants no scientific, regulatory, scoring, implementation or release
+  authority.
 - [x] The Option B source-governance decision approves only the internal
   governance model and product-traceability boundary; it selects no operational
   source and grants no scientific, regulatory, implementation or release
@@ -972,8 +1015,9 @@ food-product tri-score semantic contract: DRAFT
 scientific approval: NOT PRESENT
 PSC-OD-001: DECIDED — OPTION A — PRODUCT OWNER APPROVED
 PSC-OD-002: DECIDED — OPTION B — PRODUCT OWNER APPROVED
+PSC-OD-003: DECIDED — OPTION B — PRODUCT OWNER APPROVED
 PSC-OD-021: DECIDED — OPTION B — PRODUCT OWNER APPROVED
-PSC-OD-003 through PSC-OD-020 and PSC-OD-022: OPEN
+PSC-OD-004 through PSC-OD-020 and PSC-OD-022: OPEN
 legal/regulatory review of external wording: REQUIRED
 published scoring policy: NOT PRESENT
 product-scoring candidate: NOT PRESENT
