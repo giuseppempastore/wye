@@ -556,8 +556,10 @@ scope.
 construct, normative choices, uncertainty and sensitivity and should initially
 avoid interval-like claims.
 
-`WYE PROPOSAL`: Option B is the preferred family for further development. This
-proposal is not reported by any source and has no approval authority.
+`WYE HISTORICAL PROPOSAL`: Option B was the preferred family for further
+development in the earlier draft. That proposal is superseded as the current
+MVP direction by Option A, is not reported by any source, and has no approval
+authority. Option B remains only a possible future multi-attribute direction.
 
 ## I. Decision package
 
@@ -610,19 +612,32 @@ exact candidate under the authority recorded in the decision matrix.
 
 ### I.4 Proposed decision record
 
+The following record is retained for chronology only. It is a historical
+candidate direction record, not the current MVP direction:
+
+> Historical candidate direction only — superseded as the current MVP mapping
+> direction. Current MVP candidate mapping direction: Option A — ordinal
+> lookup based on internal profiles and traceable reference judgments. Current
+> candidate policy architecture: Option C — Layered state model. Option B
+> remains a possible future multi-attribute development direction only.
+
 ```text
 decision_id: PSC-OD-005
 decision_status: OPEN
 proposal_status: PROPOSED, NOT APPROVED
-recommended_research_family: Option B — transparent monotone multi-attribute model
+record_status: HISTORICAL CANDIDATE DIRECTION ONLY — SUPERSEDED AS CURRENT MVP DIRECTION
+historical_recommended_research_family: Option B — transparent monotone multi-attribute model
 decision_owner: Product owner after Internal Informational Assurance
 methodology_preparation: Protocol proposer / Codex-assisted workflow
 technical_verification: Data/model steward
 internal_validation: REQUIRED — NOT COMPLETE
 external_validation: FUTURE / OPTIONAL / NOT PRESENT
-candidate_direction_date: 2026-09-02
-candidate_direction_authority: Product owner
-product_owner_candidate_direction: Option B — multi-attribute monotone and decomposable model
+historical_candidate_direction_date: 2026-09-02
+historical_candidate_direction_authority: Product owner
+historical_product_owner_candidate_direction: Option B — multi-attribute monotone and decomposable model
+current_mvp_candidate_mapping_direction: Option A — ordinal lookup based on internal profiles and traceable reference judgments
+current_candidate_policy_architecture: Option C — Layered state model
+future_mapping_option: Option B — possible future multi-attribute development direction only
 candidate_direction_nature: CANDIDATE DESIGN DIRECTION ONLY
 approved_state_policy: NOT PRESENT
 reference_judgments: NOT PRESENT
@@ -637,14 +652,13 @@ runtime_authority: NONE
 release_status: NOT APPROVED
 ```
 
-The product owner confirms the semantic boundaries of `PSC-OD-005` and selects
-Option B — the multi-attribute monotone and decomposable model — exclusively as
-the candidate design direction for subsequent scientific development. This
-direction is conditional and does not constitute scientific approval or
-validation of the mapping. It does not approve formulas, transformations,
-weights, thresholds, parameters, caps, floors, overrides, comparability or
-numerical outputs, and it does not authorize implementation, publication or
-release. `PSC-OD-005` remains `OPEN`.
+The record above preserves the earlier Option B direction and its date, but it
+is explicitly superseded as the current MVP direction. The current product-
+owner direction is Option A — ordinal lookup based on internal profiles and
+traceable reference judgments — with Policy Option C as the candidate layered
+architecture. Option B remains available only as a possible future
+multi-attribute development. None of these directions constitutes scientific
+approval or validation of the mapping; `PSC-OD-005` remains `OPEN`.
 
 The internal methodology and validation functions may reject, modify or replace
 the candidate direction before product-owner acceptance. Future external
@@ -696,7 +710,10 @@ categories or products, and authorizes no `0..100` value for runtime or UI.
 ```text
 RFC status: DRAFT — SCIENTIFIC/PRODUCT DECISION REQUIRED
 PSC-OD-005: OPEN
-recommended family: OPTION B — PROPOSED, NOT APPROVED
+historical recommended family: OPTION B — PROPOSED, NOT APPROVED — SUPERSEDED AS CURRENT MVP DIRECTION
+current MVP candidate mapping direction: OPTION A — ORDINAL LOOKUP BASED ON INTERNAL PROFILES AND TRACEABLE REFERENCE JUDGMENTS
+current candidate policy architecture: OPTION C — LAYERED STATE MODEL
+future Option B status: POSSIBLE MULTI-ATTRIBUTE DEVELOPMENT ONLY
 approved ingredient-state policy: NOT PRESENT
 reference judgments: NOT PRESENT
 calibration corpus: NOT PRESENT
