@@ -204,7 +204,8 @@ not_applicable
 
 These terms report what the evidence line states; they are not WYE safety or
 risk claims. Concrete mappings, adversity interpretation and the vocabulary
-itself require external scientific review. QPS recommendation/qualification has
+itself require internal methodology review for the MVP. Optional future
+external review may refine them. QPS recommendation/qualification has
 direction `not_applicable` for experimental toxicology.
 
 ## Endpoint synthesis state model
@@ -311,7 +312,8 @@ not_applicable
 
 These states are structured summaries, not strength grades. Conditional and
 limited relevance must name every transfer assumption. Concrete transfer and
-applicability rules require external scientific review.
+applicability rules require internal methodology review for the MVP; external
+review is future and optional.
 
 ## Evidence sufficiency model
 
@@ -331,7 +333,8 @@ rationale and rule references
 Representable states are `sufficient_for_declared_conclusion`,
 `sufficient_for_limited_conclusion`, `insufficient_evidence` and
 `sufficiency_not_assessable`. A protocol may not use the positive states until
-external scientific review has approved concrete criteria covering at least:
+Internal Informational Assurance has accepted concrete criteria covering at
+least:
 
 - endpoint and context coverage;
 - evidence-line independence;
@@ -402,7 +405,8 @@ The logical representation is a `confidence_statement` containing:
 
 Phase 7.3 approves this representation only. It approves no formula or
 `limited/supported/strongly_supported` scale. A conclusion-strength vocabulary
-and calculation framework require external scientific review.
+and calculation framework require internal methodology review and validation
+for the MVP; external validation is a future optional tier.
 
 ## Endpoint-synthesis object
 
@@ -493,7 +497,8 @@ Phase 7.3 performs no dose-response modelling or unit conversion.
 | Study design | Partial | Assessment type/raw IUCLID fields exist; no governed design vocabulary |
 
 Hazard characterisation based on dose-response remains blocked by normalization,
-ontology and external scientific review.
+ontology and internal methodology assurance. Future external review is optional
+for the informational MVP.
 
 ## Provider and cross-source treatment
 
@@ -667,7 +672,11 @@ framework exists, and no uncertainty beyond the one stated is introduced.
 No vector produces a numeric hazard score, exposure estimate, product risk or
 cross-endpoint scalar.
 
-## Scientific-review boundary matrix
+## MVP assurance boundary matrix
+
+Under `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`, concrete method choices
+below require internal methodology assurance for the MVP. External review is a
+future optional tier unless a later claim or scope activates it.
 
 | Decision area | Classification | Rationale |
 |---|---|---|
@@ -676,18 +685,18 @@ cross-endpoint scalar.
 | Canonical ordering, digests and trace | ARCHITECTURALLY APPROVED | Reproducibility and audit mechanism |
 | Separation of consistency, quality, relevance, coverage, uncertainty and confidence | ARCHITECTURALLY APPROVED | Prevents category errors and premature scalarization |
 | QPS regulatory channel separated from experimental toxicology | ARCHITECTURALLY APPROVED | Matches current adapter semantics; exact QPS scientific scope still reviewed |
-| Endpoint equivalence/family mappings | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Scientific construct identity |
-| Direction/adversity normalization | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Changes scientific meaning and allowed claims |
-| Conditional population/route/duration/dose comparability | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Transfer assumptions affect conclusions |
-| Concrete quality criteria | REQUIRES EXTERNAL SCIENTIFIC REVIEW | No source rank or arbitrary rubric is valid |
-| Sufficiency and conclusion-strength criteria | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Evidence count cannot establish support |
-| Confidence framework and hazard interpretation | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Determinism is not scientific validation |
-| Dose-response/reference-point semantics | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Requires domain method and normalized inputs |
+| Endpoint equivalence/family mappings | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Scientific construct identity |
+| Direction/adversity normalization | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Changes scientific meaning and allowed claims |
+| Conditional population/route/duration/dose comparability | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Transfer assumptions affect conclusions |
+| Concrete quality criteria | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | No source rank or arbitrary rubric is valid |
+| Sufficiency and conclusion-strength criteria | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Evidence count cannot establish support |
+| Confidence framework and hazard interpretation | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Determinism is not scientific validation |
+| Dose-response/reference-point semantics | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Requires domain method and normalized inputs |
 | Endpoint/study/dependency ontologies | DATA GAP | Not represented generally through `0018` |
 | Structured route/duration/population/dose basis | DATA GAP | Current OpenFoodTox representation is partial/raw |
 | Quality/relevance/coverage/uncertainty source fields | DATA GAP | No general persisted normalized model |
-| Ingredient projection | DEFINED IN 7.4 / EXTERNAL REVIEW AND DATA REQUIRED | `WYE_INGREDIENT_PROJECTION.md` defines the non-scalar mapping-aware envelope; form/composition transfer remains review-gated |
-| Exposure/product assessment | DEFINED IN 7.5 / EXTERNAL REVIEW AND DATA REQUIRED | `WYE_PRODUCT_ASSESSMENT.md` defines readiness and risk non-computability without changing hazard synthesis |
+| Ingredient projection | DEFINED IN 7.4 / MVP INTERNAL ASSURANCE AND DATA REQUIRED | `WYE_INGREDIENT_PROJECTION.md` defines the non-scalar mapping-aware envelope; form/composition transfer remains review-gated |
+| Exposure/product assessment | DEFINED IN 7.5 / MVP INTERNAL ASSURANCE AND DATA REQUIRED | `WYE_PRODUCT_ASSESSMENT.md` defines readiness and risk non-computability without changing hazard synthesis |
 | Persistence/runtime/API | DEFERRED TO LATER PHASE | Persistence and rollout phases; not authorized here |
 
 ## Current-schema gap matrix
@@ -724,13 +733,13 @@ Classification does not authorize implementation.
 | Synthesis trace and digest envelopes | READY FOR IMPLEMENTATION | Causal content and proof boundaries are defined |
 | General study/dependency grouping | BLOCKED BY DATA MODEL | Cross-source study/dependency identity is missing |
 | Endpoint/population/route/duration/dose grouping | BLOCKED BY DATA MODEL | Normalized vocabularies/mappings are missing |
-| Direction-of-effect mapping | BLOCKED BY SCIENTIFIC REVIEW | Scientific meaning requires expert validation |
-| Quality profile content | BLOCKED BY SCIENTIFIC REVIEW | No approved framework/criteria |
-| Relevance transfer rules | BLOCKED BY SCIENTIFIC REVIEW | Applicability assumptions affect claims |
-| Uncertainty transformation rules | BLOCKED BY SCIENTIFIC REVIEW | Representation is ready; material-impact semantics are not |
-| Consistency/conflict classification runtime | BLOCKED BY SCIENTIFIC REVIEW | Concrete equivalence/discordance criteria are unvalidated |
-| Evidence sufficiency/confidence | BLOCKED BY SCIENTIFIC REVIEW | No approved framework or conclusion vocabulary |
-| Scientific hazard interpretation | BLOCKED BY SCIENTIFIC REVIEW | Profile envelope does not validate hazard conclusions |
+| Direction-of-effect mapping | BLOCKED BY MVP INTERNAL ASSURANCE | Scientific meaning requires accountable methodology review |
+| Quality profile content | BLOCKED BY MVP INTERNAL ASSURANCE | No accepted framework/criteria |
+| Relevance transfer rules | BLOCKED BY MVP INTERNAL ASSURANCE | Applicability assumptions affect claims |
+| Uncertainty transformation rules | BLOCKED BY MVP INTERNAL ASSURANCE | Representation is ready; material-impact semantics are not |
+| Consistency/conflict classification runtime | BLOCKED BY MVP INTERNAL ASSURANCE | Concrete equivalence/discordance criteria are unvalidated |
+| Evidence sufficiency/confidence | BLOCKED BY MVP INTERNAL ASSURANCE | No accepted framework or conclusion vocabulary |
+| Scientific hazard interpretation | BLOCKED BY MVP INTERNAL ASSURANCE | Profile envelope does not validate hazard conclusions |
 | Ingredient projection envelope | READY FOR IMPLEMENTATION | Phase 7.4 defines mapping-aware non-scalar entries; concrete form/composition transfer remains blocked by data/review |
 | Exposure/product assessment envelopes | READY FOR IMPLEMENTATION | Phase 7.5 defines non-numeric readiness/gate objects; exposure/risk methods remain blocked |
 | DB persistence/API/rollout | DEFERRED TO LATER PHASE | Requires persistence design, validation and governance |
@@ -762,7 +771,7 @@ Classification does not authorize implementation.
 - [x] Canonical synthesis trace defined.
 - [x] Twenty edge cases analyzed.
 - [x] Twenty conceptual deterministic test vectors defined.
-- [x] Scientific-review boundaries classified.
+- [x] MVP assurance boundaries classified; future external review remains optional.
 - [x] Current-schema gaps documented.
 - [x] Implementation readiness classified.
 

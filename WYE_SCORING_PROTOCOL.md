@@ -260,7 +260,8 @@ first protocol may use structured qualitative appraisals and explicit
 The Phase 7.3 contract keeps quality, relevance, consistency, coverage,
 uncertainty and confidence as separate profiles. Concrete endpoint equivalence,
 direction, quality, sufficiency, confidence and hazard-interpretation rules
-remain subject to external scientific review.
+require internal methodology review for the MVP; external scientific review may
+be added later as an optional assurance tier.
 
 An uncertainty item has the logical fields:
 
@@ -290,7 +291,8 @@ composition readiness. The canonical output is the non-scalar
 Multiple projected substance profiles remain separate. No `maximum`, average,
 sum, worst-substance rule, exposure assumption or product-risk inference is
 permitted. Concrete equivalence, cross-form, mixture, residual-presence and
-confidence-transfer rules remain subject to external scientific review.
+confidence-transfer rules require Internal Informational Assurance for the MVP;
+future external review is optional and not currently present.
 
 ## Product assessment and exposure-readiness specialization
 
@@ -303,7 +305,9 @@ Ingredient order, presence and nutrition totals do not supply concentration or
 consumed dose. No silent default scenario, cross-ingredient aggregation,
 reference-point comparison, risk inference or product score is permitted.
 Concrete exposure models, population/route transfer, reference semantics and
-risk characterisation require external scientific/regulatory review.
+risk characterisation require Internal Informational Assurance for a bounded
+informational MVP. Stronger regulatory, professional or personal-risk use
+remains outside scope and may require future specialist review.
 
 ## Logical versioning and reproducibility model
 
@@ -488,13 +492,14 @@ These vectors define semantic expectations only. They contain no numeric result.
 No Phase 7 runtime implementation may be published until the target protocol has:
 
 - a complete immutable declaration;
-- external scientific review appropriate to the domain;
+- internal methodology review appropriate to the domain;
 - approved intended use and claims;
 - reviewed eligibility, conflict, missing-evidence and uncertainty methods;
 - conceptual vectors extended into frozen implementation fixtures;
 - deterministic canonicalisation and digest specification;
 - an approved logical data model/ADR;
-- an independent validation plan;
+- an internal validation plan with golden, adversarial, regression and
+  proportionate sensitivity evidence;
 - explicit handling for all unavailable states;
 - confirmation that no legacy score or field is treated as scientific input.
 
@@ -525,13 +530,13 @@ its reason/rule registries, exact mappings, representation allowlist,
 evaluation order and fail-closed behavior. No Python-only default is a
 scientific rule.
 
-This specialization does not supply a scientific policy instance. Permitted
+This specialization does not supply an accepted methodology instance. Permitted
 evidence channels/types, source/dataset and representation entries, endpoint
 and population mappings, unknown/dependency dispositions and expected golden
-decisions still require independent domain review. Phase 7.7.1B prepares a
-candidate instance and oracle corpus; until independent reviewers approve those
-values for the exact policy digest, the protocol is not selection-executable
-and production selector implementation remains unauthorized.
+decisions still require accountable internal methodology review. Phase 7.7.1B
+prepares a candidate instance and oracle corpus; production selector
+implementation remains unauthorized until the exact policy completes Internal
+Informational Assurance, product-owner acceptance and release authorization.
 
 ```text
 Phase 7.7.1A:
@@ -588,3 +593,16 @@ decision promotes or publishes `1.0.0-candidate.1` in this checkpoint.
 Phase 7.7.2:
 APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 ```
+
+## Phase 7.14.13 Internal Informational Assurance alignment
+
+The Phase 7.7.1C and 7.7.2 external-review text above is a historical record of
+the package and validator that were built. Under
+`WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`, the absent external approval
+record is future/optional and does not block the informational MVP. It is not
+treated as present and is not simulated.
+
+The current MVP gate requires the complete internal assurance package,
+data/model-steward verification, product-owner acceptance and separate release
+authorization. Runtime remains unauthorized because those gates and applicable
+`PSC-OD-*` decisions are incomplete.

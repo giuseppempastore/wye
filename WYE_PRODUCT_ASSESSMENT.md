@@ -915,7 +915,12 @@ performs an exposure calculation or emits a risk score.
 
 No migration or SQL schema is designed by this matrix.
 
-## Scientific-review boundaries
+## MVP assurance boundaries
+
+Under `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`, concrete scenario and risk
+method choices below require internal methodology assurance for the MVP.
+External review is a future optional tier unless a later claim or scope
+activates it.
 
 | Area | Classification | Rationale |
 |---|---|---|
@@ -925,16 +930,16 @@ No migration or SQL schema is designed by this matrix.
 | Structured product/scenario objects, trace and digests | ARCHITECTURALLY APPROVED | Deterministic representation boundary |
 | Scenario-specific results and no product aggregation | ARCHITECTURALLY APPROVED | Preserves scientific scope and traceability |
 | Label AI as non-canonical candidate source | ARCHITECTURALLY APPROVED | Matches WYE governance and existing validation states |
-| Ingredient-order quantitative interpretation | REQUIRES EXTERNAL SCIENTIFIC/REGULATORY REVIEW | Jurisdiction/category/date rules and exceptions matter |
-| Default consumption scenarios | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Defaults directly affect exposure |
-| Oral route inference | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Intended use/preparation may differ |
-| Population transfer/categories | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Applicability affects claims |
-| Frequency/duration normalization | REQUIRES EXTERNAL SCIENTIFIC REVIEW | No arbitrary thresholds allowed |
-| Body-weight assumptions | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Population statistics and uncertainty required |
-| Mixture range/upper-bound handling | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Scenario meaning and interactions matter |
-| Substance-amount derivation policy | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Identity/form/composition assumptions affect dose |
-| Reference point selection/compatibility | REQUIRES EXTERNAL SCIENTIFIC/REGULATORY REVIEW | Endpoint, route, duration, population and form must align |
-| Risk-characterisation and confidence framework | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Determinism is not validation |
+| Ingredient-order quantitative interpretation | MVP INTERNAL ASSURANCE REQUIRED; SPECIALIST REVIEW CONDITIONAL ON CLAIM/SCOPE | Jurisdiction/category/date rules and exceptions matter |
+| Default consumption scenarios | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Defaults directly affect exposure |
+| Oral route inference | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Intended use/preparation may differ |
+| Population transfer/categories | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Applicability affects claims |
+| Frequency/duration normalization | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | No arbitrary thresholds allowed |
+| Body-weight assumptions | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Population statistics and uncertainty required |
+| Mixture range/upper-bound handling | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Scenario meaning and interactions matter |
+| Substance-amount derivation policy | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Identity/form/composition assumptions affect dose |
+| Reference point selection/compatibility | MVP INTERNAL ASSURANCE REQUIRED; SPECIALIST REVIEW CONDITIONAL ON CLAIM/SCOPE | Endpoint, route, duration, population and form must align |
+| Risk-characterisation and confidence framework | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Determinism is not validation |
 | Quantities, composition, serving history and scenarios | DATA GAP | Not generally canonical/persisted |
 | Nutrition and allergy assessment | DEFERRED | Separate protocol families |
 | Runtime exposure/risk and persistence | DEFERRED | Later phases and reviews |
@@ -996,7 +1001,7 @@ Classification describes logical maturity, not authorization.
 - [x] Twenty-four edge cases analyzed.
 - [x] Twenty-four deterministic conceptual vectors defined.
 - [x] Current-schema gaps documented.
-- [x] Scientific-review boundaries classified.
+- [x] MVP assurance boundaries classified; future external review remains optional.
 - [x] Implementation readiness classified.
 - [x] Product-level naming decision recorded.
 

@@ -1063,3 +1063,13 @@ separate checkpoints.
 Phase 7.7.2:
 APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 ```
+
+## Phase 7.14.13 assurance-governance alignment
+
+The Phase 7.7 external-approval states above describe historical artifacts and
+their validator. They no longer define the blocking assurance tier for the
+informational MVP. `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md` requires
+Internal Informational Assurance, data/model-steward verification,
+product-owner acceptance and a separate release decision. External validation
+is future, optional and not present. Execution and publication remain
+unauthorized until the internal and technical gates are completed.

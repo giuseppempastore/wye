@@ -342,7 +342,7 @@ All of these have final decision `excluded` and `resolution_state=deferred`.
 | `deferred_unit_semantics_unresolved` | Value/unit/basis cannot be interpreted for the requested use | Structure/applicability | Deterministic | Unit/context normalization |
 | `deferred_dependency_unresolved` | Independence/dependence cannot be established where it changes permitted role | Dependency | Deterministic from lineage state | Study/dependency review |
 | `deferred_correction_lineage_unresolved` | Correction/supersession claim lacks a provable predecessor/successor relation | Lifecycle | Deterministic | Lineage event |
-| `deferred_scientific_review_required` | A protocol-declared governed decision is absent | Any scientific gate | Deterministic from missing review artifact | External review |
+| `deferred_scientific_review_required` | A protocol-declared governed decision is absent | Any methodology gate | Deterministic from missing review artifact | Internal review for MVP; external review future/optional |
 
 The Phase 7.0.1 conceptual codes remain semantic predecessors. Because no Phase
 7 selection protocol has been published or executed, the precise Phase 7.2
@@ -628,8 +628,9 @@ not_applicable
 ```
 
 Phase 7.2 defines no temporal thresholds for these terms. Boundaries and source
-mappings require a recognized domain specification and external scientific
-review. Duration may exist in OpenFoodTox raw payload but is not consistently
+mappings require a recognized domain specification and internal methodology
+review for the MVP. Optional future external review may refine them. Duration
+may exist in OpenFoodTox raw payload but is not consistently
 normalized; QPS status/qualification has duration `not_applicable`. Duration-
 specific applicability is therefore a current data gap.
 
@@ -723,7 +724,8 @@ target identity: normalized microbial taxon
 This is a regulatory recommendation/status record with qualification text. It
 is not an experimental toxicology endpoint, a universal safety conclusion or a
 product-risk estimate. Its exact scientific scope and applicability require
-external review of the QPS framework and qualification semantics.
+internal methodology review of the QPS framework and qualification semantics
+for the MVP; external review is future and optional.
 
 ### OpenFoodTox
 
@@ -936,7 +938,11 @@ No vector produces an endpoint synthesis or hazard conclusion.
 
 No migration is designed or authorized by this analysis.
 
-## Scientific-review boundaries
+## MVP assurance boundaries
+
+Under `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`, the MVP classifications
+below require internal methodology assurance. External review is a future
+optional tier unless a later claim or scope activates it.
 
 | Area | Classification | Rationale |
 |---|---|---|
@@ -947,14 +953,14 @@ No migration is designed or authorized by this analysis.
 | Canonical ordering, decision/selection digest | ARCHITECTURALLY APPROVED | Reproducibility mechanism |
 | Exact duplicate/reingestion non-independence | ARCHITECTURALLY APPROVED | Identity/provenance rule, not evidence weighting |
 | No provider precedence or same-value deduplication | ARCHITECTURALLY APPROVED | Prevents unsupported scientific inference |
-| Concrete endpoint mappings/equivalences | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Scientific construct mapping |
-| Population/species transfer and route applicability | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Domain inference affects claim |
-| Duration categories and boundaries | REQUIRES EXTERNAL SCIENTIFIC REVIEW | No arbitrary thresholds allowed |
-| Quality minimum criteria and evidence-type acceptance | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Determinism does not establish scientific validity |
-| QPS role, qualification interpretation and target scope | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Regulatory framework-specific meaning |
-| Cross-study dependency/equivalence review | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Requires source/study expertise |
-| Agreement, discordance and true-conflict synthesis | DEFINED IN 7.3 / EXTERNAL REVIEW REQUIRED | Selection only pre-classifies comparability; synthesis contract is in `WYE_EVIDENCE_SYNTHESIS.md` |
-| Endpoint synthesis, hazard profile and confidence | DEFINED IN 7.3 / EXTERNAL REVIEW REQUIRED | Non-scalar representation is defined; concrete scientific rules remain review-gated |
+| Concrete endpoint mappings/equivalences | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Scientific construct mapping |
+| Population/species transfer and route applicability | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Domain inference affects claim |
+| Duration categories and boundaries | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | No arbitrary thresholds allowed |
+| Quality minimum criteria and evidence-type acceptance | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Determinism does not establish scientific validity |
+| QPS role, qualification interpretation and target scope | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Regulatory framework-specific meaning |
+| Cross-study dependency/equivalence review | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Requires source/study expertise |
+| Agreement, discordance and true-conflict synthesis | DEFINED IN 7.3 / MVP INTERNAL ASSURANCE REQUIRED | Selection only pre-classifies comparability; synthesis contract is in `WYE_EVIDENCE_SYNTHESIS.md` |
+| Endpoint synthesis, hazard profile and confidence | DEFINED IN 7.3 / MVP INTERNAL ASSURANCE REQUIRED | Non-scalar representation is defined; concrete scientific rules remain review-gated |
 | Endpoint/study/dependency ontologies and lineage | DATA GAP | Not represented generally in current schema |
 | Structured route/duration/population/unit basis | DATA GAP | Present only partially/raw |
 
@@ -998,8 +1004,10 @@ real non-numeric result and complete trace for atomic publication.
 No reviewed machine-executable scientific policy instance currently exists.
 Phase 7.7.1B prepares a concrete candidate source/dataset and representation
 allowlist, channel/type and endpoint/population mappings, dependency disposition
-and golden expected decisions. Those values remain the authority of an
-independent scientific review, not software architecture or AI assistance.
+and golden expected decisions. For the MVP, those values require accountable
+internal methodology review and product-owner acceptance, not software
+architecture or autonomous AI authority. External review is a future optional
+assurance tier.
 
 ```text
 Phase 7.7.1A:
@@ -1019,7 +1027,7 @@ policy: efsa_qps_evidence_selection / 1.0.0-candidate.1
 schema: wye_scientific_evidence_selection_policy / 1
 selection_policy_digest:
   d5c98f988ae1ef8514518a97cbc00d1f5c6d5984ae7fea7a60c7c113dc833615
-status: CANDIDATE — AWAITING EXTERNAL SCIENTIFIC APPROVAL
+status: CANDIDATE — INTERNAL INFORMATIONAL ASSURANCE REQUIRED
 ```
 
 The candidate is intentionally limited to finding-level EFSA QPS list evidence
@@ -1035,9 +1043,10 @@ scientific-policy values remain review-gated. `WYE_SELECTION_GOLDEN_CASES.md`
 authors 28 independent oracle cases, each classified as `TECHNICAL` or
 `SCIENTIFIC-REVIEW-REQUIRED`; none is self-labelled approved.
 
-Production selector publication and scientific selector implementation remain
-blocked until the exact policy digest and mandatory scientific oracles receive
-independent reviewer, validation-owner and release-approver sign-off. A later
+Production selector publication and selector implementation remain blocked
+until the exact policy digest and mandatory method oracles complete Internal
+Informational Assurance, data/model-steward verification, product-owner
+acceptance and release approval. A later
 technical conformance interpreter may use synthetic policies only in a
 non-production harness and may not create 0021 scientific publications.
 
@@ -1055,9 +1064,10 @@ candidate decision as structural, source-derived, scientific-review-required
 or fail-closed; it supplies dedicated review cards and a case-by-case approval
 matrix for all 28 golden cases. It records no approval itself.
 
-Production selection remains unauthorized until the exact candidate policy
-and golden corpus receive independent scientific review, validation-owner
-sign-off and release approval under the documented change-control rule.
+Production selection remains unauthorized until the exact candidate policy and
+golden corpus complete Internal Informational Assurance, data/model-steward
+verification, product-owner acceptance and release approval under the
+documented change-control rule.
 
 ```text
 Phase 7.7.1C:
@@ -1081,6 +1091,15 @@ No real record currently exists, so the scientific selection boundary remains:
 Phase 7.7.2:
 APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 ```
+
+### Phase 7.14.13 assurance-governance alignment
+
+The Phase 7.7.1C and 7.7.2 external-review package and validator remain intact
+as historical and future-Level-2 artifacts. Their absent approval record is not
+an MVP blocker under `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`. External
+validation is future, optional and not present; it is not simulated by internal
+roles or Codex/ChatGPT. Technical, provenance, internal-assurance and release
+gates remain blocking.
 
 ## Phase 7.2 exit criteria
 
@@ -1109,7 +1128,7 @@ APPROVAL GATE IMPLEMENTED — EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 - [x] Selection-digest boundary defined.
 - [x] Eighteen edge cases defined.
 - [x] Hybrid reason-code versioning and compatibility defined.
-- [x] Scientific-review boundaries classified.
+- [x] MVP assurance boundaries classified; future external review remains optional.
 - [x] Twenty conceptual deterministic vectors defined.
 - [x] Current-schema gap matrix completed.
 - [x] Implementation-readiness matrix completed.

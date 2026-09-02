@@ -15,16 +15,20 @@ product_approval: NOT PRESENT
 validation_status: NOT PERFORMED
 runtime_authority: NONE
 cutoff: 2026-09-01
+assurance_governance: INTERNAL INFORMATIONAL ASSURANCE ADOPTED 2026-09-02
+external_validation: FUTURE / OPTIONAL / NOT PRESENT
 ```
 
 This RFC compares methodological families for a future ingredient-level mapping.
 It does not approve a formula, state policy, weight, threshold, mapping value,
 computability gate, implementation or release. `PSC-OD-005` remains `OPEN`.
 
-The required decision authority is the scientific review panel together with the
-validation owner, as recorded in the Product Scoring Contract. The product owner
-may confirm product semantics, interpretation limits and acceptable transparency
-trade-offs, but cannot confer scientific validity on a numerical mapping.
+For the informational MVP, a protocol proposer prepares the candidate, the
+internal validation function and data/model steward verify its assurance and
+technical properties, and the product owner may accept the exact methodology
+for bounded informational use. This acceptance cannot confer scientific,
+clinical or regulatory validity. Independent external review is future and
+optional under `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`.
 
 This RFC is distinct from:
 
@@ -512,9 +516,11 @@ A candidate must return to draft if any material condition holds:
 ### G.3 Approval gate
 
 Approval requires an exact candidate identity and digest, complete source and
-decision provenance, scientific-panel sign-off, independent validation-owner
-sign-off, resolved blocking dependencies, approved golden corpus, impact report
-and a separate release decision. Passing technical checks is insufficient.
+decision provenance, internal methodology and validation dispositions,
+data/model-steward verification, product-owner acceptance, resolved blocking
+dependencies, approved internal golden corpus, impact report and a separate
+release decision. Passing technical checks is insufficient; independent
+external validation remains an optional future tier.
 
 ## H. Internal evidence register
 
@@ -558,15 +564,17 @@ Question for the product owner, within product authority only:
 > rather than interval-like, while accepting that scientific validation may
 > reject or materially change the proposed family?
 
-Question for the scientific review panel and validation owner:
+Question for the internal methodology and validation functions:
 
 > After the state policy, reference judgments and calibration corpus are
 > approved, which reviewed candidate mapping validly represents ingredient
 > favourability on the bounded WYE scale while preserving monotonicity,
 > uncertainty, non-computability and the mandatory semantic separations?
 
-The product-owner answer cannot close `PSC-OD-005`. Closure requires the
-authority recorded in the decision matrix.
+The product-owner candidate-direction answer alone cannot close `PSC-OD-005`.
+Closure requires the complete Internal Informational Assurance package,
+data/model-steward verification and a separate product-owner acceptance of the
+exact candidate under the authority recorded in the decision matrix.
 
 ### I.2 Options and principal trade-offs
 
@@ -585,12 +593,14 @@ authority recorded in the decision matrix.
 - decision-scoped source register and cutoff;
 - documented directional and applicability rules;
 - governed reference-judgment protocol and reviewer roles;
-- representative calibration and independent validation corpus;
+- representative calibration corpus and internally separated validation set;
 - exact candidate formulas/parameters and canonical identity;
 - sensitivity, monotonicity, extremes, stability and falsification results;
 - explicit dependency handling for `PSC-OD-013` through `PSC-OD-019`;
 - communication risk review without approving final UI;
-- scientific panel and validation owner sign-off.
+- internal methodology and validation dispositions, data/model-steward check
+  and product-owner acceptance; external independent validation is optional for
+  the informational MVP.
 
 ### I.4 Proposed decision record
 
@@ -599,8 +609,11 @@ decision_id: PSC-OD-005
 decision_status: OPEN
 proposal_status: PROPOSED, NOT APPROVED
 recommended_research_family: Option B — transparent monotone multi-attribute model
-decision_owner: Scientific review panel + validation owner
-product_owner_role: product semantics and transparency trade-off consultation only
+decision_owner: Product owner after Internal Informational Assurance
+methodology_preparation: Protocol proposer / Codex-assisted workflow
+technical_verification: Data/model steward
+internal_validation: REQUIRED — NOT COMPLETE
+external_validation: FUTURE / OPTIONAL / NOT PRESENT
 candidate_direction_date: 2026-09-02
 candidate_direction_authority: Product owner
 product_owner_candidate_direction: Option B — multi-attribute monotone and decomposable model
@@ -611,8 +624,8 @@ calibration_corpus: NOT PRESENT
 exact_formula: NOT PROPOSED OR APPROVED
 weights_or_thresholds: NOT PROPOSED OR APPROVED
 scientific_approval: NOT PRESENT
-scientific_validation: NOT PERFORMED
-validation_owner_approval: NOT PRESENT
+scientific_validation: NOT CLAIMED
+validation_owner_approval: INTERNAL DISPOSITION NOT PRESENT
 implementation_authorization: NOT PRESENT
 runtime_authority: NONE
 release_status: NOT APPROVED
@@ -627,10 +640,12 @@ weights, thresholds, parameters, caps, floors, overrides, comparability or
 numerical outputs, and it does not authorize implementation, publication or
 release. `PSC-OD-005` remains `OPEN`.
 
-The scientific review panel and validation owner may reject, modify or replace
-the candidate direction. Option A remains the transparency baseline and Option
-D remains the non-compensatory stress case. Validation must still compare the
-exact candidate with alternatives and baselines. The direction gives the scale
+The internal methodology and validation functions may reject, modify or replace
+the candidate direction before product-owner acceptance. Future external
+reviewers may also challenge it without being an MVP prerequisite. Option A
+remains the transparency baseline and Option D remains the non-compensatory
+stress case. Internal validation must still compare the exact candidate with
+alternatives and baselines. The direction gives the scale
 no interval or ratio properties, approves no comparability across ingredients,
 categories or products, and authorizes no `0..100` value for runtime or UI.
 

@@ -264,8 +264,9 @@ derived_from != current presence
 The normal projection is provenance-only and presence-dependent endpoint
 dimensions are blocked. An exception requires governed evidence describing the
 transformation, residual identity/form, residual presence and applicable
-scientific transfer. Such rules require external scientific review and a new
-snapshot/execution when new residual evidence appears.
+scientific transfer. Such rules require internal methodology review for the MVP
+and a new snapshot/execution when new residual evidence appears. External
+review is a future optional assurance tier.
 
 ## Substance form and identity compatibility
 
@@ -697,15 +698,19 @@ Classification describes logical maturity, not authorization.
 | Composition-aware projection | BLOCKED BY DATA MODEL | Quantity/range/unit/basis are missing |
 | General substance-form compatibility | BLOCKED BY DATA MODEL | Form/speciation model and mappings are missing |
 | `equivalent_to` direct scientific projection | BLOCKED BY SCIENTIFIC REVIEW | Equivalence kind/scope is unrepresented and unvalidated |
-| `contains` conclusion-transfer policy | BLOCKED BY SCIENTIFIC REVIEW | Presence scope and permitted hazard wording require review |
-| Mixture component scientific handling | BLOCKED BY SCIENTIFIC REVIEW | Fractions, interactions and mixture method unvalidated |
-| `derived_from` residual transfer | BLOCKED BY SCIENTIFIC REVIEW | Transformation/residual semantics require domain evidence |
-| Confidence propagation vocabulary | BLOCKED BY SCIENTIFIC REVIEW | Representation constraint exists; no approved framework |
+| `contains` conclusion-transfer policy | BLOCKED BY MVP INTERNAL ASSURANCE | Presence scope and permitted hazard wording require review |
+| Mixture component scientific handling | BLOCKED BY MVP INTERNAL ASSURANCE | Fractions, interactions and mixture method unvalidated |
+| `derived_from` residual transfer | BLOCKED BY MVP INTERNAL ASSURANCE | Transformation/residual semantics require domain evidence |
+| Confidence propagation vocabulary | BLOCKED BY MVP INTERNAL ASSURANCE | Representation constraint exists; no accepted framework |
 | Multi-substance structured collection | READY FOR IMPLEMENTATION | Separate entries/canonical order/no aggregation are defined |
 | Exposure/product assessment envelopes | READY FOR IMPLEMENTATION | Phase 7.5 defines composition/exposure readiness and risk-computability states; actual calculation remains review/data blocked |
 | Persistence/API/runtime rollout | DEFERRED | Later persistence, validation and rollout phases |
 
-## Scientific-review boundaries
+## MVP assurance boundaries
+
+Under `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`, concrete transfer choices
+below require internal methodology assurance for the MVP. External review is a
+future optional tier unless a later claim or scope activates it.
 
 | Area | Classification | Rationale |
 |---|---|---|
@@ -715,12 +720,12 @@ Classification describes logical maturity, not authorization.
 | No cross-substance aggregation, exposure or risk inference | ARCHITECTURALLY APPROVED | Required input/construct separation |
 | Additive uncertainty and non-increasing confidence constraint | ARCHITECTURALLY APPROVED | Prevents unsupported strengthening; calculation remains reviewed |
 | QPS regulatory channel separation | ARCHITECTURALLY APPROVED | Preserves Phase 7.3 semantic role |
-| `equivalent_to` scientific scope | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Chemical/functional/regulatory/label equivalence differ |
-| Substance-form interchangeability and cross-form transfer | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Endpoint meaning may change with form/speciation |
-| `contains` projection limits and claim wording | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Presence does not define magnitude/applicability |
-| Mixture composition/interactions | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Component evidence is not whole-mixture evidence |
-| `derived_from` residual presence/transfer | REQUIRES EXTERNAL SCIENTIFIC REVIEW | Transformation can remove/change source substance |
-| Confidence vocabulary/propagation method | REQUIRES EXTERNAL SCIENTIFIC REVIEW | No formula or qualitative scale validated |
+| `equivalent_to` scientific scope | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Chemical/functional/regulatory/label equivalence differ |
+| Substance-form interchangeability and cross-form transfer | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Endpoint meaning may change with form/speciation |
+| `contains` projection limits and claim wording | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Presence does not define magnitude/applicability |
+| Mixture composition/interactions | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Component evidence is not whole-mixture evidence |
+| `derived_from` residual presence/transfer | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | Transformation can remove/change source substance |
+| Confidence vocabulary/propagation method | MVP INTERNAL ASSURANCE REQUIRED; EXTERNAL REVIEW FUTURE/OPTIONAL | No formula or qualitative scale validated |
 | Form, composition, presence and residual data | DATA GAP | Not generally represented through `0017` |
 | Projection persistence/snapshot documents | DATA GAP | No Phase 7 storage exists |
 | Exposure readiness and product assessment | DEFINED IN 7.5 / REVIEW AND DATA REQUIRED | `WYE_PRODUCT_ASSESSMENT.md` preserves separate entries and does not infer exposure/risk |
@@ -755,7 +760,7 @@ Classification describes logical maturity, not authorization.
 - [x] Twenty deterministic conceptual vectors defined.
 - [x] Current-schema gaps documented.
 - [x] Implementation readiness classified.
-- [x] Scientific-review boundaries classified.
+- [x] MVP assurance boundaries classified; future external review remains optional.
 
 ## Roadmap and next checkpoint
 

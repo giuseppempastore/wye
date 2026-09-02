@@ -30,6 +30,7 @@ Fase 7.7.1C — Scientific review package                            SCIENTIFIC 
 Fase 7.7.2 — External scientific approval gate                     COMPLETED + COMMITTED
 Fase 7.7.3 — External scientific review handoff                    HANDOFF READY — HUMAN REVIEW REQUIRED
 Fase 7.7.4 — External scientific review delivery package           PACKAGE READY — HUMAN REVIEW REQUIRED
+Fase 7.14.13 — Internal Informational Assurance governance          ADOPTED — IMPLEMENTATION GATES OPEN
 ```
 
 La Fase 7.0.1 congela il contratto architetturale iniziale. Non dichiara il
@@ -601,6 +602,49 @@ HANDOFF READY — HUMAN REVIEW REQUIRED
 Gate:
 EXTERNAL SCIENTIFIC APPROVAL REQUIRED
 ```
+
+## Fase 7.14.14 — Registrazione Policy Option C e commit dell'Internal Informational Assurance package
+
+Il product owner ha confermato il `2026-09-02` Policy Option C — Layered state
+model esclusivamente come `CANDIDATE DESIGN DIRECTION ONLY` e ha confermato
+`INTERNAL INFORMATIONAL ASSURANCE` come governance dell'MVP informativo.
+Validazione esterna e certificazione restano `FUTURE / OPTIONAL / NOT PRESENT`.
+`PSC-OD-005` resta `OPEN`; nessuna formula, runtime o release è approvata.
+
+Il commit locale isolato previsto contiene esattamente 11 file: questo
+checkpoint, Evidence Selection, Evidence Synthesis, Ingredient Projection,
+Ingredient Score Mapping RFC, Product Assessment, Product Scoring Contract,
+Scoring Execution Model, Scoring Protocol, Ingredient State and Dimension
+Policy RFC e Internal Assurance and Disclosure RFC.
+
+```text
+planned_commit_message: docs(scoring): adopt MVP internal informational assurance governance
+push: FORBIDDEN
+```
+
+## Phase 7.14.13 Internal Informational Assurance governance
+
+Con direzione esplicita del product owner del `2026-09-02`,
+`WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md` adotta per l'MVP informativo il
+modello `INTERNAL INFORMATIONAL ASSURANCE`. La metodologia candidata potrà
+raggiungere lo stato `INTERNALLY REVIEWED — NOT INDEPENDENTLY VALIDATED` solo
+dopo il completamento del pacchetto interno, dei controlli del data/model
+steward e dell'accettazione del product owner.
+
+La validazione scientifica indipendente e l'eventuale certificazione restano
+future, opzionali per l'MVP e non presenti. Le sezioni storiche 7.7.1C–7.7.4 e
+i relativi artifact non sono riscritte: descrivono il gate esterno costruito in
+quelle sottofasi e ora disponibile come futuro assurance tier. L'assenza del
+record esterno non blocca più drafting, decision closure interna o release
+informativa.
+
+Runtime e release restano comunque non autorizzati finché decisioni, formula,
+test, provenance, assurance package interno, claim/disclosure package e
+autorizzazione di release non sono completati. Nessuna decisione `PSC-OD-*` è
+chiusa da questa sottofase; `PSC-OD-005` resta `OPEN`, `PSC-OD-006` resta in
+attesa e Policy Option C resta `PROPOSED, NOT APPROVED`.
+
+I finding `ISDP-REV-001`–`ISDP-REV-005` sono riconosciuti `CLOSED`.
 
 ## Phase 7.7.4 external scientific review delivery package
 

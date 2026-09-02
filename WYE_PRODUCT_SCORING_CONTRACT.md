@@ -3,7 +3,7 @@
 ## Document status
 
 ```text
-DRAFT — NOT SCIENTIFICALLY APPROVED
+DRAFT — INTERNAL INFORMATIONAL ASSURANCE GOVERNANCE ADOPTED
 NOT A PUBLISHED SCORING POLICY
 NO RUNTIME AUTHORITY
 ```
@@ -19,13 +19,15 @@ The frozen selection-policy candidate remains a separate review subject:
 ```text
 policy: efsa_qps_evidence_selection
 version: 1.0.0-candidate.1
-status: frozen candidate awaiting external scientific approval
+status: frozen candidate awaiting internal assurance and product acceptance
 ```
 
 Nothing in this document modifies, approves, supersedes or promotes that
-candidate, its golden corpus, its delivery package or its external approval
-gate. Any future product-scoring candidate requires a new governed identity,
-version, digest, scientific review and validation corpus.
+candidate or its golden corpus. Its historical external-review package remains
+available for a future optional assurance tier. Under the governance adopted in
+`WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`, an MVP candidate instead
+requires a new governed identity, version, digest and complete Internal
+Informational Assurance package.
 
 ## 1. Scope and authority boundary
 
@@ -46,7 +48,9 @@ It has no authority to:
 
 Runtime numerical scoring remains blocked until all blocking decisions in the
 decision matrix are resolved through governed artifacts and the resulting
-candidate has completed scientific review, validation and publication.
+candidate has completed Internal Informational Assurance, product-owner
+acceptance and separate release authorization. Independent external validation
+is future and optional for the informational MVP.
 
 ### 1.1 Immediate document audience
 
@@ -85,8 +89,9 @@ determine the result while preserving the possibility of `not_computable`.
 This food-domain boundary did not by itself define the final target population,
 intended users or permitted claims. Those first-release product decisions are
 now recorded under `PSC-OD-001`; exact external wording remains subject to
-`PSC-OD-020` and the applicable scientific, communication and legal/regulatory
-review gates.
+`PSC-OD-020`, Internal Informational Assurance and the applicable communication
+and scope-dependent legal/regulatory gates. External scientific review is a
+future optional tier for the informational MVP.
 
 The product promise is:
 
@@ -433,7 +438,7 @@ not choose weighted, geometric or any other formula.
 | Weighted aggregation with guardrails | Interpretable contribution by domain; simple sensitivity analysis; explicit priorities. | Arbitrary weights and excessive compensation can let one domain erase another. | Rationale for weights, calibration set, sensitivity analysis and guardrail validation. |
 | Geometric aggregation | Limits compensation and makes jointly weak domains more visible. | Zero is absorbing; near-zero values dominate; exponents and any floor require justification. | Scale properties, treatment of zero, robustness and calibration against reference judgments. |
 | Minimum-dominant aggregation | Conservative and easy to explain when the weakest domain should dominate. | Discards information from the stronger domain and creates discontinuities around the minimum. | Evidence that the intended use warrants dominance rather than balanced comparison. |
-| Nonlinear penalties | Can distinguish severity, multiplicity and interactions without a universal linear decrement. | High flexibility can hide arbitrary curves, overfitting and non-monotonic behaviour. | Prespecified functional family, calibration, external validation and adversarial tests. |
+| Nonlinear penalties | Can distinguish severity, multiplicity and interactions without a universal linear decrement. | High flexibility can hide arbitrary curves, overfitting and non-monotonic behaviour. | Prespecified functional family, calibration, internal validation and adversarial tests; external validation remains optional for the MVP. |
 | Score caps | Prevents an excellent ordinary profile from masking a qualified critical concern. | Threshold discontinuities; an incorrectly triggered cap has large impact. | Cap eligibility, cap level, identity/applicability gates and false-positive analysis. |
 | Critical override | Can represent a formally disqualifying condition, including a future zero rule. | Conflation of hazard and risk or weak identity may produce unjustified extreme results. | Published rule, strong applicability, qualified source, validation and release approval. |
 | Hierarchical combination | Keeps ordinary aggregation, missingness and criticality as separately auditable layers. | More governance and explanation complexity; interactions between layers must be frozen. | Layer order, no-double-counting invariants, trace schema and end-to-end validation. |
@@ -808,26 +813,26 @@ The remaining 17 decisions, `PSC-OD-005` through `PSC-OD-020` and
 
 | Decision ID | Description | Domain | Prerequisites | Required decision authority | Future artifact | Blocking? | Current status |
 |---|---|---|---|---|---|---|---|
-| `PSC-OD-001` | First-release intended use, general reference population and permitted product-claims boundary: Option A. | Cross-domain/product | Claims inventory, user scenarios and completed internal RFC review; external wording reviews remain separate gates | Product owner; scientific and legal/regulatory review remain downstream release gates | Intended-use and claims decision record | RESOLVED FOR PRODUCT DECISION | `DECIDED` |
-| `PSC-OD-002` | Goodness is a transparent, versioned methodological assessment of compositional and nutritional favourability under declared WYE criteria, not personal health or clinical risk. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Product owner for semantic/product boundary; multidisciplinary scientific validation remains a downstream gate | Goodness Construct decision record | RESOLVED FOR SEMANTIC/PRODUCT DECISION | `DECIDED` |
+| `PSC-OD-001` | First-release intended use, general reference population and permitted product-claims boundary: Option A. | Cross-domain/product | Claims inventory, user scenarios and completed internal RFC review | Product owner; internal claim/disclosure and release gates remain downstream | Intended-use and claims decision record | RESOLVED FOR PRODUCT DECISION | `DECIDED` |
+| `PSC-OD-002` | Goodness is a transparent, versioned methodological assessment of compositional and nutritional favourability under declared WYE criteria, not personal health or clinical risk. | Cross-domain/scientific | Intended use, construct review, alternative definitions | Product owner for semantic/product boundary; Internal Informational Assurance remains downstream | Goodness Construct decision record | RESOLVED FOR SEMANTIC/PRODUCT DECISION | `DECIDED` |
 | `PSC-OD-003` | Option B: domain-scoped, layered and source-backed WYE ontology separating regulatory and methodological categories without scoring or operational authority. | Ingredient/regulatory | Reviewed Regulatory Ontology RFC and decided source-governance model | Product owner for vocabulary/governance boundary; regulatory, legal, scientific and data/model reviews remain downstream | Regulatory Ontology decision record | RESOLVED FOR CONCEPTUAL ONTOLOGY DECISION | `DECIDED` |
 | `PSC-OD-004` | Option B: multi-label category coexistence with contextual precedence, preserved secondary assertions and no universal primary category. | Ingredient/governance | Reviewed Category Coexistence and Precedence RFC; decided Regulatory Ontology and Source Governance models | Product owner for conceptual product/governance boundary; regulatory, scientific, data/model and validation reviews remain downstream | Category Coexistence and Precedence decision record | RESOLVED FOR CONCEPTUAL GOVERNANCE DECISION | `DECIDED` |
-| `PSC-OD-005` | Map approved ingredient states and dimensions to a 0..100 ingredient scale without conflating missingness or uncertainty with risk. | Ingredient/numeric | Approved state policy, reference judgments, calibration corpus | Scientific review panel + validation owner | Ingredient numerical-mapping candidate | BLOCKING | `OPEN` |
-| `PSC-OD-006` | Select and validate product-level aggregation across multiple ingredients, relationships and quantities. | Ingredient/aggregation | Ingredient mapping, QUID/order semantics, adversarial cases | Scientific review panel + validation owner | Ingredient aggregation candidate | BLOCKING | `OPEN` |
+| `PSC-OD-005` | Map approved ingredient states and dimensions to a 0..100 ingredient scale without conflating missingness or uncertainty with risk. | Ingredient/numeric | Approved state policy, reference judgments, calibration corpus | Protocol proposer + internal validation function + data/model steward; product owner accepts MVP use | Ingredient numerical-mapping candidate | BLOCKING | `OPEN` |
+| `PSC-OD-006` | Select and validate product-level aggregation across multiple ingredients, relationships and quantities. | Ingredient/aggregation | Ingredient mapping, QUID/order semantics, adversarial cases | Protocol proposer + internal validation function + data/model steward; product owner accepts MVP use | Ingredient aggregation candidate | BLOCKING | `OPEN` |
 | `PSC-OD-007` | Select the base nutrient-profile construct or justified WYE-specific combination. | Nutrition | Benchmark comparison, intended use, WYE data audit | Nutrition-science panel + public-health reviewer | Nutrient-profile selection RFC | BLOCKING | `OPEN` |
 | `PSC-OD-008` | Freeze authoritative product-category, solid/liquid and sold/prepared/reconstituted rules. | Nutrition/product | Category sources, label-state model, edge-case corpus | Nutrition reviewer + regulatory specialist + data steward | Category and preparation policy candidate | BLOCKING | `OPEN` |
 | `PSC-OD-009` | Define total, added and free-sugar semantics and what may be derived from declared data. | Nutrition | Label availability study, source definitions, derivation validation | Nutrition-science panel | Sugar semantics and derivation RFC | BLOCKING | `OPEN` |
 | `PSC-OD-010` | Define treatment of protein, fibre, fruit/vegetable/legume components, sweeteners and supplementary nutrients. | Nutrition | Intended use, category policy, data coverage study | Nutrition-science panel | Nutrient component policy candidate | BLOCKING | `OPEN` |
-| `PSC-OD-011` | Map approved nutrition components to a category-aware 0..100 scale. | Nutrition/numeric | Selected nutrient model, category rules, calibration corpus | Nutrition-science panel + validation owner | Nutrition numerical-mapping candidate | BLOCKING | `OPEN` |
-| `PSC-OD-012` | Select the ordinary overall aggregation family and its parameters. | Overall/aggregation | Approved domain scales, construct study, sensitivity analysis | Multidisciplinary scientific panel + validation owner | Overall aggregation candidate | BLOCKING | `OPEN` |
-| `PSC-OD-013` | Define flag-effect classification, applicable critical caps, severity classes and no-double-counting behavior without treating hazard alone as a score effect. | Criticality/overall | Criticality ontology, validation corpus, false-positive analysis | Scientific panel + regulatory reviewer + validation owner | Critical cap and flag-effect policy candidate | BLOCKING | `OPEN` |
+| `PSC-OD-011` | Map approved nutrition components to a category-aware 0..100 scale. | Nutrition/numeric | Selected nutrient model, category rules, calibration corpus | Internal methodology and validation functions + data/model steward; product owner accepts MVP use | Nutrition numerical-mapping candidate | BLOCKING | `OPEN` |
+| `PSC-OD-012` | Select the ordinary overall aggregation family and its parameters. | Overall/aggregation | Approved domain scales, construct study, sensitivity analysis | Protocol proposer + internal validation function + data/model steward; product owner accepts MVP use | Overall aggregation candidate | BLOCKING | `OPEN` |
+| `PSC-OD-013` | Define flag-effect classification, applicable critical caps, severity classes and no-double-counting behavior without treating hazard alone as a score effect. | Criticality/overall | Criticality ontology, validation corpus, false-positive analysis | Internal methodology and validation functions + regulatory-scope review; product owner accepts MVP use | Critical cap and flag-effect policy candidate | BLOCKING | `OPEN` |
 | `PSC-OD-014` | Define the closed set of zero-override rules and prove reproducibility and user-safe interpretation. | Criticality/overall | Disqualifier contract, legal/scientific cases, communication testing | Scientific reviewer + legal reviewer + release approver | Zero-override RFC and golden cases | BLOCKING | `OPEN` |
-| `PSC-OD-015` | Define required-input sets and aggregation of coverage, including critical-gate coverage. | Missing data | Input inventory, domain policies, missingness simulations | Scientific reviewers + data steward + validation owner | Coverage policy candidate | BLOCKING | `OPEN` |
-| `PSC-OD-016` | Define the evaluability and missing-data policy, including component indispensability, `not_computable` conditions and interaction with overall aggregation, without a numeric fallback. | Missing data/evaluability | Coverage policy, user testing, sensitivity and bias analysis | Scientific panel + validation owner + product communication reviewer | Evaluability and missing-data RFC | BLOCKING | `OPEN` |
-| `PSC-OD-017` | Freeze confidence dimensions, state derivation and interaction with evaluability without using confidence as an evaluability proxy. | Confidence/uncertainty | Evidence-quality framework, data-quality audit, use cases | Scientific reviewers + data steward | Confidence policy candidate | BLOCKING | `OPEN` |
-| `PSC-OD-018` | Freeze integer precision, intermediate arithmetic, rounding, boundary and canonical serialization rules. | Determinism/technical | Approved formulas, canonicalization compatibility analysis | Data/model steward + validation owner | Numeric execution profile | BLOCKING | `OPEN` |
-| `PSC-OD-019` | Define golden corpus, external benchmarks, sensitivity, monotonicity, robustness and comprehension validation. | Validation | All policy candidates, representative product corpus | Independent validation owner + external scientific reviewers | Product-scoring validation plan and corpus | BLOCKING | `OPEN` |
-| `PSC-OD-020` | Approve user-facing language, bands, colors, limitations and non-misleading interpretation. | Communication/claims | Final scale behavior, endpoint study, accessibility and comprehension tests | Product communication reviewer + scientific reviewer + legal reviewer | User communication and claims package | BLOCKING FOR USER RELEASE | `OPEN` |
+| `PSC-OD-015` | Define required-input sets and aggregation of coverage, including critical-gate coverage. | Missing data | Input inventory, domain policies, missingness simulations | Internal methodology and validation functions + data/model steward; product owner accepts MVP use | Coverage policy candidate | BLOCKING | `OPEN` |
+| `PSC-OD-016` | Define the evaluability and missing-data policy, including component indispensability, `not_computable` conditions and interaction with overall aggregation, without a numeric fallback. | Missing data/evaluability | Coverage policy, user testing, sensitivity and bias analysis | Internal methodology and validation functions + product communication reviewer; product owner accepts MVP use | Evaluability and missing-data RFC | BLOCKING | `OPEN` |
+| `PSC-OD-017` | Freeze confidence dimensions, state derivation and interaction with evaluability without using confidence as an evaluability proxy. | Confidence/uncertainty | Evidence-quality framework, data-quality audit, use cases | Internal methodology function + data/model steward; product owner accepts MVP use | Confidence policy candidate | BLOCKING | `OPEN` |
+| `PSC-OD-018` | Freeze integer precision, intermediate arithmetic, rounding, boundary and canonical serialization rules. | Determinism/technical | Approved formulas, canonicalization compatibility analysis | Data/model steward + internal validation function; product owner accepts MVP use | Numeric execution profile | BLOCKING | `OPEN` |
+| `PSC-OD-019` | Define golden corpus, external benchmarks, sensitivity, monotonicity, robustness and comprehension validation. | Validation | All policy candidates, representative product corpus | Internal validation function + data/model steward; product owner accepts residual MVP product risk; external validation is future/optional | Product-scoring validation plan and corpus | BLOCKING | `OPEN` |
+| `PSC-OD-020` | Approve user-facing language, bands, colors, limitations and non-misleading interpretation. | Communication/claims | Final scale behavior, endpoint study, accessibility and comprehension tests | Product communication reviewer + product owner + release approver; specialist or legal review is conditional on scope and claim | User communication and claims package | BLOCKING FOR USER RELEASE | `OPEN` |
 | `PSC-OD-021` | Option B: source register domain-scoped with immutable acquired artifacts and provenance linked to WYE decisions. | Provenance/governance | Reviewed Source Governance RFC, source ingestion capabilities | Product owner for governance-model and product-traceability boundary; scientific, regulatory, legal and data-governance reviews remain downstream | Source Governance decision record | RESOLVED FOR GOVERNANCE MODEL DECISION | `DECIDED` |
 | `PSC-OD-022` | Define the legal and scientific boundary between general product information and future personalized recommendations. | Premium/privacy | Intended use, GDPR analysis, medical-device and consumer-law screening | Privacy counsel + legal reviewer + clinical governance reviewer | Premium boundary and DPIA pre-assessment | NON-BLOCKING FOR BASE CANDIDATE; BLOCKING FOR PREMIUM | `OPEN` |
 
@@ -854,9 +859,10 @@ scientific or clinical approval; legal/regulatory approval; scoring formula;
 runtime; or user-facing release. Pregnancy, minors, allergies, diseases,
 medicines, specifically regulated supplements and non-food domains are outside
 the supported use or require a separate policy. External wording remains
-subject to scientific, communication and legal/regulatory review. The ordinary
-UI requires no bibliography, and premium personalization remains deferred to a
-separate future Wave.
+subject to internal methodology, communication and scope-dependent
+legal/regulatory review; external scientific review is future and optional for
+the informational MVP. The ordinary UI requires no bibliography, and premium
+personalization remains deferred to a separate future Wave.
 
 ### 16.2 `PSC-OD-002` decision record
 
@@ -1000,6 +1006,39 @@ missing-data policy; UI content, premium features or personalization; an API,
 runtime, database, migration or code; or a release or publication. All
 applicable downstream scientific, regulatory, legal, data-governance,
 implementation and release gates remain required.
+
+### 16.6 Internal Informational Assurance governance direction
+
+The product owner adopts `WYE_INTERNAL_ASSURANCE_AND_DISCLOSURE_RFC.md`,
+effective `2026-09-02`, as the governance model for the informational MVP.
+This applies the intended-use boundary already decided in `PSC-OD-001`; it does
+not reopen that decision and does not close any open `PSC-OD-*` decision.
+
+For the MVP, methodology preparation may use a protocol-proposer and
+Codex-assisted workflow, technical reproducibility is verified by the
+data/model steward, internal validation evidence is reviewed by an accountable
+internal validation function, and the product owner accepts the exact candidate
+for informational use. Codex/ChatGPT is not an independent reviewer and has no
+autonomous acceptance authority.
+
+Independent external scientific validation and certification are future,
+optional and not present. They are not prerequisites for internal decision
+closure or an informational MVP release. They may become required for stronger
+clinical, health, professional, regulated or independently validated claims.
+Technical, provenance, data-safety, internal-assurance, claim and release gates
+remain fully applicable.
+
+```text
+governance_status: ADOPTED FOR MVP GOVERNANCE — IMPLEMENTATION GATES OPEN
+mvp_assurance: INTERNAL INFORMATIONAL ASSURANCE
+level_1_completion_status_label: INTERNALLY REVIEWED — NOT INDEPENDENTLY VALIDATED
+internal_assurance_package: NOT YET COMPLETE
+external_validation: FUTURE / OPTIONAL / NOT PRESENT
+certification: NOT PRESENT
+medical_or_clinical_authority: NONE
+runtime_release: NOT YET AUTHORIZED
+legal_review: NOT PERFORMED
+```
 
 ## 17. Acceptance checklist
 
