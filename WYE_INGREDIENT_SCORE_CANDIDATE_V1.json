@@ -1,0 +1,358 @@
+{
+  "$schema": "wye-internal://ingredient-score-candidate/v1",
+  "candidate_id": "WYE-INGREDIENT-SCORE-CANDIDATE-V1",
+  "candidate_version": "1.0.1-internal",
+  "status": "INTERNAL HEURISTIC CANDIDATE — NOT INDEPENDENTLY VALIDATED",
+  "phase": "7.15.2",
+  "governance": {
+    "assurance_tier": "Internal Informational Assurance",
+    "scientific_approval": "NOT CLAIMED",
+    "independent_validation": "NOT PRESENT",
+    "certification": "NOT PRESENT",
+    "runtime_authority": "NONE",
+    "release_authority": "NONE",
+    "psc_od_006": "NOT STARTED",
+    "product_owner_direction_date": "2026-09-02",
+    "decision_state": "OPEN"
+  },
+  "source_control": {
+    "source_cutoff": "2026-09-02",
+    "provenance_requirement": "Every conclusion must bind a governed proposition, abstract subject identity, context, source identities, source versions or retrieval dates, and the candidate version.",
+    "external_validation": "FUTURE / OPTIONAL / NOT PRESENT"
+  },
+  "linked_decisions": [
+    {"decision_id": "PSC-OD-005", "state": "OPEN"},
+    {"decision_id": "PSC-OD-013", "state": "OPEN"},
+    {"decision_id": "PSC-OD-014", "state": "OPEN"},
+    {"decision_id": "PSC-OD-015", "state": "OPEN"},
+    {"decision_id": "PSC-OD-016", "state": "OPEN"},
+    {"decision_id": "PSC-OD-017", "state": "OPEN"},
+    {"decision_id": "PSC-OD-018", "state": "OPEN"},
+    {"decision_id": "PSC-OD-019", "state": "OPEN"}
+  ],
+  "intended_use": {
+    "purpose": "A transparent, versioned, ingredient-level indicator of protocol-relative favourability under declared WYE criteria.",
+    "audience_scope": "General, non-personal informational use only.",
+    "score_range": {"minimum": 0, "maximum": 100, "inclusive": true},
+    "non_claims": [
+      "Not a clinical or medical model.",
+      "Not a safety, healthfulness, efficacy, regulatory, or individual-suitability guarantee.",
+      "Not personal, therapeutic, dietary, dose, or portion advice.",
+      "Not independently validated, certified, or approved for runtime or release."
+    ],
+    "version_dependency": "Every score and disclosure is meaningful only with this exact candidate version, input version, source cutoff, and provenance trace."
+  },
+  "model_principle": {
+    "architecture": "Policy Option C layered state consumed by a Mapping Option A reviewed ordinal lookup with bounded anchors.",
+    "mvp_mapping_direction": "Mapping Option A — Reviewed ordinal lookup with bounded anchors",
+    "future_mapping_option": "Mapping Option B — Transparent monotone multi-attribute model",
+    "mapping_alignment": "The V1 single-construct lookup is an Option A MVP candidate, not a multi-attribute realization of Option B.",
+    "score_bearing_construct_count": 1,
+    "simplicity_limit": "The bundle supports only one defensible score-bearing construct. No additional attribute, proxy, or pseudo-component is invented.",
+    "construct": "DIM-CAND-INGREDIENT-FAVOURABILITY",
+    "construct_status": "INTERNAL NUMERICAL CANDIDATE ONLY",
+    "separation_rule": "Support, informational, risk, and criticality layers cannot contribute to the number."
+  },
+  "canonical_input_schema": {
+    "schema_id": "WYE-INGREDIENT-SCORE-INPUT-V1",
+    "additional_properties": false,
+    "required": [
+      "subject_key",
+      "question_key",
+      "context_key",
+      "applicability",
+      "identity_mapping_state",
+      "conclusion_validity",
+      "favourability_level",
+      "support",
+      "informational",
+      "provenance"
+    ],
+    "fields": {
+      "subject_key": {"type": "string", "personal_information_forbidden": true},
+      "question_key": {"type": "string", "const": "ingredient_favourability_general_v1"},
+      "context_key": {"type": "string", "const": "general_food_ingredient_non_personal"},
+      "applicability": {"type": "string", "enum": ["applicable", "non_applicable"]},
+      "identity_mapping_state": {"type": "string", "enum": ["resolved", "partial", "history_unavailable"]},
+      "conclusion_validity": {"type": "string", "enum": ["valid", "invalid", "absent"]},
+      "favourability_level": {"type": ["integer", "null"], "minimum": 0, "maximum": 4},
+      "support": {
+        "type": "object",
+        "additional_properties": false,
+        "required": ["coverage", "confidence", "uncertainty", "evidence_state", "missingness", "mapping_resolution", "hazard", "exposure", "risk", "criticality"],
+        "fields": {
+          "coverage": {"type": "string", "enum": ["complete", "partial", "low"]},
+          "confidence": {"type": "string", "enum": ["high", "moderate", "low"]},
+          "uncertainty": {"type": "string", "enum": ["low", "moderate", "high"]},
+          "evidence_state": {"type": "string", "enum": ["internally_synthesized", "limited", "conflicting", "invalid", "absent"]},
+          "missingness": {"type": "array", "items": {"type": "string"}},
+          "mapping_resolution": {"type": "string", "enum": ["resolved", "partial", "history_unavailable"]},
+          "hazard": {"type": "string"},
+          "exposure": {"type": "string"},
+          "risk": {"type": "string"},
+          "criticality": {"type": "string"}
+        }
+      },
+      "informational": {
+        "type": "object",
+        "additional_properties": false,
+        "required": ["regulatory_status", "ontology_labels", "nutrition_overlap"],
+        "fields": {
+          "regulatory_status": {"type": "array", "items": {"type": "string"}},
+          "ontology_labels": {"type": "array", "items": {"type": "string"}},
+          "nutrition_overlap": {"type": "string", "enum": ["excluded", "detected_and_excluded", "not_assessed"]}
+        }
+      },
+      "provenance": {
+        "type": "object",
+        "additional_properties": false,
+        "required": ["source_cutoff", "source_ids", "judgment_id", "input_version"],
+        "fields": {
+          "source_cutoff": {"type": "string", "format": "YYYY-MM-DD"},
+          "source_ids": {"type": "array", "items": {"type": "string"}},
+          "judgment_id": {"type": "string"},
+          "input_version": {"type": "string"}
+        }
+      }
+    },
+    "invariants": [
+      "identity_mapping_state must equal support.mapping_resolution.",
+      "A valid applicable conclusion requires a non-null integer favourability_level in 0..4.",
+      "A non-applicable, invalid, absent, partial-mapping, or history-unavailable input cannot emit a score.",
+      "No field may contain personal, clinical, therapeutic, individual dietary, dose, or portion information.",
+      "Optional missingness may be disclosed without changing a valid level; indispensable missingness must be represented by a failed gate, never by a penalty."
+    ]
+  },
+  "eligibility_evaluability_gate": {
+    "evaluation_order": [
+      {
+        "order": 1,
+        "if": "applicability == non_applicable",
+        "result": "non_applicable",
+        "score_member": "ABSENT"
+      },
+      {
+        "order": 2,
+        "if": "identity_mapping_state != resolved OR support.mapping_resolution != resolved",
+        "result": "not_computable",
+        "reason_code": "IDENTITY_NOT_RESOLVED",
+        "score_member": "ABSENT"
+      },
+      {
+        "order": 3,
+        "if": "conclusion_validity != valid",
+        "result": "not_computable",
+        "reason_code": "FAVOURABILITY_CONCLUSION_NOT_VALID",
+        "score_member": "ABSENT"
+      },
+      {
+        "order": 4,
+        "if": "favourability_level is null, non-integer, or outside 0..4",
+        "result": "not_computable",
+        "reason_code": "FAVOURABILITY_LEVEL_UNAVAILABLE",
+        "score_member": "ABSENT"
+      },
+      {
+        "order": 5,
+        "if": "all preceding gates pass",
+        "result": "computable",
+        "score_member": "REQUIRED"
+      }
+    ],
+    "explicit_non_gates": [
+      "confidence label",
+      "uncertainty label",
+      "coverage label by itself",
+      "optional missingness",
+      "regulatory status",
+      "ontology labels",
+      "hazard",
+      "exposure",
+      "risk",
+      "criticality"
+    ],
+    "zero_distinction": "A computed score of 0 is a valid endpoint from level 0. not_computable and non_applicable contain no score member."
+  },
+  "score_bearing_components": [
+    {
+      "component_id": "DIM-CAND-INGREDIENT-FAVOURABILITY",
+      "definition": "A governed internal ordinal judgment of protocol-relative ingredient favourability for the exact reviewed question and declared general, non-personal context; it is not safety, health benefit, risk, or regulatory compliance.",
+      "internal_rationale": "A single ordinal construct is the selected Mapping Option A MVP lookup candidate; it prevents proxy leakage and artificial compensability without claiming a multi-attribute model.",
+      "source_provenance_requirement": "The level requires a versioned internal judgment record linked to the exact subject, proposition, context, applicable evidence synthesis, source identities, source cutoff, and reviewer accountability.",
+      "applicability": "Only the declared general food-ingredient question with resolved identity, governed projection, applicable scope, valid conclusion, and all indispensable inputs.",
+      "non_applicability": "Outside the declared domain, an incompatible question, a genuinely irrelevant proposition, or unsupported transfer between subject or context.",
+      "directionality": "Higher level means more favourable only within the same governed question and compatible context.",
+      "monotonicity": "Holding subject scope, question, context, and every score-bearing input compatible, increasing the level by one cannot decrease the score.",
+      "missing_data_behavior": "A missing or invalid level yields not_computable without a score. Optional support missingness is disclosed and does not change the level or number.",
+      "falsification_tests": [
+        "A higher level produces a lower score.",
+        "A support-only or informational-only change alters a computed score.",
+        "An unresolved identity or invalid conclusion emits a number.",
+        "The same canonical input and candidate version produce different output or digest.",
+        "A nutrition-only, hazard-only, exposure-only, risk-only, or criticality-only change alters the number.",
+        "A contextual reversal is presented as a universal ordering."
+      ],
+      "linked_wye_decisions": ["PSC-OD-005", "PSC-OD-015", "PSC-OD-016", "PSC-OD-017", "PSC-OD-018", "PSC-OD-019"],
+      "input_domain": {"type": "integer", "minimum": 0, "maximum": 4},
+      "ordinal_anchors": [
+        {"level": 0, "anchor": "least_favourable_within_governed_reference_frame", "score": 0},
+        {"level": 1, "anchor": "less_favourable_within_governed_reference_frame", "score": 25},
+        {"level": 2, "anchor": "intermediate_favourability_within_governed_reference_frame", "score": 50},
+        {"level": 3, "anchor": "more_favourable_within_governed_reference_frame", "score": 75},
+        {"level": 4, "anchor": "most_favourable_within_governed_reference_frame", "score": 100}
+      ]
+    }
+  ],
+  "support_dimensions": [
+    {"dimension": "applicability", "numeric_effect": "NONE", "behavior": "Selects applicable perimeter or a non_applicable outcome."},
+    {"dimension": "identity_mapping_state", "numeric_effect": "NONE", "behavior": "Resolved identity is an eligibility condition; failure yields not_computable, not a penalty."},
+    {"dimension": "conclusion_validity", "numeric_effect": "NONE", "behavior": "A typed validity gate; the label is not a weight."},
+    {"dimension": "evidence_state", "numeric_effect": "NONE", "behavior": "Disclosed support state; cannot reward source quantity or prestige."},
+    {"dimension": "coverage", "numeric_effect": "NONE", "behavior": "Disclosed separately; no multiplier, penalty, or imputation."},
+    {"dimension": "confidence", "numeric_effect": "NONE", "behavior": "Disclosed separately and never an evaluability proxy."},
+    {"dimension": "uncertainty", "numeric_effect": "NONE", "behavior": "Disclosed separately and never an adverse score."},
+    {"dimension": "missingness", "numeric_effect": "NONE", "behavior": "Optional gaps are disclosed; indispensable gaps fail a named gate without numeric fallback."},
+    {"dimension": "hazard", "numeric_effect": "NONE", "behavior": "Separate from favourability and not equivalent to risk."},
+    {"dimension": "exposure", "numeric_effect": "NONE", "behavior": "Contextual support only; no dose or portion is processed."},
+    {"dimension": "risk", "numeric_effect": "NONE", "behavior": "Separate, context-bound support; risk_not_computable is not a score result."},
+    {"dimension": "mapping_resolution", "numeric_effect": "NONE", "behavior": "Technical reconstruction support and identity gate only."}
+  ],
+  "informational_dimensions": [
+    {"dimension": "regulatory_status", "numeric_effect": "NONE", "behavior": "Informational only; no approval, prohibition, hazard, or goodness inference."},
+    {"dimension": "ontology_labels", "numeric_effect": "NONE", "behavior": "Informational multi-label classification only; no universal primary category."},
+    {"dimension": "nutrition_overlap", "numeric_effect": "NONE", "behavior": "Nutrition-property scoring is excluded to prevent double counting."}
+  ],
+  "criticality_behavior": {
+    "layer": "SEPARATE INFORMATIONAL CANDIDATE LAYER",
+    "numeric_effect": "NONE",
+    "cap": "NONE",
+    "floor": "NONE",
+    "veto": "NONE",
+    "override": "NONE",
+    "zero_override": "NONE",
+    "rule": "Criticality may produce a versioned disclosure only. It never changes score or computability in V1.",
+    "linked_wye_decisions": ["PSC-OD-013", "PSC-OD-014"]
+  },
+  "formula": {
+    "notation": "L = favourability_level, with L an integer in [0,4] after all gates pass.",
+    "exact_expression": "score = round_half_even(clip((100 * L) / 4, 0, 100), 0)",
+    "lookup_equivalence": {"0": 0, "1": 25, "2": 50, "3": 75, "4": 100},
+    "order_of_operations": [
+      "Validate schema and invariants.",
+      "Evaluate applicability and evaluability gates in declared order.",
+      "If computable, multiply integer L by integer 100 using exact integer arithmetic.",
+      "Divide the exact integer numerator by integer 4 as an exact rational.",
+      "Clip the rational value to the inclusive interval 0..100.",
+      "Apply round-half-to-even once at the terminal integer serialization locus.",
+      "Serialize score as a base-10 JSON integer and emit separate disclosures."
+    ],
+    "transformations": [
+      {"name": "linear_ordinal_anchor_transform", "input": "L in 0..4", "output": "25 * L", "nonlinear": false}
+    ],
+    "weights": {"rule": "NO WEIGHTS", "reason": "There is exactly one score-bearing component."},
+    "compensability": {"rule": "NON-COMPENSATORY / NOT APPLICABLE", "reason": "No second numeric component exists."},
+    "interaction_rules": {"numeric_interactions": "NONE", "support_interactions": "Only explicit applicability and validity gates; no support field changes the number."},
+    "clipping": {"minimum": 0, "maximum": 100, "method": "explicit inclusive clip after exact division", "expected_activation_for_valid_input": "NEVER"},
+    "rounding": {"mode": "round half to even", "decimal_places": 0, "locus": "terminal only", "expected_effect_for_valid_input": "NONE because every valid rational is already an integer"},
+    "arithmetic_profile": {"intermediate": "exact integers and exact rational denominator 4", "floating_point": "FORBIDDEN", "overflow_behavior": "ERROR; no silent wrap or saturation", "score_serialization": "JSON integer"}
+  },
+  "canonical_serialization_and_digest": {
+    "profile_id": "WYE-CANONICAL-JSON-ASCII-KEYS-V1",
+    "scope": "The complete JSON value after removing only integrity.canonical_digest_sha256.",
+    "rules": [
+      "Validate the schema and reject duplicate object keys.",
+      "Normalize all strings to Unicode NFC.",
+      "Sort object keys recursively in ascending Unicode code-point order; all V1 schema keys are ASCII.",
+      "Preserve array order.",
+      "Encode null, booleans, and integers using lowercase JSON literals and minimal base-10 integers; floats, exponent notation, leading zeros, and negative zero are forbidden.",
+      "Escape quotation mark, reverse solidus, and U+0000..U+001F using JSON escapes; encode all other characters directly as UTF-8.",
+      "Emit no insignificant whitespace and no byte-order mark.",
+      "Hash the canonical UTF-8 bytes with SHA-256 and serialize the digest as 64 lowercase hexadecimal characters."
+    ],
+    "input_digest_scope": "The complete canonical input object.",
+    "output_digest_scope": "The complete canonical output object excluding its own digest field.",
+    "replay_identity": ["candidate_id", "candidate_version", "candidate_digest", "input_digest", "output_digest", "source_cutoff"]
+  },
+  "output_schema": {
+    "schema_id": "WYE-INGREDIENT-SCORE-OUTPUT-V1",
+    "required_common": ["candidate_id", "candidate_version", "status", "evaluability", "disclosures", "provenance", "replay"],
+    "computable": {"evaluability": "computable", "required": ["score"], "score": {"type": "integer", "minimum": 0, "maximum": 100}},
+    "not_computable": {"evaluability": "not_computable", "score_member": "FORBIDDEN", "required": ["reason_codes"]},
+    "non_applicable": {"evaluability": "non_applicable", "score_member": "FORBIDDEN", "required": ["reason_codes"]},
+    "zero_rule": "score=0 is permitted only for a computable level-0 input and is never a missing-data sentinel.",
+    "golden_expected_output_projection": {
+      "schema_id": "WYE-INGREDIENT-SCORE-GOLDEN-EXPECTED-PROJECTION-V1",
+      "purpose": "The 30 corpus expected_output values test only formula, gate, and score-result behavior. They are not full WYE-INGREDIENT-SCORE-OUTPUT-V1 objects.",
+      "required_common": ["evaluability"],
+      "computable": {"required": ["score"], "score": {"type": "integer", "minimum": 0, "maximum": 100}},
+      "not_computable": {"score_member": "FORBIDDEN", "required": ["reason_codes"]},
+      "non_applicable": {"score_member": "FORBIDDEN", "required": ["reason_codes"]},
+      "full_contract_coverage": "The corpus output_contract_fixtures provide complete structural examples for computable, not_computable, and non_applicable outcomes."
+    }
+  },
+  "disclosure_schema": {
+    "required": [
+      "candidate_status",
+      "intended_use",
+      "non_claims",
+      "source_cutoff",
+      "coverage",
+      "confidence",
+      "uncertainty",
+      "missingness",
+      "mapping_resolution",
+      "evidence_state",
+      "hazard",
+      "exposure",
+      "risk",
+      "criticality",
+      "regulatory_status",
+      "ontology_labels",
+      "nutrition_overlap",
+      "version_dependency"
+    ],
+    "presentation_rule": "Disclosures accompany the result but remain structurally outside score and formula trace."
+  },
+  "known_limitations": [
+    "The five ordinal anchors and equal 25-point spacing are internal heuristic conventions, not empirically calibrated intervals.",
+    "The candidate has no independent, external, clinical, regulatory, or population validation.",
+    "Reference judgments are synthetic or abstract and may not represent the distribution or ambiguity of production ingredients.",
+    "A single component improves transparency but cannot express context-dependent multidimensional trade-offs and is not a multi-attribute Option B model.",
+    "No personal context, dose, portion, preparation, exposure, or individual suitability is modeled.",
+    "No cross-version or cross-question comparability is claimed.",
+    "The source cutoff is fixed and later evidence requires a new governed version.",
+    "Comprehension and impact testing remain internal and incomplete for runtime decisions."
+  ],
+  "forbidden_interpretations": [
+    "Scientific approval or independent validation.",
+    "Clinical validity, diagnosis, treatment, prevention, or medical advice.",
+    "Safety, healthfulness, efficacy, regulatory compliance, or individual suitability.",
+    "Personal dietary advice, dose guidance, portion guidance, or exposure estimate.",
+    "A probability, risk magnitude, hazard severity, evidence quality, confidence, or certainty measure.",
+    "A nutrition-property score or a substitute for the future product-level scoring decision.",
+    "Runtime authority, release readiness, certification, or regulatory approval.",
+    "Comparability across candidate versions, questions, contexts, or incompatible applicability perimeters."
+  ],
+  "assurance_requirements": {
+    "internal_only": true,
+    "golden_corpus_id": "WYE-INGREDIENT-SCORE-CANDIDATE-V1-GOLDEN",
+    "required_checks": [
+      "schema consistency",
+      "exact replay",
+      "boundary and range",
+      "bounded monotonicity",
+      "single-component sensitivity",
+      "support and informational non-influence",
+      "not_computable separation",
+      "zero distinction",
+      "nutrition double-counting exclusion",
+      "canonical serialization and digest"
+    ],
+    "acceptance_effect": "Internal review eligibility only; never runtime or release authorization."
+  },
+  "integrity": {
+    "digest_algorithm": "SHA-256",
+    "canonicalization_profile": "WYE-CANONICAL-JSON-ASCII-KEYS-V1",
+    "canonical_digest_sha256": "a0efffbed58a2d5c8c5cc996518e7b155b02d57b29fd5be465418dc1f08fa2f3"
+  }
+}

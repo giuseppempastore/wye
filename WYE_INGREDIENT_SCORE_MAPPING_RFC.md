@@ -409,41 +409,47 @@ cases plus a justified scalarization step. Runtime remains unauthorized.
 
 ## E. Recommendation
 
-### E.1 Recommended family
+### E.1 MVP candidate direction
 
 `PROPOSED, NOT APPROVED`
 
-Option B is recommended as the research and decision-package family, not as an
-approved formula. It best preserves the decided multi-axis ontology, permits
-explicit monotonicity, exposes normative choices, separates score from evidence
-quality, and supports versioned sensitivity analysis.
+For the internal informational MVP, the product owner selected Option A —
+Reviewed ordinal lookup with bounded anchors — as the candidate direction on
+`2026-09-02`. The selection is limited to a lookup over versioned internal
+profiles and traced reference judgments. It does not approve a formula,
+profile, anchor, calibration, scientific claim, runtime, publication or release.
 
-The recommendation is conditional on these safeguards:
+Option B remains a future multi-attribute research and decision-package option.
+It is not represented by an MVP with one score-bearing ordinal construct; a
+future Option B candidate must meet its separate-dimension and aggregation
+requirements before it may be described as multi-attribute.
 
-1. approve the ingredient-state policy before mapping any state;
-2. publish a dimension card for every candidate input, including construct link,
-   direction, applicability, dependencies and forbidden interpretations;
+The Option A MVP direction is conditional on these safeguards:
+
+1. preserve Policy Option C layers before any lookup entry is evaluated;
+2. define every internal profile, anchor, applicability rule, provenance trace,
+   reference judgment and unmatched-case behavior explicitly;
 3. treat the initial scale as ordered, not interval or ratio;
 4. keep missingness, coverage, confidence and uncertainty outside the score
    calculation unless a later decision explicitly and scientifically justifies
    a different relationship;
 5. use structured reference judgments and a representative calibration corpus
    to test, not merely decorate, normative choices;
-6. compare Option B against at least the transparent lookup baseline in Option A
-   and the non-compensatory stress case in Option D;
+6. compare any future transition to Option B against the Option A baseline and
+   the non-compensatory stress case in Option D; and
 7. reject the candidate if plausible choices produce unstable ordering or
    clinically misleading endpoint interpretations.
 
-Option C may support calibration and validation but is not recommended as the
-primary explanatory model. Option D is valuable as a non-compensation stress
-test. Option A is the required transparency baseline.
+Policy Option C remains the selected layered state-model direction. Option D is
+valuable as a non-compensation stress test. Option B remains available for a
+future explicitly multi-attribute candidate.
 
 ### E.2 Why the recommendation does not decide `PSC-OD-005`
 
-No approved dimension transformations, aggregation family, parameters,
-reference judgments or calibration corpus exist. The recommendation therefore
-selects only a family for further scientific development. It grants no product,
-scientific, validation, publication or runtime authority.
+No approved lookup profile, anchor, reference judgment, calibration corpus,
+dimension transformation or aggregation family exists. The direction therefore
+selects only a bounded internal candidate family for further development. It
+grants no product, scientific, validation, publication or runtime authority.
 
 ## F. Missingness, uncertainty and computability scenarios
 
