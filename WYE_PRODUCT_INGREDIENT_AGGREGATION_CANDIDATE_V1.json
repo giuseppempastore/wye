@@ -1,0 +1,108 @@
+{
+  "$schema": "wye-internal://product-ingredient-aggregation-candidate/v1",
+  "candidate_id": "WYE-PRODUCT-INGREDIENT-AGGREGATION-CANDIDATE-V1",
+  "candidate_version": "1.0.1-internal",
+  "status": "INTERNAL HEURISTIC CANDIDATE — NOT APPROVED FOR RUNTIME OR RELEASE",
+  "phase": "7.18.4",
+  "governance": {
+    "assurance_tier": "Internal Informational Assurance",
+    "decision_id": "PSC-OD-006",
+    "decision_state": "OPEN",
+    "candidate_direction": "Option E — Evidence-gated staged MVP",
+    "final_method_approval": "NOT PRESENT",
+    "runtime_authority": "NONE",
+    "release_authority": "NONE",
+    "external_validation": "FUTURE / OPTIONAL / NOT PRESENT",
+    "certification": "FUTURE / OPTIONAL / NOT PRESENT"
+  },
+  "intended_use": {
+    "purpose": "An internal, exact and replayable candidate for a future product ingredient_goodness_percent under a declared abstract product composition.",
+    "audience_scope": "Broad, general and non-personal informational food guidance only.",
+    "non_claims": [
+      "Not a medical, clinical, therapeutic, personal dietary, dose, frequency or portion recommendation.",
+      "Not a safety, regulatory-compliance, certification or individual-suitability statement.",
+      "Not a nutrition score or an overall product score.",
+      "Not independently validated and not authorized for runtime or release."
+    ]
+  },
+  "upstream_dependencies": {
+    "ingredient_candidate_id": "WYE-INGREDIENT-SCORE-CANDIDATE-V1",
+    "ingredient_candidate_version": "1.0.1-internal",
+    "mapping_mvp": "Mapping Option A — ordinal lookup based on internal profiles and traceable reference judgments",
+    "policy_architecture": "Policy Option C — Layered state model",
+    "future_mapping_option": "Mapping Option B — possible multi-attribute development only"
+  },
+  "candidate_input_contract": {
+    "product_snapshot_state": ["available", "history_unavailable"],
+    "entry_required_fields": ["entry_id", "contribution_identity_key", "ingredient_result_state", "relationship_state", "quantity_state", "ingredient_score"],
+    "ingredient_result_state": ["computable", "not_computable", "non_applicable"],
+    "relationship_state": ["resolved", "partial", "ambiguous", "history_unavailable"],
+    "quantity_state": ["not_provided", "declared", "quid", "order_only", "missing", "unreliable"],
+    "input_invariants": [
+      "A computable entry carries one integer ingredient_score in 0..100; other states carry no score member.",
+      "Each applicable entry has a unique contribution_identity_key after governed relationship resolution.",
+      "Raw quantity, QUID and order information are preserved as provenance/disclosure and are not numerical inputs in V1.",
+      "Confidence, uncertainty, coverage, missingness, criticality, hazard, exposure, risk, regulatory status, ontology labels and informational flags are non-numeric disclosures."
+    ]
+  },
+  "staged_evaluability_algorithm": {
+    "stage_1_product_perimeter": [
+      {"if": "product_snapshot_state == history_unavailable", "output_status": "not_computable", "reason_code": "PRODUCT_HISTORY_UNAVAILABLE"},
+      {"if": "no applicable entries remain after explicit non_applicable entries are separated", "output_status": "non_applicable", "reason_code": "NO_APPLICABLE_INGREDIENT_ENTRIES"}
+    ],
+    "stage_2_evidence_and_identity_gate": [
+      {"if": "any applicable entry has ingredient_result_state == not_computable", "output_status": "not_computable", "reason_code": "APPLICABLE_INGREDIENT_NOT_COMPUTABLE"},
+      {"if": "any applicable entry has relationship_state != resolved", "output_status": "not_computable", "reason_code": "RELATIONSHIP_NOT_RESOLVED"},
+      {"if": "any applicable contribution_identity_key is duplicated", "output_status": "not_computable", "reason_code": "DUPLICATE_OR_PROXY_CONTRIBUTION"}
+    ],
+    "stage_3_numeric_candidate": {
+      "precondition": "Every applicable entry is computable, relationship-resolved and uniquely represented.",
+      "expression": "ingredient_goodness_percent = round_half_even((sum of applicable ingredient_score integers) / applicable entry count)",
+      "arithmetic": "Exact integer numerator and exact rational denominator; floating point is forbidden; terminal result is a JSON integer in 0..100.",
+      "status": "computable"
+    }
+  },
+  "quantity_and_order_boundary": {
+    "numeric_effect": "NONE",
+    "per_entry_contribution_policy": "The formula deliberately assigns one equal arithmetic contribution to each eligible entry. This is an internal MVP heuristic contribution policy for broad informational food guidance only, not a physical quantity model and not a final approved aggregation method.",
+    "rule": "Missing quantity is neither zero, absence, an equal known physical quantity nor a reliable quantity denominator. The V1 arithmetic denominator is a count of eligible entries, not a quantity denominator.",
+    "non_inferences": ["Equal per-entry contribution does not mean equal mass.", "Equal per-entry contribution does not mean equal exposure, risk, nutritional importance or scientific importance.", "Quantity, QUID and order remain disclosure, provenance and support fields only."],
+    "limitation": "The candidate is quantity-blind and order-blind by design. Its per-entry contribution policy is acceptable only as an Internal Informational Assurance candidate while PSC-OD-006 remains OPEN; reliable quantity or order rules require a separate future decision and review."
+  },
+  "separation_controls": {
+    "coverage_and_evaluability": "Reported independently. Coverage labels do not multiply, penalize, impute or otherwise alter a computable numeric result.",
+    "support_dimensions": ["confidence", "uncertainty", "missingness", "criticality", "hazard", "exposure", "risk"],
+    "informational_dimensions": ["regulatory_status", "ontology_labels", "informational_flags"],
+    "numeric_effect_of_support_and_information": "NONE",
+    "criticality_behavior": {"cap": "NONE", "floor": "NONE", "veto": "NONE", "override": "NONE"},
+    "nutrition_boundary": "Nutrition properties and nutrition scores are excluded from inputs, formula and output; nutrition_overlap is disclosure-only."
+  },
+  "output_contract": {
+    "common_required": ["candidate_id", "candidate_version", "status", "evaluability", "disclosures", "provenance", "replay"],
+    "computable": {"required": ["ingredient_goodness_percent"], "range": "integer 0..100"},
+    "not_computable": {"score_member": "FORBIDDEN", "required": ["reason_codes"]},
+    "non_applicable": {"score_member": "FORBIDDEN", "required": ["reason_codes"]},
+    "zero_rule": "ingredient_goodness_percent=0 is a valid computable numeric endpoint and never represents missingness, not_computable or non_applicable."
+  },
+  "disclosure_contract": {
+    "required": ["candidate_status", "intended_use", "non_claims", "coverage", "evaluability", "quantity_state_summary", "order_information_summary", "missingness", "confidence", "uncertainty", "criticality", "hazard", "exposure", "risk", "regulatory_status", "ontology_labels", "nutrition_overlap", "limitations"],
+    "presentation_rule": "Disclosures accompany, but do not contribute to, the candidate number."
+  },
+  "provenance_and_replay": {
+    "required": ["product_snapshot_id", "product_snapshot_version", "ingredient_candidate_id", "ingredient_candidate_version", "source_cutoff", "input_digest", "candidate_digest", "output_digest"],
+    "determinism": "Identical canonical input, candidate version and source cutoff must yield the same status, output and digests."
+  },
+  "canonical_serialization_and_digest": {
+    "profile_id": "WYE-CANONICAL-JSON-V1",
+    "scope": "Complete JSON value excluding only integrity.canonical_digest_sha256.",
+    "rules": ["Reject duplicate object keys.", "Normalize strings to Unicode NFC.", "Sort object keys recursively by Unicode code point.", "Preserve array order.", "Use minimal JSON integers and lowercase literals; floats, exponent notation, leading zeros and negative zero are forbidden.", "Encode UTF-8 without BOM and no insignificant whitespace.", "Hash canonical UTF-8 bytes with SHA-256 in lowercase hexadecimal." ]
+  },
+  "known_limitations": [
+    "Quantity-blind unless future quantity evidence and a separate decision support its use.",
+    "Order-blind unless future order rules are separately approved.",
+    "Sensitive to duplicate representation; V1 blocks rather than resolves duplicate/proxy cases.",
+    "Internal heuristic only; not externally validated.",
+    "No personal context, medical interpretation, nutrition score or overall score is modeled."
+  ],
+  "integrity": {"canonical_digest_sha256": "b131292e09f9c79f9761bfca51efe631c4608ae1b1517335f4c2af73a2280884"}
+}
