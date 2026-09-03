@@ -34,7 +34,7 @@ The selected boundary is:
 Flutter UI
   -> CaptureUploadController
   -> CaptureUploadGateway
-  -> FastAPI mobile capture façade over configured LAN API_BASE_URL
+  -> FastAPI mobile capture facade over configured LAN API_BASE_URL
   -> existing ImageUploadService / LabelExtractionService
   -> PostgreSQL and MinIO/S3
 
@@ -52,9 +52,9 @@ Rules:
 3. Flutter never contains or sends `X-WYE-Image-Key`. It also never contains
    storage, database, extraction-provider, or other server credentials.
 4. The existing protected operational routes remain protected. The mobile
-   façade calls the underlying services server-side; it must not relay the
+   facade calls the underlying services server-side; it must not relay the
    shared image key to or from the app.
-5. Mobile façade access requires a separately reviewed, short-lived and scoped
+5. Mobile facade access requires a separately reviewed, short-lived and scoped
    development session or equivalent safe local authorization mechanism. An
    unauthenticated LAN endpoint is not an acceptable substitute.
 6. The upload URL and any mobile session token are temporary capabilities.
@@ -63,16 +63,16 @@ Rules:
 7. `API_BASE_URL` and the host embedded in the presigned MinIO/S3 URL must both
    be reachable from the physical phone. A `localhost`-only signed URL is a
    blocking configuration error.
-8. Neither the façade nor the Flutter flow imports, calls, or maps scoring
+8. Neither the facade nor the Flutter flow imports, calls, or maps scoring
    services or legacy `/analyze` and `/analyze-image` endpoints.
 
 ### 2.2 Blocking backend prerequisite
 
-The current backend has no mobile-safe façade/session endpoint. Its image and
+The current backend has no mobile-safe facade/session endpoint. Its image and
 extraction routes require the shared `X-WYE-Image-Key`. Therefore live Flutter
 integration is blocked until a separately authorized backend phase supplies:
 
-- a versioned mobile capture façade;
+- a versioned mobile capture facade;
 - a reviewed short-lived, operation-scoped development authorization model;
 - product ownership/submission scope sufficient for the requested product;
 - stable response and error envelopes;
@@ -89,7 +89,7 @@ to base64 or legacy analysis endpoints.
 | Slice | Scope | Entry gate | Exit gate |
 | --- | --- | --- | --- |
 | A | Pure frontend models, metadata service, state reducer/controller, fixtures, and fake gateway | Plan reviewed and runtime work separately authorized | Unit tests pass; no HTTP and no scoring dependencies |
-| B | Backend mobile façade/session prerequisite | Separate backend authorization and security review | Contract tests prove scope, expiry, redaction, and no image-key exposure |
+| B | Backend mobile facade/session prerequisite | Separate backend authorization and security review | Contract tests prove scope, expiry, redaction, and no image-key exposure |
 | C | HTTP gateway and binary uploader behind a disabled feature flag | Slice B contract frozen; reachable development storage configured | Fake-transport tests pass; no live calls in CI |
 | D | Add-product UI integration and safe history/result references | Slices A–C reviewed; UI scope authorized | Widget/state tests pass; legacy base64 paths are not used by the new flow |
 | E | Physical-device validation | Phase 8.6 explicitly authorized | Redacted E2E record complete; rollback switch verified |
@@ -121,7 +121,7 @@ upload method accepts `ProductIdentity`, never a bare barcode or nullable ID.
 | `wye-flutter/pubspec.yaml` | Add an explicitly pinned direct SHA-256 dependency such as `crypto` only after dependency/lockfile policy and network authorization are approved. Do not add a MIME dependency unless magic-byte tests show it is needed. |
 | `wye-flutter/lib/services/image_metadata_service.dart` (new) | Read the final post-crop file, identify JPEG/PNG/WebP by content signature, calculate byte size and lowercase SHA-256 over the exact bytes to upload, enforce local size policy, and return `ImageMetadata`. No base64 conversion. |
 | `wye-flutter/lib/services/capture_upload_gateway.dart` (new) | Define the control-plane interface: resolve/create product identity, initialize upload, finalize upload, start/retrieve extraction. Method signatures accept typed DTOs and a correlation context. |
-| `wye-flutter/lib/services/http_capture_upload_gateway.dart` (new) | Implement only the reviewed mobile façade contract using an injected `http.Client`, `API_BASE_URL`, safe session provider, timeout policy, and sanitized logger. It must not know `X-WYE-Image-Key` and must reject unexpected secret-bearing headers. |
+| `wye-flutter/lib/services/http_capture_upload_gateway.dart` (new) | Implement only the reviewed mobile facade contract using an injected `http.Client`, `API_BASE_URL`, safe session provider, timeout policy, and sanitized logger. It must not know `X-WYE-Image-Key` and must reject unexpected secret-bearing headers. |
 | `wye-flutter/lib/services/presigned_binary_uploader.dart` (new) | PUT exact file bytes to the presigned URL with only returned allowlisted headers. Return status/latency, not the URL. Do not follow redirects to an unapproved host and do not log request URI/query or body. |
 | `wye-flutter/lib/services/capture_flow_logger.dart` (new) | Emit structured redacted events described in section 9. Provide a test sink. Values classified as secret/capability/raw payload must be unrepresentable or redacted before reaching `logger`. |
 | `wye-flutter/lib/services/api_client.dart` | Inject the HTTP transport instead of constructing it internally; add or adapt product resolve/create methods so raw `product.id` is preserved. Do not add the mobile image key. The new capture path must not call `analyzeIngredients`, `analyzeProductImage`, or score mappers. |
@@ -183,14 +183,14 @@ authorized by this document.
 
 | Proposed file | Planned responsibility |
 | --- | --- |
-| `backend/app/routes/mobile_capture.py` (new) | Versioned mobile façade for product identity, upload initialize/finalize, and extraction lifecycle. Require scoped mobile-session authorization and return stable typed envelopes. Never accept or return `X-WYE-Image-Key`. |
-| `backend/app/services/mobile_capture_sessions.py` (new) | Issue/validate short-lived development sessions through a reviewed local pairing/operator mechanism; scope them to capture operations/product identity; record expiry and audit metadata. |
+| `backend/app/routes/mobile_upload.py` (implemented) | Versioned mobile facade for upload initialize/finalize and extraction lifecycle. Require scoped mobile-session authorization and return stable typed envelopes. Never accept or return `X-WYE-Image-Key` on mobile operations. |
+| `backend/app/services/mobile_upload_sessions.py` (implemented) | Issue/validate short-lived development sessions through the existing operator authorization boundary; retain only token digests and safe metadata; scope them to upload/extraction operations. |
 | `backend/app/security.py` or a new dedicated dependency | Add mobile-session verification without weakening `require_image_api_key` on existing operational routes. Reject disabled/unconfigured mode by default. |
-| `backend/app/services/image_uploads.py` | Reuse existing initialize/finalize service behavior. Change only if the façade needs a safe typed response; preserve SHA-256, MIME, size, idempotency, and supersession checks. |
+| `backend/app/services/image_uploads.py` | Reuse existing initialize/finalize service behavior. Change only if the facade needs a safe typed response; preserve SHA-256, MIME, size, idempotency, and supersession checks. |
 | `backend/app/services/label_extractions.py` | Reuse current service; do not invoke scoring. If async polling is selected, define enqueue/status semantics in a separate reviewed backend change. |
 | `backend/app/storage/config.py` and `backend/.env.example` | Add only non-secret configuration needed to distinguish an internal storage endpoint from the device-reachable presigning endpoint, if required. Defaults must not expose a public service. |
-| `backend/app/main.py` | Register the façade only behind explicit development configuration until production authentication exists. |
-| `backend/tests/test_mobile_capture_api.py` (new) | Prove disabled-by-default behavior, session scope/expiry, no shared-key exposure, stable errors, correlation, and absence of scoring imports/calls. |
+| `backend/app/main.py` | Register the facade; every facade operation remains gated by explicit development configuration until production authentication exists. |
+| `backend/tests/test_mobile_upload_facade.py` (implemented) | Prove disabled-by-default behavior, session scope/expiry, no shared-key exposure, stable errors, correlation, response allowlisting, and absence of scoring calls. |
 
 Proposed URL names remain provisional until the backend contract review. The
 Flutter gateway depends on a versioned OpenAPI/fixture freeze, not guessed route
@@ -359,7 +359,7 @@ checking both `correlationId` and expected prior phase.
 
 - Product create timeout: resolve by barcode before any new POST.
 - Product create 409: resolve and verify barcode; never assume returned identity.
-- Upload initialize failure before response: retry request only under façade
+- Upload initialize failure before response: retry request only under facade
   contract; each successful initialize produces a distinct upload ID.
 - Expired presigned capability: dispose it and initialize a new upload.
 - PUT timeout/unknown outcome: retain upload ID and attempt finalize/reconcile
@@ -395,7 +395,7 @@ checking both `correlationId` and expected prior phase.
 - `test/services/api_client_product_identity_test.dart`: injected fake HTTP
   transport for found/not-found/create/409/timeout/malformed responses; prove
   `product_id` survives without accepting score placeholders.
-- `test/services/http_capture_upload_gateway_test.dart`: assert façade paths,
+- `test/services/http_capture_upload_gateway_test.dart`: assert facade paths,
   typed payloads, timeouts, status/error mapping, correlation header, and that
   `X-WYE-Image-Key` is never present.
 - `test/services/presigned_binary_uploader_test.dart`: exact bytes and allowed
@@ -450,7 +450,7 @@ MinIO, S3, an extraction provider, or the internet.
 
 Generate one opaque `flowCorrelationId` when a capture draft begins. Generate a
 child `requestId` for each network attempt. Send only the reviewed correlation
-header to the FastAPI façade. FastAPI propagates it to structured application
+header to the FastAPI facade. FastAPI propagates it to structured application
 logs and associates it with product/upload/image/extraction IDs. Object-storage
 PUT cannot be assumed to echo custom headers; correlate it locally by request
 ID, upload ID alias, timestamp, byte size, and status.
@@ -495,7 +495,7 @@ the reviewed log policy permits the actual UUID.
 - finalize start/result/retry and returned safe IDs;
 - extraction start/idempotent retry/status refresh/terminal result;
 - controller transition, cancellation, retry budget, and terminal failure;
-- backend façade entry/exit with matching correlation/request IDs;
+- backend facade entry/exit with matching correlation/request IDs;
 - Phase 8.6 environment record: device/OS, command, API base host, database name,
   storage host/status, and non-secret configuration described in Phase 8.5.1.
 
@@ -539,7 +539,7 @@ captured logs are removed from the test artifact.
 | Extraction state regresses or conflicts | Stop polling, preserve finalized image reference, record safe IDs/code, and show neutral extraction unavailable state |
 | Backend returns legacy score placeholders | Ignore them through existing typed score adapter; assert no score-state mutation; flag contract telemetry |
 | Mobile logs may expose a secret/capability | Stop logging and live test; remove/quarantine logs, expire/rotate affected material, fix redaction, and repeat review |
-| Authorization façade is disabled or unavailable | Keep fake/local flow only; never send shared image key from Flutter |
+| Authorization facade is disabled or unavailable | Keep fake/local flow only; never send shared image key from Flutter |
 
 Server-side image deletion is not currently a public mobile contract. Rollback
 must not attempt destructive cleanup. Orphan/expired staging cleanup remains a
@@ -551,7 +551,7 @@ Before any live-device authorization, the review must verify:
 
 1. No Flutter source, asset, define, fixture, log, or binary contains
    `X-WYE-Image-Key` or another server credential.
-2. The mobile façade/session is enabled only under reviewed configuration and
+2. The mobile facade/session is enabled only under reviewed configuration and
    rejects absent, expired, or out-of-scope sessions.
 3. The physical phone can reach both `API_BASE_URL` and the exact host used in
    a presigned URL.
@@ -573,31 +573,50 @@ Before any live-device authorization, the review must verify:
 
 When each later slice is completed, update documentation narrowly:
 
-- record the selected and implemented mobile façade/session contract;
+- record the selected and implemented mobile facade/session contract;
 - record actual DTO and route names if they differ from this proposal;
 - update the Phase 8.5.1 contract through an explicit reviewed diff;
 - create the Phase 8.6 log template only after redaction tests pass;
 - keep runtime and release authority fields explicit;
 - record that capture/extraction does not activate scoring runtime.
 
-## 13. Checkpoint
+## 13. Phase 8.5.4 backend implementation record
 
-    checkpoint: Phase 8.5.2 capture/upload implementation plan
-    prior_verdict: READY_FOR_PHASE_8_5_2_CAPTURE_UPLOAD_IMPLEMENTATION_PLAN
-    implementation_completed: DOCUMENTATION ONLY
+The approved backend-only dev/local slice now provides the disabled-by-default
+`/mobile/dev/v1/capture` facade. Operator-authorized session creation returns a
+short-lived Bearer capability with `upload` and/or `extraction` scope; only its
+SHA-256 digest and safe metadata are retained server-side. Initialize, finalize,
+and extraction routes reuse the existing services directly. The controlling
+flag is `WYE_MOBILE_UPLOAD_FACADE_ENABLED`; the TTL setting is
+`WYE_MOBILE_UPLOAD_FACADE_SESSION_TTL_SECONDS`.
+
+The session store is deliberately process-local and dev-only. Restarting the
+backend invalidates all issued tokens; multi-worker or shared-session operation
+is unsupported and would require the deferred production authentication model.
+
+Focused tests use dependency-overridden fake services and no network. Flutter
+integration remains unimplemented. Production/release/scoring authority and a
+numerical overall candidate remain absent.
+
+## 14. Checkpoint
+
+    checkpoint: Phase 8.5.4 dev/local mobile upload facade implementation
+    prior_verdict: READY_FOR_PHASE_8_5_4_MOBILE_FACADE_IMPLEMENTATION
+    backend_dev_implementation: IMPLEMENTED — REVIEW AND COMMIT PENDING
+    flutter_integration: NOT IMPLEMENTED
     selected_control_plane: FASTAPI MOBILE FACADE
     selected_data_plane: TEMPORARY PRESIGNED BINARY PUT
     shared_mobile_secret: PROHIBITED
-    current_live_integration_blocker: MOBILE-SAFE FACADE/SESSION NOT IMPLEMENTED
+    current_live_integration_blocker: FLUTTER INTEGRATION NOT IMPLEMENTED
     endpoint_calls_performed: NONE
     scoring_runtime_connection: NONE
     overall_numerical_candidate: NONE / DEFERRED
-    runtime_authority: NONE
+    production_runtime_authority: NONE
     release_authority: NONE
-    next_recommended_subphase: Phase 8.5.2.1 review and commit implementation plan
+    next_recommended_subphase: Phase 8.5.4.1 review and commit mobile facade
 
-Expected planning verdict:
+Expected implementation verdict:
 
 ```text
-READY_FOR_PHASE_8_5_2_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_5_4_1_REVIEW_AND_COMMIT
 ```

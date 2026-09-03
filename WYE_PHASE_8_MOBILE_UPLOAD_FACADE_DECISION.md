@@ -481,9 +481,33 @@ to production, public release, scoring, or a different authorization boundary
 requires a new explicit decision. A successful desktop harness or availability
 of a shared key does not expand this approval.
 
-## 15. Checkpoint
+## 15. Phase 8.5.4 implementation record
 
-    checkpoint: Phase 8.5.3.1 mobile upload facade decision approval
+The approved dev/local backend boundary is now implemented and awaits review:
+
+- feature flag: `WYE_MOBILE_UPLOAD_FACADE_ENABLED`, default `false`;
+- session TTL: `WYE_MOBILE_UPLOAD_FACADE_SESSION_TTL_SECONDS`, default 300
+  seconds and constrained to 30–900 seconds;
+- operator session issuance: `POST /mobile/dev/v1/capture/sessions`, protected
+  by the existing server-side `X-WYE-Image-Key` dependency;
+- mobile authorization: temporary Bearer capability, stored server-side only as
+  a SHA-256 digest, with fixed `upload` and/or `extraction` scopes;
+- session storage is process-local and dev-only; a backend restart invalidates
+  every token, and multi-worker/shared-session operation is not supported;
+- upload/finalize facade: `POST` initialize and finalize routes below
+  `/mobile/dev/v1/capture/products/{product_id}/images/...`;
+- extraction facade: `POST` create plus `GET` list/result routes under the same
+  product/image scope;
+- logs contain safe transition metadata and IDs, not tokens, server keys, raw
+  payloads, image bytes, or full presigned URLs.
+
+Flutter integration remains a separate follow-up. This implementation does not
+authorize production deployment, public release, scoring runtime, or a
+numerical overall score.
+
+## 16. Checkpoint
+
+    checkpoint: Phase 8.5.4 dev/local mobile upload facade implementation
     artifact_status: APPROVED — OPTION A / DEV-LOCAL MVP ONLY
     decision_status: OPTION A APPROVED
     approval_date: 2026-09-03
@@ -492,16 +516,17 @@ of a shared key does not expand this approval.
     fallback_option: OPTION B — LOCAL DESKTOP/HARNESS ONLY
     future_option: OPTION C — FULL AUTHENTICATED USER/SESSION MODEL
     rejected_option: OPTION D — EMBED X-WYE-IMAGE-KEY IN MOBILE
-    runtime_changes_completed: NONE
+    backend_dev_runtime_status: IMPLEMENTED — REVIEW AND COMMIT PENDING
+    flutter_runtime_changes_completed: NONE
     endpoint_calls_performed: NONE
     scoring_runtime_connection: NONE
     overall_numerical_candidate: NONE / DEFERRED
-    runtime_authority: NONE
+    production_runtime_authority: NONE
     release_authority: NONE
-    next_recommended_subphase: Phase 8.5.4 mobile-safe facade implementation
+    next_recommended_subphase: Phase 8.5.4.1 review and commit mobile facade
 
-Expected approval verdict:
+Expected implementation verdict:
 
 ```text
-READY_FOR_PHASE_8_5_4_MOBILE_FACADE_IMPLEMENTATION
+READY_FOR_PHASE_8_5_4_1_REVIEW_AND_COMMIT
 ```

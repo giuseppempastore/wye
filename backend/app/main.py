@@ -11,12 +11,14 @@ from app.db import get_connection
 from app.routes.product_images import router as product_images_router
 from app.routes.label_extractions import router as label_extractions_router
 from app.routes.ingredient_mapping_reviews import router as ingredient_mapping_reviews_router
+from app.routes.mobile_upload import router as mobile_upload_router
 import psycopg2.extras
 
 app = FastAPI(title="Wye MVP prototype")
 app.include_router(product_images_router)
 app.include_router(label_extractions_router)
 app.include_router(ingredient_mapping_reviews_router)
+app.include_router(mobile_upload_router)
 
 app.add_middleware(
     CORSMiddleware,

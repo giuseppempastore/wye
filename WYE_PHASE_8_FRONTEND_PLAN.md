@@ -255,10 +255,12 @@ a separately reviewed mobile facade/session exists.
 The mobile-boundary decision is recorded in
 `WYE_PHASE_8_MOBILE_UPLOAD_FACADE_DECISION.md`. Option A, a dev-only FastAPI
 facade, was approved on 2026-09-03 for local/dev MVP integration and real-device
-test preparation only. Phase 8.5.4 is the next implementation candidate;
-runtime work still requires its own scoped authorization, and scoring,
-production deployment, public release, and mobile-embedded secrets remain
-unauthorized.
+test preparation only. Phase 8.5.4 now implements the backend-only,
+disabled-by-default `/mobile/dev/v1/capture` facade with short-lived scoped
+Bearer capabilities. Its dev-only store is process-local, so backend restart
+invalidates all tokens and multi-worker sessions are unsupported. Review/commit
+and Flutter integration remain separate; scoring, production deployment,
+public release, and mobile-embedded secrets remain unauthorized.
 
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
@@ -300,29 +302,33 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.5.4 — implement the approved dev-only, mobile-safe FastAPI facade and
-its scoped authorization boundary for local MVP real-device test preparation.
+Phase 8.5.4.1 — review and commit the dev-only, mobile-safe FastAPI facade and
+its scoped authorization boundary before any Flutter integration.
 ```
 
-Phase 8.5.4 requires its own file-level runtime authorization. The facade must
-be disabled by default, keep `X-WYE-Image-Key` and all server credentials off
-the phone, issue only temporary scoped capabilities, and fail closed unless the
-physical device can reach both `API_BASE_URL` and the presigned storage host.
-It must not enable scoring, introduce an overall number, authorize production
-deployment or public release, or fall back to legacy base64/analysis paths.
+The review must verify the default-off feature flag, server-side operator
+authorization, hashed TTL-bound mobile capabilities, upload/extraction scope,
+safe structured errors/logs, service reuse, and focused fake-service tests. The
+following Flutter integration phase must validate both `API_BASE_URL` and the
+presigned storage host before a separately authorized real-phone run. Neither
+phase may enable scoring, introduce an overall number, authorize production or
+release, or fall back to legacy base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.5.3.1 mobile upload facade decision approval
-    prior_verdict: READY_FOR_MOBILE_UPLOAD_FACADE_DECISION_APPROVAL
+    checkpoint: Phase 8.5.4 dev/local mobile upload facade implementation
+    prior_verdict: READY_FOR_PHASE_8_5_4_MOBILE_FACADE_IMPLEMENTATION
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
-    next_recommended_subphase: Phase 8.5.4 mobile-safe facade implementation
-    runtime_authority: NONE
+    feature_flag: WYE_MOBILE_UPLOAD_FACADE_ENABLED — DEFAULT FALSE
+    backend_dev_implementation: IMPLEMENTED — REVIEW AND COMMIT PENDING
+    flutter_runtime_implementation: NONE
+    next_recommended_subphase: Phase 8.5.4.1 review and commit mobile facade
+    production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: DOCUMENTATION DECISION ONLY
+    implementation_completed_by_this_checkpoint: DEV/LOCAL BACKEND FACADE ONLY
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -330,5 +336,5 @@ deployment or public release, or fall back to legacy base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_5_4_MOBILE_FACADE_IMPLEMENTATION
+READY_FOR_PHASE_8_5_4_1_REVIEW_AND_COMMIT
 ```
