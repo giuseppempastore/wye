@@ -250,7 +250,15 @@ The proposed file-by-file implementation sequence, DTOs, state machine,
 mobile-safe FastAPI boundary, fake/test strategy, logging hooks, and rollback
 gates are recorded in `WYE_PHASE_8_CAPTURE_UPLOAD_IMPLEMENTATION_PLAN.md`.
 That plan is documentation only; live mobile integration remains blocked until
-a separately reviewed mobile façade/session exists.
+a separately reviewed mobile facade/session exists.
+
+The mobile-boundary decision is recorded in
+`WYE_PHASE_8_MOBILE_UPLOAD_FACADE_DECISION.md`. Option A, a dev-only FastAPI
+facade, was approved on 2026-09-03 for local/dev MVP integration and real-device
+test preparation only. Phase 8.5.4 is the next implementation candidate;
+runtime work still requires its own scoped authorization, and scoring,
+production deployment, public release, and mobile-embedded secrets remain
+unauthorized.
 
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
@@ -292,30 +300,35 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.2 — introduce typed frontend score/evaluability models with local
-fixtures and characterization tests, without connecting scoring runtime.
+Phase 8.5.4 — implement the approved dev-only, mobile-safe FastAPI facade and
+its scoped authorization boundary for local MVP real-device test preparation.
 ```
 
-Phase 8.2 should first test the invariants in this document: a real zero is
-distinct from absent data; `not_computable` and `non_applicable` carry no
-numeric score; components stay separate; and overall remains deferred. It must
-not introduce a formula, a backend integration, final UI copy, or runtime
-scoring behavior.
+Phase 8.5.4 requires its own file-level runtime authorization. The facade must
+be disabled by default, keep `X-WYE-Image-Key` and all server credentials off
+the phone, issue only temporary scoped capabilities, and fail closed unless the
+physical device can reach both `API_BASE_URL` and the presigned storage host.
+It must not enable scoring, introduce an overall number, authorize production
+deployment or public release, or fall back to legacy base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.1 frontend baseline preservation and contract-gap specification
-    prior_verdict: READY_FOR_PHASE_8_FRONTEND_PLAN
-    next_recommended_subphase: Phase 8.2 typed frontend score/evaluability models and fixture tests
+    checkpoint: Phase 8.5.3.1 mobile upload facade decision approval
+    prior_verdict: READY_FOR_MOBILE_UPLOAD_FACADE_DECISION_APPROVAL
+    approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
+    approval_date: 2026-09-03
+    approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
+    next_recommended_subphase: Phase 8.5.4 mobile-safe facade implementation
     runtime_authority: NONE
     release_authority: NONE
-    implementation_completed_by_this_checkpoint: DOCUMENTATION ONLY
+    scoring_runtime_authority: NONE
+    implementation_completed_by_this_checkpoint: DOCUMENTATION DECISION ONLY
     overall_numerical_candidate: NONE / DEFERRED
-    external_validation: FUTURE OPTIONAL NOT PRESENT
+    production_deployment_authority: NONE
     git_push_authority: NONE
 
-Expected planning verdict:
+Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_2_FRONTEND_MODELS
+READY_FOR_PHASE_8_5_4_MOBILE_FACADE_IMPLEMENTATION
 ```
