@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 import 'package:wye/config/mobile_upload_config.dart';
 import 'package:wye/models/capture_upload_error.dart';
 import 'package:wye/models/capture_upload_models.dart';
+import 'package:wye/models/extraction_models.dart';
 import 'package:wye/services/capture_flow_logger.dart';
 import 'package:wye/services/http_capture_upload_gateway.dart';
 
@@ -271,6 +272,205 @@ void main() {
     expect(failure, isA<CaptureUploadException>());
     expect(failure.toString(), isNot(contains(responseSecret)));
     expect(failure.toString(), isNot(contains('storage.invalid')));
+    expect(failure.toString(), isNot(contains(tokenValue)));
+  });
+
+  test('start, list and get extraction use only mobile facade routes',
+      () async {
+    final requests = <http.Request>[];
+    final logger = CollectingCaptureFlowLogger();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        tokenValue,
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final extractionBody = jsonEncode({
+      'extraction': {
+        'id': 501,
+        'run_status': 'succeeded',
+        'raw_response': {'secret': 'provider-payload'},
+        'score': 91,
+      },
+      'items': [
+        {
+          'id': 601,
+          'item_type': 'ingredient',
+          'raw_text': 'sale',
+          'normalized_text': 'sale',
+          'extraction_status': 'detected',
+          'internal_field': 'provider-payload',
+          'overall_score': 91,
+        },
+      ],
+    });
+    final gateway = HttpCaptureUploadGateway(
+      client: MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'GET' &&
+            request.url.path.endsWith('/extractions')) {
+          return http.Response(
+            jsonEncode({
+              'extractions': [
+                {'id': 501, 'run_status': 'succeeded'},
+              ],
+            }),
+            200,
+          );
+        }
+        return http.Response(
+          extractionBody,
+          request.method == 'POST' ? 201 : 200,
+          headers: {'X-Request-ID': 'extraction-1'},
+        );
+      }),
+      config: MobileUploadConfig(
+        enabled: true,
+        apiBaseUri: Uri.parse('http://api.invalid:8000'),
+      ),
+      tokenProvider: tokenProvider,
+      logger: logger,
+    );
+    addTearDown(gateway.close);
+    final image = ProductImageRef(
+      productImageId: 401,
+      storageObjectId: 301,
+      uploadId: '00000000-0000-4000-8000-000000000001',
+    );
+
+    final started = await gateway.startExtraction(
+      productIdentity: identity,
+      productImage: image,
+      idempotencyKey: 'extract-7-401',
+    );
+    final listed = await gateway.listExtractions(
+      productIdentity: identity,
+      productImage: image,
+    );
+    final retrieved = await gateway.getExtraction(
+      productIdentity: identity,
+      productImage: image,
+      extractionRunId: 501,
+    );
+
+    const base = '/mobile/dev/v1/capture/products/7/images/401/extractions';
+    expect(
+        requests.map((request) => request.url.path), [base, base, '$base/501']);
+    expect(requests.map((request) => request.method), ['POST', 'GET', 'GET']);
+    expect(requests.first.headers['idempotency-key'], 'extract-7-401');
+    expect(
+      requests.map((request) => request.headers['authorization']),
+      everyElement('Bearer $tokenValue'),
+    );
+    expect(
+      requests.expand((request) => request.headers.keys),
+      everyElement(isNot(equalsIgnoringCase('X-WYE-Image-Key'))),
+    );
+    expect(requests.map((request) => request.url.path),
+        everyElement(isNot(contains('/analyze'))));
+    expect(requests.map((request) => request.url.path),
+        everyElement(isNot(contains('score'))));
+    expect(started.run.extractionRunId, 501);
+    expect(started.items.single.normalizedText, 'sale');
+    expect(listed.single.status, ExtractionStatus.succeeded);
+    expect(retrieved.run.extractionRunId, 501);
+    final logged = logger.events.join('\n');
+    expect(logged, isNot(contains(tokenValue)));
+    expect(logged, isNot(contains('provider-payload')));
+    expect(logged, isNot(contains('sale')));
+  });
+
+  test('extraction fails closed without token or valid run identifier',
+      () async {
+    var requests = 0;
+    final gateway = HttpCaptureUploadGateway(
+      client: MockClient((request) async {
+        requests += 1;
+        return http.Response('{}', 200);
+      }),
+      config: MobileUploadConfig(
+        enabled: true,
+        apiBaseUri: Uri.parse('http://api.invalid:8000'),
+      ),
+      tokenProvider: InMemoryMobileUploadTokenProvider(),
+    );
+    addTearDown(gateway.close);
+    final image = ProductImageRef(
+      productImageId: 401,
+      storageObjectId: 301,
+      uploadId: '00000000-0000-4000-8000-000000000001',
+    );
+
+    await expectLater(
+      gateway.startExtraction(
+        productIdentity: identity,
+        productImage: image,
+        idempotencyKey: 'extract-7-401',
+      ),
+      throwsA(
+        isA<CaptureUploadException>()
+            .having((error) => error.code, 'code', 'mobile_token_missing'),
+      ),
+    );
+    await expectLater(
+      gateway.getExtraction(
+        productIdentity: identity,
+        productImage: image,
+        extractionRunId: 0,
+      ),
+      throwsA(
+        isA<CaptureUploadException>().having(
+          (error) => error.code,
+          'code',
+          'extraction_run_id_invalid',
+        ),
+      ),
+    );
+    expect(requests, 0);
+  });
+
+  test('extraction facade errors expose only sanitized error code', () async {
+    const providerSecret = 'raw-provider-secret';
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        tokenValue,
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final gateway = HttpCaptureUploadGateway(
+      client: MockClient((request) async => http.Response(
+            jsonEncode({
+              'detail': {
+                'code': 'mobile_extraction_failed',
+                'message': providerSecret,
+              },
+            }),
+            503,
+          )),
+      config: MobileUploadConfig(
+        enabled: true,
+        apiBaseUri: Uri.parse('http://api.invalid:8000'),
+      ),
+      tokenProvider: tokenProvider,
+    );
+    addTearDown(gateway.close);
+
+    Object? failure;
+    try {
+      await gateway.startExtraction(
+        productIdentity: identity,
+        productImage: ProductImageRef(
+          productImageId: 401,
+          storageObjectId: 301,
+          uploadId: '00000000-0000-4000-8000-000000000001',
+        ),
+        idempotencyKey: 'extract-7-401',
+      );
+    } on Object catch (error) {
+      failure = error;
+    }
+
+    expect(failure, isA<CaptureUploadException>());
+    expect(failure.toString(), contains('mobile_extraction_failed'));
+    expect(failure.toString(), isNot(contains(providerSecret)));
     expect(failure.toString(), isNot(contains(tokenValue)));
   });
 }

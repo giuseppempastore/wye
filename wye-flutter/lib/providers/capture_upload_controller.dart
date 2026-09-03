@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../config/mobile_upload_config.dart';
 import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
+import '../models/extraction_models.dart';
 import '../services/capture_upload_gateway.dart';
 import '../services/image_metadata_service.dart';
 
@@ -15,6 +16,9 @@ class CaptureUploadController extends ChangeNotifier {
   final ImageMetadataService _metadataService;
 
   UploadFlowState _state;
+  ExtractionFlowState _extractionState = const ExtractionFlowState(
+    step: ExtractionFlowStep.notStarted,
+  );
   ImageCaptureDraft? _draft;
   bool _transitionActive = false;
   DateTime? _tokenExpiresAt;
@@ -40,6 +44,8 @@ class CaptureUploadController extends ChangeNotifier {
 
   UploadFlowState get state => _state;
 
+  ExtractionFlowState get extractionState => _extractionState;
+
   bool get isTransitionActive => _transitionActive;
 
   DateTime? get tokenExpiresAt => _tokenExpiresAt;
@@ -61,6 +67,9 @@ class CaptureUploadController extends ChangeNotifier {
     }
     _tokenExpiresAt = expiresAt.toUtc();
     _tokenProvider.setToken(token, expiresAt: _tokenExpiresAt!);
+    _extractionState = const ExtractionFlowState(
+      step: ExtractionFlowStep.notStarted,
+    );
     _setState(
       UploadFlowState(
         step: _tokenProvider.currentToken == null
@@ -74,6 +83,9 @@ class CaptureUploadController extends ChangeNotifier {
     _tokenExpiresAt = null;
     _tokenProvider.clear();
     _draft = null;
+    _extractionState = const ExtractionFlowState(
+      step: ExtractionFlowStep.notStarted,
+    );
     _setState(
       UploadFlowState(
         step: _config.enabled
@@ -107,6 +119,9 @@ class CaptureUploadController extends ChangeNotifier {
       productIdentity: productIdentity,
       purpose: purpose,
       bytes: bytes,
+    );
+    _extractionState = const ExtractionFlowState(
+      step: ExtractionFlowStep.notStarted,
     );
     _setState(
       UploadFlowState(
@@ -229,6 +244,15 @@ class CaptureUploadController extends ChangeNotifier {
           productImage: imageRef.productImage,
         ),
       );
+      _setExtractionState(
+        ExtractionFlowState(
+          step: extractionDeferred
+              ? ExtractionFlowStep.deferred
+              : ExtractionFlowStep.unavailable,
+          errorCode:
+              extractionDeferred ? null : 'extraction_purpose_unsupported',
+        ),
+      );
     } on CaptureUploadException catch (error) {
       _fail(error);
     } on Object {
@@ -254,8 +278,112 @@ class CaptureUploadController extends ChangeNotifier {
     await upload();
   }
 
+  Future<void> startExtraction() async {
+    if (_transitionActive) {
+      return;
+    }
+    final context = _validatedExtractionContext();
+    if (context == null) {
+      return;
+    }
+    _transitionActive = true;
+    _setExtractionState(
+      const ExtractionFlowState(step: ExtractionFlowStep.starting),
+    );
+    try {
+      final result = await _gateway.startExtraction(
+        productIdentity: context.productIdentity,
+        productImage: context.productImage,
+        idempotencyKey: 'mobile-extraction-'
+            '${context.productIdentity.productId}-'
+            '${context.productImage.productImageId}',
+      );
+      _applyExtractionResult(result);
+    } on CaptureUploadException catch (error) {
+      _failExtraction(error);
+    } on Object {
+      _failExtraction(
+        const CaptureUploadException(
+          kind: CaptureUploadFailureKind.transport,
+          code: 'mobile_extraction_failed',
+          safeMessage: 'Extraction request failed',
+          retryable: true,
+          lastStableStep: UploadFlowStep.extractionDeferred,
+        ),
+      );
+    } finally {
+      _transitionActive = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshExtraction() async {
+    if (_transitionActive) {
+      return;
+    }
+    final context = _validatedExtractionContext();
+    final runId = _extractionState.result?.run.extractionRunId;
+    if (context == null) {
+      return;
+    }
+    if (runId == null || runId <= 0) {
+      _setExtractionState(
+        const ExtractionFlowState(
+          step: ExtractionFlowStep.failedTerminal,
+          errorCode: 'extraction_run_id_missing',
+        ),
+      );
+      return;
+    }
+    _transitionActive = true;
+    _setExtractionState(
+      ExtractionFlowState(
+        step: ExtractionFlowStep.loading,
+        result: _extractionState.result,
+      ),
+    );
+    try {
+      final result = await _gateway.getExtraction(
+        productIdentity: context.productIdentity,
+        productImage: context.productImage,
+        extractionRunId: runId,
+      );
+      _applyExtractionResult(result);
+    } on CaptureUploadException catch (error) {
+      _failExtraction(error);
+    } on Object {
+      _failExtraction(
+        const CaptureUploadException(
+          kind: CaptureUploadFailureKind.transport,
+          code: 'mobile_extraction_failed',
+          safeMessage: 'Extraction request failed',
+          retryable: true,
+          lastStableStep: UploadFlowStep.extractionDeferred,
+        ),
+      );
+    } finally {
+      _transitionActive = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> retryExtraction() async {
+    if (_extractionState.step != ExtractionFlowStep.failedRetryable) {
+      return;
+    }
+    if (_extractionState.result?.run.extractionRunId case final int runId
+        when runId > 0) {
+      await refreshExtraction();
+    } else {
+      await startExtraction();
+    }
+  }
+
   void reset() {
     _draft = null;
+    _extractionState = const ExtractionFlowState(
+      step: ExtractionFlowStep.notStarted,
+    );
     _setState(
       UploadFlowState(
         step: !_config.enabled
@@ -263,6 +391,89 @@ class CaptureUploadController extends ChangeNotifier {
             : _tokenProvider.currentToken == null
                 ? UploadFlowStep.missingToken
                 : UploadFlowStep.idle,
+      ),
+    );
+  }
+
+  _ExtractionContext? _validatedExtractionContext() {
+    if (!_config.enabled) {
+      _setExtractionState(
+        const ExtractionFlowState(
+          step: ExtractionFlowStep.unavailable,
+          errorCode: 'mobile_upload_disabled',
+        ),
+      );
+      return null;
+    }
+    if (_tokenProvider.currentToken == null) {
+      _setExtractionState(
+        const ExtractionFlowState(
+          step: ExtractionFlowStep.failedTerminal,
+          errorCode: 'mobile_token_missing',
+        ),
+      );
+      return null;
+    }
+    final identity = _state.productIdentity;
+    final image = _state.productImage;
+    final purpose = _state.purpose;
+    if (identity == null || image == null) {
+      _setExtractionState(
+        const ExtractionFlowState(
+          step: ExtractionFlowStep.failedTerminal,
+          errorCode: 'extraction_image_not_finalized',
+        ),
+      );
+      return null;
+    }
+    if (purpose != CaptureImagePurpose.ingredients &&
+        purpose != CaptureImagePurpose.nutrition) {
+      _setExtractionState(
+        const ExtractionFlowState(
+          step: ExtractionFlowStep.unavailable,
+          errorCode: 'extraction_purpose_unsupported',
+        ),
+      );
+      return null;
+    }
+    if (_state.step != UploadFlowStep.extractionDeferred) {
+      _setExtractionState(
+        const ExtractionFlowState(
+          step: ExtractionFlowStep.failedTerminal,
+          errorCode: 'extraction_image_not_finalized',
+        ),
+      );
+      return null;
+    }
+    return _ExtractionContext(identity, image);
+  }
+
+  void _applyExtractionResult(ExtractionResultSummary result) {
+    final step = switch (result.run.status) {
+      ExtractionStatus.pending ||
+      ExtractionStatus.running =>
+        ExtractionFlowStep.loading,
+      ExtractionStatus.succeeded => ExtractionFlowStep.succeeded,
+      ExtractionStatus.failed => ExtractionFlowStep.failedTerminal,
+      ExtractionStatus.superseded => ExtractionFlowStep.unavailable,
+    };
+    _setExtractionState(
+      ExtractionFlowState(
+        step: step,
+        result: result,
+        errorCode: result.run.errorCode,
+      ),
+    );
+  }
+
+  void _failExtraction(CaptureUploadException error) {
+    _setExtractionState(
+      ExtractionFlowState(
+        step: error.retryable
+            ? ExtractionFlowStep.failedRetryable
+            : ExtractionFlowStep.failedTerminal,
+        result: _extractionState.result,
+        errorCode: error.code,
       ),
     );
   }
@@ -313,6 +524,11 @@ class CaptureUploadController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _setExtractionState(ExtractionFlowState value) {
+    _extractionState = value;
+    notifyListeners();
+  }
+
   @override
   void dispose() {
     _tokenExpiresAt = null;
@@ -320,4 +536,11 @@ class CaptureUploadController extends ChangeNotifier {
     _draft = null;
     super.dispose();
   }
+}
+
+class _ExtractionContext {
+  final ProductIdentity productIdentity;
+  final ProductImageRef productImage;
+
+  const _ExtractionContext(this.productIdentity, this.productImage);
 }

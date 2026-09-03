@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../config/mobile_upload_config.dart';
 import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
+import '../models/extraction_models.dart';
 import 'capture_flow_logger.dart';
 import 'capture_upload_gateway.dart';
 
@@ -201,10 +202,126 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
     }
   }
 
+  @override
+  Future<ExtractionResultSummary> startExtraction({
+    required ProductIdentity productIdentity,
+    required ProductImageRef productImage,
+    required String idempotencyKey,
+  }) async {
+    final key = idempotencyKey.trim();
+    if (key.isEmpty || key.length > 255) {
+      throw const CaptureUploadException(
+        kind: CaptureUploadFailureKind.invalidInput,
+        code: 'extraction_idempotency_key_invalid',
+        safeMessage: 'Extraction idempotency key is invalid',
+        retryable: false,
+        lastStableStep: UploadFlowStep.extractionDeferred,
+      );
+    }
+    final started = DateTime.now();
+    final response = await _sendControlPlane(
+      uri: _extractionUri(productIdentity, productImage),
+      stableStep: UploadFlowStep.extractionDeferred,
+      body: const {},
+      headers: {'Idempotency-Key': key},
+    );
+    final result = _decodeExtractionResult(response);
+    _recordExtractionEvent(
+      step: 'extraction_start',
+      response: response,
+      started: started,
+      productIdentity: productIdentity,
+      productImage: productImage,
+      extractionRunId: result.run.extractionRunId,
+    );
+    return result;
+  }
+
+  @override
+  Future<List<ExtractionRunRef>> listExtractions({
+    required ProductIdentity productIdentity,
+    required ProductImageRef productImage,
+  }) async {
+    final started = DateTime.now();
+    final response = await _sendControlPlane(
+      method: 'GET',
+      uri: _extractionUri(productIdentity, productImage),
+      stableStep: UploadFlowStep.extractionDeferred,
+    );
+    try {
+      final decoded =
+          _decodeObject(response, UploadFlowStep.extractionDeferred);
+      final rawRuns = decoded['extractions'];
+      if (rawRuns is! List) {
+        throw const FormatException('extractions must be a list');
+      }
+      final runs = rawRuns
+          .map(
+            (run) => ExtractionRunRef.fromJson(
+              Map<String, dynamic>.from(run as Map),
+            ),
+          )
+          .toList(growable: false);
+      _recordExtractionEvent(
+        step: 'extraction_list',
+        response: response,
+        started: started,
+        productIdentity: productIdentity,
+        productImage: productImage,
+      );
+      return runs;
+    } on CaptureUploadException {
+      rethrow;
+    } on Object {
+      throw _extractionContractError();
+    }
+  }
+
+  @override
+  Future<ExtractionResultSummary> getExtraction({
+    required ProductIdentity productIdentity,
+    required ProductImageRef productImage,
+    required int extractionRunId,
+  }) async {
+    if (extractionRunId <= 0) {
+      throw const CaptureUploadException(
+        kind: CaptureUploadFailureKind.invalidInput,
+        code: 'extraction_run_id_invalid',
+        safeMessage: 'Extraction run identifier is invalid',
+        retryable: false,
+        lastStableStep: UploadFlowStep.extractionDeferred,
+      );
+    }
+    final started = DateTime.now();
+    final response = await _sendControlPlane(
+      method: 'GET',
+      uri: _extractionUri(productIdentity, productImage).replace(
+        path: '${_extractionUri(productIdentity, productImage).path}/'
+            '$extractionRunId',
+      ),
+      stableStep: UploadFlowStep.extractionDeferred,
+    );
+    final result = _decodeExtractionResult(response);
+    if (result.run.extractionRunId != extractionRunId) {
+      throw _extractionContractError();
+    }
+    _recordExtractionEvent(
+      step: 'extraction_get',
+      response: response,
+      started: started,
+      productIdentity: productIdentity,
+      productImage: productImage,
+      extractionRunId: extractionRunId,
+    );
+    return result;
+  }
+
   Future<http.Response> _sendControlPlane({
+    String method = 'POST',
     required Uri uri,
     required UploadFlowStep stableStep,
     Map<String, Object>? body,
+    Map<String, String> headers = const {},
   }) async {
     if (!_config.enabled) {
       throw CaptureUploadException(
@@ -226,16 +343,19 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
       );
     }
     try {
-      final response = await _client
-          .post(
-            uri,
-            headers: {
-              'Authorization': token.authorizationHeader,
-              'Content-Type': 'application/json',
-            },
-            body: body == null ? null : jsonEncode(body),
-          )
-          .timeout(_config.timeout);
+      final request = http.Request(method, uri)
+        ..followRedirects = false
+        ..headers.addAll({
+          'Authorization': token.authorizationHeader,
+          ...headers,
+        });
+      if (body != null) {
+        request.headers['Content-Type'] = 'application/json';
+        request.body = jsonEncode(body);
+      }
+      final streamed = await _client.send(request).timeout(_config.timeout);
+      final response =
+          await http.Response.fromStream(streamed).timeout(_config.timeout);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw CaptureUploadException(
           kind: CaptureUploadFailureKind.http,
@@ -274,6 +394,60 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
         lastStableStep: stableStep,
       );
     }
+  }
+
+  ExtractionResultSummary _decodeExtractionResult(http.Response response) {
+    try {
+      return ExtractionResultSummary.fromJson(
+        _decodeObject(response, UploadFlowStep.extractionDeferred),
+      );
+    } on CaptureUploadException {
+      rethrow;
+    } on Object {
+      throw _extractionContractError();
+    }
+  }
+
+  CaptureUploadException _extractionContractError() {
+    return const CaptureUploadException(
+      kind: CaptureUploadFailureKind.contract,
+      code: 'mobile_extraction_contract_invalid',
+      safeMessage: 'Extraction response is invalid',
+      retryable: false,
+      lastStableStep: UploadFlowStep.extractionDeferred,
+    );
+  }
+
+  Uri _extractionUri(
+    ProductIdentity productIdentity,
+    ProductImageRef productImage,
+  ) {
+    return _facadeUri(
+      '/products/${productIdentity.productId}/images/'
+      '${productImage.productImageId}/extractions',
+    );
+  }
+
+  void _recordExtractionEvent({
+    required String step,
+    required http.Response response,
+    required DateTime started,
+    required ProductIdentity productIdentity,
+    required ProductImageRef productImage,
+    int? extractionRunId,
+  }) {
+    _logger.record(
+      CaptureFlowEvent(
+        step: step,
+        statusClass: '${response.statusCode ~/ 100}xx',
+        productId: productIdentity.productId,
+        productImageId: productImage.productImageId,
+        storageObjectId: productImage.storageObjectId,
+        extractionRunId: extractionRunId,
+        requestId: response.headers['x-request-id'],
+        latencyMs: DateTime.now().difference(started).inMilliseconds,
+      ),
+    );
   }
 
   Map<String, dynamic> _decodeObject(

@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../models/capture_upload_models.dart';
+import '../models/extraction_models.dart';
 import '../providers/capture_upload_controller.dart';
 import '../theme/app_theme.dart';
 
@@ -180,7 +181,7 @@ class _DevMobileCaptureUploadPanelState
                 Text('Upload mobile locale', style: AppTypography.headline3),
                 const SizedBox(height: 8),
                 const Text(
-                  'Percorso tecnico separato da analisi, estrazione e scoring.',
+                  'Percorso tecnico locale separato dallo scoring.',
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -267,6 +268,49 @@ class _DevMobileCaptureUploadPanelState
                   key: const Key('dev-mobile-upload-status'),
                   style: AppTypography.bodySmall,
                 ),
+                if (_showExtractionControls(controller)) ...[
+                  const SizedBox(height: 12),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Estrazione etichetta',
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  if (controller.extractionState.step ==
+                      ExtractionFlowStep.deferred)
+                    OutlinedButton.icon(
+                      key: const Key('dev-mobile-extraction-start'),
+                      onPressed: busy ? null : controller.startExtraction,
+                      icon: const Icon(Icons.text_snippet_outlined),
+                      label: const Text('Avvia estrazione'),
+                    ),
+                  if (controller.extractionState.step ==
+                      ExtractionFlowStep.loading)
+                    OutlinedButton.icon(
+                      key: const Key('dev-mobile-extraction-refresh'),
+                      onPressed: busy ? null : controller.refreshExtraction,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Aggiorna stato'),
+                    ),
+                  if (controller.extractionState.step ==
+                      ExtractionFlowStep.failedRetryable)
+                    OutlinedButton.icon(
+                      key: const Key('dev-mobile-extraction-retry'),
+                      onPressed: busy ? null : controller.retryExtraction,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Riprova estrazione'),
+                    ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _extractionStatusText(controller),
+                    key: const Key('dev-mobile-extraction-status'),
+                    style: AppTypography.bodySmall,
+                  ),
+                  if (controller.extractionState.step ==
+                      ExtractionFlowStep.succeeded)
+                    ..._extractionItems(controller.extractionState),
+                ],
                 if (busy) ...[
                   const SizedBox(height: 12),
                   const LinearProgressIndicator(),
@@ -428,5 +472,59 @@ class _DevMobileCaptureUploadPanelState
     return identity?.productId == _productId &&
         identity?.barcode == _barcodeController.text.trim() &&
         controller.state.purpose == _purpose;
+  }
+
+  bool _showExtractionControls(CaptureUploadController controller) {
+    return controller.state.productImage != null;
+  }
+
+  String _extractionStatusText(CaptureUploadController controller) {
+    switch (controller.extractionState.step) {
+      case ExtractionFlowStep.notStarted:
+      case ExtractionFlowStep.deferred:
+        return 'Estrazione non avviata';
+      case ExtractionFlowStep.starting:
+        return 'Avvio estrazione';
+      case ExtractionFlowStep.loading:
+        return 'Estrazione in elaborazione';
+      case ExtractionFlowStep.succeeded:
+        final count = controller.extractionState.result?.items.length ?? 0;
+        return 'Estrazione completata: $count elementi disponibili';
+      case ExtractionFlowStep.failedRetryable:
+        return 'Estrazione non completata; riprova disponibile';
+      case ExtractionFlowStep.failedTerminal:
+        return 'Estrazione bloccata '
+            '(${controller.extractionState.errorCode ?? 'errore'})';
+      case ExtractionFlowStep.unavailable:
+        return 'Estrazione non disponibile per questa immagine';
+    }
+  }
+
+  List<Widget> _extractionItems(ExtractionFlowState state) {
+    final items = state.result?.items ?? const <ExtractionItem>[];
+    return [
+      for (final item in items)
+        ListTile(
+          dense: true,
+          contentPadding: EdgeInsets.zero,
+          key: Key('dev-mobile-extraction-item-${item.extractionItemId}'),
+          title: Text(item.normalizedText ?? item.rawText),
+          subtitle: Text(
+            '${_itemTypeLabel(item.type)} · ${item.status.name}',
+          ),
+        ),
+    ];
+  }
+
+  String _itemTypeLabel(ExtractionItemType type) {
+    return switch (type) {
+      ExtractionItemType.ingredient => 'Ingrediente',
+      ExtractionItemType.ingredientList => 'Lista ingredienti',
+      ExtractionItemType.nutrition => 'Dato nutrizionale',
+      ExtractionItemType.allergen => 'Voce allergeni',
+      ExtractionItemType.quantity => 'Quantita',
+      ExtractionItemType.unit => 'Unita',
+      ExtractionItemType.other => 'Altro',
+    };
   }
 }

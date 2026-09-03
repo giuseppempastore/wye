@@ -8,6 +8,7 @@ class CaptureFlowEvent {
   final String? requestId;
   final int? productImageId;
   final int? storageObjectId;
+  final int? extractionRunId;
   final int? latencyMs;
 
   const CaptureFlowEvent({
@@ -18,6 +19,7 @@ class CaptureFlowEvent {
     this.requestId,
     this.productImageId,
     this.storageObjectId,
+    this.extractionRunId,
     this.latencyMs,
   });
 
@@ -29,6 +31,7 @@ class CaptureFlowEvent {
         'request_id': _safeRequestId(requestId),
         'product_image_id': productImageId,
         'storage_object_id': storageObjectId,
+        'extraction_run_id': extractionRunId,
         'latency_ms': latencyMs,
       };
 

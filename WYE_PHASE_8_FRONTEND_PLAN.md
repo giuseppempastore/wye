@@ -288,6 +288,22 @@ analysis. Ingredient and nutrition uploads remain explicitly
 remain follow-ups. Scoring, production deployment, public release, and
 mobile-embedded secrets remain unauthorized.
 
+Phase 8.5.8 adds the default-off Flutter extraction client through the same
+mobile-safe FastAPI facade. Typed, fail-closed models retain `productId`,
+`productImageId`, and `extractionRunId` as distinct identifiers and represent
+only the frontend allowlist for run status and extracted items. The gateway can
+start, list, and retrieve extraction runs under `/mobile/dev/v1/capture`; it
+uses the existing in-memory Bearer token, never sends `X-WYE-Image-Key`, and
+does not call legacy analysis or scoring routes. The controller permits
+extraction only after finalize for ingredient or nutrition images, with
+separate deferred, starting, loading, succeeded, retryable failure, terminal
+failure, and unavailable states. Minimal dev UI can start and refresh a run and
+renders only neutral status plus allowlisted item text. Provider payloads,
+structured internal metadata, score/goodness fields, and overall values are not
+represented. Physical-device reachability and sanitized log capture remain
+Phase 8.6 prerequisites; runtime scoring, production, and release remain
+unauthorized.
+
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
 
@@ -328,22 +344,22 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.5.7.1 - review and commit the Flutter dev-only token/capture UI before
-adding extraction or physical-device E2E wiring.
+Phase 8.5.8.1 - review and commit the Flutter extraction client before
+physical-device E2E wiring.
 ```
 
 The review must verify hidden-by-default surfaces, in-memory redacted token
-handling, explicit expiry/removal, required product identity, purpose selection,
-neutral flow states, exact-byte metadata/PUT integration, and fake-only widget
-tests. A later authorized device phase must validate both `API_BASE_URL` and the
-presigned storage host before any real-phone run. No phase may enable scoring,
-introduce an overall number, authorize production or release, or fall back to
-legacy base64/analysis paths.
+handling, strict identifier separation, mobile-facade-only start/list/get
+routes, allowlisted response mapping, supported-purpose/finalize gates, neutral
+flow states, safe logs, and fake-only tests. A later authorized device phase
+must validate both `API_BASE_URL` and the presigned storage host before any
+real-phone run. No phase may enable scoring, introduce an overall number,
+authorize production or release, or fall back to legacy base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.5.7 Flutter dev-only token/capture UI
-    prior_verdict: READY_FOR_PHASE_8_5_7_FLUTTER_TOKEN_CAPTURE_UI
+    checkpoint: Phase 8.5.8 Flutter extraction client
+    prior_verdict: READY_FOR_PHASE_8_5_8_FLUTTER_EXTRACTION_CLIENT
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
@@ -355,15 +371,18 @@ legacy base64/analysis paths.
     runtime_sha256_adapter: IMPLEMENTED AND COMMITTED
     sha256_dependency: crypto ^3.0.7 - DIRECT; RESOLVED OFFLINE
     flutter_lockfile: PRESENT LOCALLY; IGNORED BY REPOSITORY POLICY
-    dev_token_ui: IMPLEMENTED - REVIEW AND COMMIT PENDING
-    capture_upload_ui: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    dev_token_ui: IMPLEMENTED AND COMMITTED
+    capture_upload_ui: IMPLEMENTED AND COMMITTED
     token_storage: IN-MEMORY ONLY; FULL VALUE NOT RENDERED AFTER CONFIRMATION
-    extraction_integration: DEFERRED
-    next_recommended_subphase: Phase 8.5.7.1 review and commit Flutter dev UI
+    extraction_integration: IMPLEMENTED THROUGH MOBILE FACADE - REVIEW PENDING
+    extraction_routes: START, LIST, GET UNDER MOBILE DEV CAPTURE PREFIX
+    extraction_models: STRICT FRONTEND ALLOWLIST; NO PROVIDER PAYLOADS OR SCORES
+    extraction_ui: MINIMAL DEV-ONLY START, REFRESH, STATUS, ALLOWLISTED ITEMS
+    next_recommended_subphase: Phase 8.5.8.1 review and commit extraction client
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: DEFAULT-OFF DEV TOKEN/CAPTURE UI
+    implementation_completed_by_this_checkpoint: DEFAULT-OFF FLUTTER EXTRACTION CLIENT
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -371,5 +390,5 @@ legacy base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_5_7_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_5_8_1_REVIEW_AND_COMMIT
 ```

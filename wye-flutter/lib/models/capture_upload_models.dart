@@ -278,45 +278,6 @@ class UploadFinalizeResponse {
   }
 }
 
-enum ExtractionRunStatus { pending, running, succeeded, failed, superseded }
-
-class ExtractionRunRef {
-  final int runId;
-  final int? labelDocumentId;
-  final ExtractionRunStatus status;
-  final String? errorCode;
-
-  const ExtractionRunRef({
-    required this.runId,
-    required this.status,
-    this.labelDocumentId,
-    this.errorCode,
-  });
-
-  factory ExtractionRunRef.fromJson(Map<String, dynamic> json) {
-    final rawStatus = _requiredString(json, 'run_status');
-    final status = ExtractionRunStatus.values.where(
-      (candidate) => candidate.name == rawStatus,
-    );
-    if (status.isEmpty) {
-      throw FormatException('Unsupported extraction run status: $rawStatus');
-    }
-    final labelDocumentId = json['label_document_id'];
-    if (labelDocumentId != null &&
-        (labelDocumentId is! int || labelDocumentId <= 0)) {
-      throw const FormatException(
-        'label_document_id must be a positive integer or absent',
-      );
-    }
-    return ExtractionRunRef(
-      runId: _requiredPositiveInt(json, 'id'),
-      labelDocumentId: labelDocumentId as int?,
-      status: status.single,
-      errorCode: json['error_code'] as String?,
-    );
-  }
-}
-
 enum UploadFlowStep {
   disabled,
   missingToken,

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:wye/config/mobile_upload_config.dart';
 import 'package:wye/models/capture_upload_error.dart';
 import 'package:wye/models/capture_upload_models.dart';
+import 'package:wye/models/extraction_models.dart';
 import 'package:wye/providers/app_providers.dart';
 import 'package:wye/providers/capture_upload_controller.dart';
 import 'package:wye/screens/add_product_screen.dart';
@@ -242,6 +243,14 @@ void main() {
       const Sha256DigestService().hash(harness.gateway.uploadedBytes!),
     );
     expect(find.text('Upload completato e immagine associata'), findsOneWidget);
+    expect(
+      find.text('Estrazione non disponibile per questa immagine'),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('dev-mobile-extraction-start')),
+      findsNothing,
+    );
 
     final visibleText = tester
         .widgetList<Text>(find.byType(Text))
@@ -255,11 +264,26 @@ void main() {
     expect(harness.gateway.calls, everyElement(isNot(contains('score'))));
   });
 
-  testWidgets('ingredients upload leaves extraction explicitly deferred',
+  testWidgets('ingredients upload can start extraction and show safe items',
       (tester) async {
     final harness = _Harness();
     addTearDown(harness.dispose);
     harness.setUsableToken();
+    harness.gateway.extractionResult = ExtractionResultSummary(
+      run: const ExtractionRunRef(
+        extractionRunId: 501,
+        status: ExtractionStatus.succeeded,
+      ),
+      items: const [
+        ExtractionItem(
+          extractionItemId: 601,
+          type: ExtractionItemType.ingredient,
+          rawText: 'sale',
+          normalizedText: 'sale',
+          status: ExtractionItemStatus.detected,
+        ),
+      ],
+    );
     await _pumpPanels(
       tester,
       harness,
@@ -288,6 +312,31 @@ void main() {
       find.text('Upload associato; estrazione non avviata'),
       findsOneWidget,
     );
+    expect(
+      find.byKey(const Key('dev-mobile-extraction-start')),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const Key('dev-mobile-extraction-start')),
+    );
+    await tester.tap(find.byKey(const Key('dev-mobile-extraction-start')));
+    await tester.pumpAndSettle();
+
+    expect(
+        harness.controller.extractionState.step, ExtractionFlowStep.succeeded);
+    expect(find.text('Estrazione completata: 1 elementi disponibili'),
+        findsOneWidget);
+    expect(find.text('sale'), findsOneWidget);
+    expect(harness.gateway.calls.last, 'extraction-start');
+    final visibleText = tester
+        .widgetList<Text>(find.byType(Text))
+        .map((widget) => widget.data ?? '')
+        .join('\n');
+    expect(visibleText, isNot(contains('temporary-sensitive-token')));
+    expect(visibleText, isNot(contains('signature=')));
+    expect(visibleText, isNot(contains('base64')));
+    expect(visibleText, isNot(contains('score')));
   });
 
   testWidgets('metadata failure blocks upload before the gateway',

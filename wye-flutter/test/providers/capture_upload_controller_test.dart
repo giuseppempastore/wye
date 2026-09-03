@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wye/config/mobile_upload_config.dart';
 import 'package:wye/models/capture_upload_error.dart';
 import 'package:wye/models/capture_upload_models.dart';
+import 'package:wye/models/extraction_models.dart';
 import 'package:wye/providers/capture_upload_controller.dart';
 import 'package:wye/services/fake_capture_upload_gateway.dart';
 import 'package:wye/services/image_metadata_service.dart';
@@ -308,6 +309,199 @@ void main() {
     expect(controller.state.step, UploadFlowStep.failedTerminal);
     expect(controller.state.errorCode, 'image_metadata_missing');
     expect(gateway.calls, isEmpty);
+  });
+
+  test('extraction starts only after finalize and maps allowlisted items',
+      () async {
+    final gateway = FakeCaptureUploadGateway()
+      ..extractionResult = ExtractionResultSummary(
+        run: const ExtractionRunRef(
+          extractionRunId: 501,
+          status: ExtractionStatus.succeeded,
+        ),
+        items: const [
+          ExtractionItem(
+            extractionItemId: 601,
+            type: ExtractionItemType.ingredient,
+            rawText: 'sale',
+            normalizedText: 'sale',
+            status: ExtractionItemStatus.detected,
+          ),
+        ],
+      );
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 7, barcode: 'barcode-7'),
+      purpose: CaptureImagePurpose.ingredients,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+
+    await controller.startExtraction();
+    expect(controller.extractionState.step, ExtractionFlowStep.failedTerminal);
+    expect(
+        controller.extractionState.errorCode, 'extraction_image_not_finalized');
+    expect(gateway.calls, isEmpty);
+
+    await controller.upload();
+    expect(controller.extractionState.step, ExtractionFlowStep.deferred);
+    await controller.startExtraction();
+
+    expect(controller.state.step, UploadFlowStep.extractionDeferred);
+    expect(controller.extractionState.step, ExtractionFlowStep.succeeded);
+    expect(controller.extractionState.result!.run.extractionRunId, 501);
+    expect(controller.extractionState.result!.items.single.rawText, 'sale');
+    expect(
+      gateway.calls,
+      ['initialize', 'put', 'finalize', 'extraction-start'],
+    );
+  });
+
+  test('running extraction can be refreshed without changing upload state',
+      () async {
+    final gateway = FakeCaptureUploadGateway()
+      ..extractionResult = ExtractionResultSummary(
+        run: const ExtractionRunRef(
+          extractionRunId: 502,
+          status: ExtractionStatus.running,
+        ),
+        items: const [],
+      );
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 8, barcode: 'barcode-8'),
+      purpose: CaptureImagePurpose.nutrition,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+    await controller.upload();
+    await controller.startExtraction();
+    expect(controller.extractionState.step, ExtractionFlowStep.loading);
+
+    gateway.extractionResult = ExtractionResultSummary(
+      run: const ExtractionRunRef(
+        extractionRunId: 502,
+        status: ExtractionStatus.succeeded,
+      ),
+      items: const [],
+    );
+    await controller.refreshExtraction();
+
+    expect(controller.extractionState.step, ExtractionFlowStep.succeeded);
+    expect(controller.state.step, UploadFlowStep.extractionDeferred);
+    expect(gateway.calls.last, 'extraction-get');
+  });
+
+  test('missing token and unsupported purpose block extraction', () async {
+    final gateway = FakeCaptureUploadGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 9, barcode: 'barcode-9'),
+      purpose: CaptureImagePurpose.productFront,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+    await controller.upload();
+    await controller.startExtraction();
+    expect(controller.extractionState.step, ExtractionFlowStep.unavailable);
+    expect(
+        controller.extractionState.errorCode, 'extraction_purpose_unsupported');
+    expect(gateway.calls, isNot(contains('extraction-start')));
+
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 9, barcode: 'barcode-9'),
+      purpose: CaptureImagePurpose.ingredients,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+    await controller.upload();
+    tokenProvider.clear();
+    await controller.startExtraction();
+    expect(controller.extractionState.step, ExtractionFlowStep.failedTerminal);
+    expect(controller.extractionState.errorCode, 'mobile_token_missing');
+    expect(
+      gateway.calls.where((call) => call == 'extraction-start'),
+      isEmpty,
+    );
+  });
+
+  test('retryable extraction failure can retry without repeating upload',
+      () async {
+    final gateway = FakeCaptureUploadGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 10, barcode: 'barcode-10'),
+      purpose: CaptureImagePurpose.ingredients,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+    await controller.upload();
+    gateway.failure = const CaptureUploadException(
+      kind: CaptureUploadFailureKind.transport,
+      code: 'mobile_facade_transport_error',
+      safeMessage: 'Mobile facade transport failed',
+      retryable: true,
+      lastStableStep: UploadFlowStep.extractionDeferred,
+    );
+
+    await controller.startExtraction();
+    expect(controller.extractionState.step, ExtractionFlowStep.failedRetryable);
+    gateway.failure = null;
+    await controller.retryExtraction();
+
+    expect(controller.extractionState.step, ExtractionFlowStep.succeeded);
+    expect(
+      gateway.calls.where((call) => call == 'initialize'),
+      hasLength(1),
+    );
+    expect(
+      gateway.calls.where((call) => call == 'extraction-start'),
+      hasLength(2),
+    );
   });
 }
 

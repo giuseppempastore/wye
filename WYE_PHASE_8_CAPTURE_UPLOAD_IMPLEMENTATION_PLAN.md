@@ -731,3 +731,59 @@ Expected implementation verdict:
 ```text
 READY_FOR_PHASE_8_5_7_1_REVIEW_AND_COMMIT
 ```
+
+## 18. Phase 8.5.8 Flutter extraction client record
+
+Phase 8.5.8 implements start, list, and get operations exclusively through the
+existing `/mobile/dev/v1/capture` FastAPI facade. The gateway uses the existing
+ephemeral in-memory Bearer token and never sends `X-WYE-Image-Key`. It does not
+invoke `/analyze`, `/analyze-image`, a scoring endpoint, or the presigned binary
+PUT capability for extraction control-plane requests.
+
+The Flutter extraction models preserve product, product-image, storage-object,
+and extraction-run identifiers as distinct values. They map run state and a
+minimal explicit item allowlist; provider responses, structured internal
+metadata, score fields, goodness percentages, and numerical overall values are
+not represented. Unknown response keys are ignored, while missing or malformed
+required IDs and enum values fail closed.
+
+`CaptureUploadController` keeps extraction state separate from upload state.
+Only finalized ingredient and nutrition images can start extraction. Product
+front images are explicitly unavailable, and a missing token or missing image
+blocks transport. Pending/running results can be refreshed by run ID; failures
+remain explicitly retryable or terminal. The minimal dev-only widget exposes
+start/refresh/retry actions, neutral status, and allowlisted item text only.
+
+All tests use fake transports and make no backend, provider, storage, or network
+call. Phase 8.6 still requires explicit authorization plus physical-device
+reachability checks for `API_BASE_URL` and the MinIO/S3 host, a temporary token
+provided out of band with suitable extraction scope, and sanitized log capture.
+This phase grants no scoring runtime, production deployment, or release
+authority.
+
+## 19. Phase 8.5.8 checkpoint
+
+    checkpoint: Phase 8.5.8 Flutter extraction client
+    prior_verdict: READY_FOR_PHASE_8_5_8_FLUTTER_EXTRACTION_CLIENT
+    flutter_feature_flag: WYE_MOBILE_UPLOAD_ENABLED - DEFAULT FALSE
+    extraction_control_plane: FASTAPI MOBILE FACADE ONLY
+    extraction_routes: START, LIST, GET
+    extraction_supported_purposes: INGREDIENTS, NUTRITION
+    extraction_unsupported_purpose: PRODUCT FRONT - EXPLICITLY UNAVAILABLE
+    extraction_identifiers: PRODUCT, PRODUCT IMAGE, STORAGE OBJECT, RUN DISTINCT
+    extraction_response: STRICT FRONTEND ALLOWLIST
+    provider_payload_representation: NONE
+    token_storage: IN-MEMORY ONLY
+    shared_mobile_secret: PROHIBITED
+    live_device_calls_performed: NONE
+    scoring_runtime_connection: NONE
+    overall_numerical_candidate: NONE / DEFERRED
+    production_runtime_authority: NONE
+    release_authority: NONE
+    next_recommended_subphase: Phase 8.5.8.1 review and commit extraction client
+
+Expected implementation verdict:
+
+```text
+READY_FOR_PHASE_8_5_8_1_REVIEW_AND_COMMIT
+```
