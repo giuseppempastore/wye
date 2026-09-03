@@ -246,6 +246,12 @@ provenance, extraction-recovery, mobile-security, and Phase 8.6 logging contract
 is recorded in `WYE_PHASE_8_CAPTURE_UPLOAD_FLOW.md`. That artifact is a
 specification only and does not authorize frontend or backend implementation.
 
+The proposed file-by-file implementation sequence, DTOs, state machine,
+mobile-safe FastAPI boundary, fake/test strategy, logging hooks, and rollback
+gates are recorded in `WYE_PHASE_8_CAPTURE_UPLOAD_IMPLEMENTATION_PLAN.md`.
+That plan is documentation only; live mobile integration remains blocked until
+a separately reviewed mobile façade/session exists.
+
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
 
