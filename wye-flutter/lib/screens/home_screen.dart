@@ -134,25 +134,25 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       InfoSection(
                         icon: Icons.explore,
-                        title: 'Valutazione trasparente',
+                        title: 'Indicazioni informative',
                         description:
-                            'Scopri la salubrità di ogni prodotto basato su ingredienti e nutrizione.',
+                            'Consulta informazioni generali basate su ingredienti e dati nutrizionali.',
                         iconColor: AppColors.primary,
                       ),
                       const SizedBox(height: 12),
                       InfoSection(
                         icon: Icons.warning,
-                        title: 'Allergeni e rischi',
+                        title: 'Dati disponibili',
                         description:
-                            'Identifichiamo ingredienti critici e allergeni potenziali.',
+                            'Consulta ingredienti e allergeni riportati nei dati disponibili.',
                         iconColor: AppColors.riskHigh,
                       ),
                       const SizedBox(height: 12),
                       InfoSection(
                         icon: Icons.trending_up,
-                        title: 'Scoring dettagliato',
+                        title: 'Componenti separati',
                         description:
-                            'Vedi come ingredienti e nutrizione influenzano il punteggio finale.',
+                            'Le valutazioni di ingredienti e nutrizione restano separate.',
                         iconColor: AppColors.secondary,
                       ),
                     ],

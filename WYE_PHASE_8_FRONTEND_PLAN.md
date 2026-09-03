@@ -235,9 +235,9 @@ claims.
 | 8.1 | Baseline preservation and contract-gap specification | This document; no runtime/code change |
 | 8.2 | Typed frontend score/evaluability models and fixture tests | Local DTO/view-model contract and characterization tests; no scoring runtime connection |
 | 8.3 | Remove client-side fallback and overall assumptions | Explicit migration plan for legacy DTO, widgets, mock, history, and parser paths |
-| 8.4 | UX skeleton for result states | Screens/wireframes for computable, not-computable, non-applicable, deferred overall, errors, and loading |
+| 8.4 | Result-state UX | Minimal Flutter UI for computable, not-computable, non-applicable, and deferred/unavailable overall states; component qualifiers remain separate |
 | 8.5 | Product capture/upload integration planning | Canonical capture, identity, presigned upload, finalization, provenance, and credential boundary |
-| 8.6 | Extraction result screens | Typed extraction run/item/review/correction flows for ingredient and nutrition labels |
+| 8.6 | Mobile E2E test & log capture | Real-phone flow validation with device, app, backend, API, and user-flow logs for debugging |
 | 8.7 | Integration hardening | Versioned API contracts, authentication/authorization boundary, error semantics, idempotency, retries, accessibility, and tests |
 | 8.8 | Final UX/checkpoint review | Product, governance, and claim/disclosure review before seeking any runtime or release authorization |
 

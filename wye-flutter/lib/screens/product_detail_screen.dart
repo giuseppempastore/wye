@@ -205,10 +205,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         const SizedBox(height: 24),
                       ],
 
-                      // Dangerous substances Section
+                      // Informational notices section
                       if (product.dangerousSubstances.isNotEmpty) ...[
                         Text(
-                          'Sostanze Pericolose / Ritiri',
+                          'Segnalazioni informative',
                           style: AppTypography.headline3,
                         ),
                         const SizedBox(height: 12),
@@ -235,8 +235,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           CrossAxisAlignment.start,
                                       children: [
                                         Icon(
-                                          Icons.warning_amber_rounded,
-                                          color: AppColors.riskHigh,
+                                          Icons.info_outline,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .outline,
                                           size: 18,
                                         ),
                                         const SizedBox(width: 12),

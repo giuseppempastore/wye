@@ -53,7 +53,7 @@ class _WyeAppState extends State<WyeApp> {
         ),
       ],
       child: MaterialApp.router(
-        title: 'WYE - Product Safety Score',
+        title: 'WYE',
         theme: AppTheme.lightTheme,
         routerConfig: AppRouter.router,
         debugShowCheckedModeBanner: false,

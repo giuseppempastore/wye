@@ -17,10 +17,6 @@ class ScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final ingredient = scoreView.ingredientGoodnessPercent;
     final nutrition = scoreView.nutritionGoodnessPercent;
-    final hasIngredientScore =
-        ingredient.evaluabilityStatus == EvaluabilityStatus.computable;
-    final hasNutritionScore =
-        nutrition.evaluabilityStatus == EvaluabilityStatus.computable;
     final neutralColor = Theme.of(context).colorScheme.outline;
 
     return GestureDetector(
@@ -34,25 +30,28 @@ class ScoreCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (hasIngredientScore || hasNutritionScore)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    if (hasIngredientScore)
-                      _ComponentScore(
-                        label: 'Ingredienti',
-                        value: ingredient.scoreValue!,
-                      ),
-                    if (hasNutritionScore)
-                      _ComponentScore(
-                        label: 'Nutrizione',
-                        value: nutrition.scoreValue!,
-                      ),
-                  ],
-                ),
-              if (!hasIngredientScore && !hasNutritionScore)
-                Icon(Icons.info_outline, color: neutralColor),
+              Text(
+                'Valutazioni per componente',
+                style: AppTypography.label,
+              ),
+              const SizedBox(height: 16),
+              _ComponentResult(
+                componentId: 'ingredient',
+                label: 'Ingredienti',
+                evaluation: ingredient,
+              ),
+              const SizedBox(height: 12),
+              _ComponentResult(
+                componentId: 'nutrition',
+                label: 'Nutrizione',
+                evaluation: nutrition,
+              ),
+              const SizedBox(height: 16),
+              Divider(color: neutralColor),
+              const SizedBox(height: 8),
+              _OverallResult(overallScore: scoreView.overallScore),
             ],
           ),
         ),
@@ -61,26 +60,162 @@ class ScoreCard extends StatelessWidget {
   }
 }
 
-class _ComponentScore extends StatelessWidget {
+class _ComponentResult extends StatelessWidget {
+  final String componentId;
   final String label;
-  final int value;
+  final ScoreEvaluation evaluation;
 
-  const _ComponentScore({
+  const _ComponentResult({
+    required this.componentId,
     required this.label,
-    required this.value,
+    required this.evaluation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final neutralColor = Theme.of(context).colorScheme.outline;
+
+    return Container(
+      key: ValueKey('$componentId-component-result'),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: neutralColor),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text(label, style: AppTypography.labelSmall)),
+              _EvaluationValue(
+                componentId: componentId,
+                evaluation: evaluation,
+              ),
+            ],
+          ),
+          if (_hasSupportingDetails(evaluation)) ...[
+            const SizedBox(height: 10),
+            Divider(color: neutralColor),
+            const SizedBox(height: 6),
+            _SupportingDetails(
+              componentId: componentId,
+              evaluation: evaluation,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  bool _hasSupportingDetails(ScoreEvaluation value) {
+    return value.assessmentCoveragePercent != null ||
+        value.confidenceState != null ||
+        value.missingInputs.isNotEmpty ||
+        value.uncertainties.isNotEmpty;
+  }
+}
+
+class _EvaluationValue extends StatelessWidget {
+  final String componentId;
+  final ScoreEvaluation evaluation;
+
+  const _EvaluationValue({
+    required this.componentId,
+    required this.evaluation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    switch (evaluation.evaluabilityStatus) {
+      case EvaluabilityStatus.computable:
+        return Text(
+          '${evaluation.scoreValue} su 100',
+          key: ValueKey('$componentId-score-value'),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        );
+      case EvaluabilityStatus.notComputable:
+        return Text(
+          'Non calcolabile',
+          key: ValueKey('$componentId-not-computable'),
+          style: AppTypography.bodySmall,
+        );
+      case EvaluabilityStatus.nonApplicable:
+        return Text(
+          'Non applicabile',
+          key: ValueKey('$componentId-non-applicable'),
+          style: AppTypography.bodySmall,
+        );
+    }
+  }
+}
+
+class _SupportingDetails extends StatelessWidget {
+  final String componentId;
+  final ScoreEvaluation evaluation;
+
+  const _SupportingDetails({
+    required this.componentId,
+    required this.evaluation,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
+      key: ValueKey('$componentId-supporting-details'),
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTypography.labelSmall),
-        const SizedBox(height: 4),
-        Text(
-          '$value',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+        if (evaluation.assessmentCoveragePercent case final coverage?)
+          Text('Copertura: $coverage%', style: AppTypography.bodySmall),
+        if (evaluation.confidenceState case final confidence?)
+          Text('Confidenza: $confidence', style: AppTypography.bodySmall),
+        if (evaluation.missingInputs.isNotEmpty)
+          Text(
+            'Dati mancanti dichiarati: ${evaluation.missingInputs.length}',
+            style: AppTypography.bodySmall,
+          ),
+        if (evaluation.uncertainties.isNotEmpty)
+          Text(
+            'Incertezze dichiarate: ${evaluation.uncertainties.length}',
+            style: AppTypography.bodySmall,
+          ),
+      ],
+    );
+  }
+}
+
+class _OverallResult extends StatelessWidget {
+  final OverallScoreState overallScore;
+
+  const _OverallResult({required this.overallScore});
+
+  @override
+  Widget build(BuildContext context) {
+    final stateLabel = switch (overallScore.availability) {
+      OverallScoreAvailability.deferred => 'Differita per questa fase MVP',
+      OverallScoreAvailability.unavailable =>
+        'Non disponibile per questa fase MVP',
+    };
+
+    return Row(
+      key: const ValueKey('overall-result-state'),
+      children: [
+        Icon(
+          Icons.info_outline,
+          color: Theme.of(context).colorScheme.outline,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Valutazione complessiva', style: AppTypography.labelSmall),
+              const SizedBox(height: 2),
+              Text(stateLabel, style: AppTypography.bodySmall),
+            ],
           ),
         ),
       ],
