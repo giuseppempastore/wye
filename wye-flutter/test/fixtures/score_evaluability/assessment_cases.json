@@ -1,0 +1,102 @@
+{
+  "computable_zero": {
+    "evaluability_status": "computable",
+    "score_value": 0,
+    "assessment_coverage_percent": 42,
+    "confidence_state": "fixture_low",
+    "missing_inputs": [
+      {
+        "code": "fixture_optional_input_missing",
+        "context": {"field": "fixture_field"}
+      }
+    ],
+    "uncertainties": [
+      {
+        "code": "fixture_identity_uncertainty",
+        "context": {"source": "fixture"}
+      }
+    ],
+    "explanations": [
+      {
+        "code": "fixture_computed_endpoint",
+        "context": {"endpoint": "lower"}
+      }
+    ],
+    "disclosures": [
+      {
+        "code": "fixture_informational_only",
+        "context": {}
+      }
+    ]
+  },
+  "computable_hundred": {
+    "evaluability_status": "computable",
+    "score_value": 100,
+    "assessment_coverage_percent": 100,
+    "confidence_state": "fixture_high",
+    "missing_inputs": [],
+    "uncertainties": [],
+    "explanations": [],
+    "disclosures": []
+  },
+  "not_computable": {
+    "evaluability_status": "not_computable",
+    "assessment_coverage_percent": 35,
+    "confidence_state": "fixture_indeterminate",
+    "missing_inputs": [
+      {
+        "code": "fixture_required_input_missing",
+        "context": {"field": "fixture_required_field"}
+      }
+    ],
+    "uncertainties": [],
+    "explanations": [],
+    "disclosures": []
+  },
+  "non_applicable": {
+    "evaluability_status": "non_applicable",
+    "assessment_coverage_percent": 0,
+    "confidence_state": "fixture_not_applicable",
+    "missing_inputs": [],
+    "uncertainties": [],
+    "explanations": [
+      {
+        "code": "fixture_component_not_applicable",
+        "context": {}
+      }
+    ],
+    "disclosures": []
+  },
+  "product_independent_components": {
+    "ingredient_goodness_percent": {
+      "evaluability_status": "computable",
+      "score_value": 0,
+      "assessment_coverage_percent": 80,
+      "confidence_state": "fixture_medium",
+      "missing_inputs": [],
+      "uncertainties": [],
+      "explanations": [],
+      "disclosures": []
+    },
+    "nutrition_goodness_percent": {
+      "evaluability_status": "computable",
+      "score_value": 100,
+      "assessment_coverage_percent": 90,
+      "confidence_state": "fixture_high",
+      "missing_inputs": [],
+      "uncertainties": [],
+      "explanations": [],
+      "disclosures": []
+    },
+    "overall_score": {
+      "availability": "deferred",
+      "explanations": [
+        {
+          "code": "fixture_overall_deferred",
+          "context": {}
+        }
+      ],
+      "disclosures": []
+    }
+  }
+}
