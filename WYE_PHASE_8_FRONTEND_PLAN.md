@@ -265,10 +265,18 @@ Phase 8.5.5 now implements the Flutter integration boundary behind
 DTOs, in-memory token handling, FastAPI initialize/finalize calls, exact-byte
 presigned PUT, redacted events, and a Provider-backed state machine. The client
 never sends `X-WYE-Image-Key`, never logs the Bearer token or full presigned URL,
-and never invokes legacy image analysis or scoring from the new path. The real
-SHA-256 adapter, token-entry/UI hook, extraction calls, and physical-device E2E
-remain follow-ups. Scoring, production deployment, public release, and
-mobile-embedded secrets remain unauthorized.
+and never invokes legacy image analysis or scoring from the new path.
+
+Phase 8.5.6 adds the authorized direct `crypto: ^3.0.7` dependency and replaces
+the fail-closed metadata adapter with a real SHA-256 implementation. It derives
+JPEG/PNG/WebP MIME from content signatures and calculates lowercase SHA-256 and
+byte size over the exact immutable bytes later passed to binary PUT. The
+controller receives the metadata service through Provider, while fakes remain
+available to tests. `wye-flutter/pubspec.lock` was refreshed locally but remains
+unversioned because the repository currently ignores it; changing that policy
+is outside this phase. The token-entry/capture UI hook, extraction calls, and
+physical-device Phase 8.6 validation remain follow-ups. Scoring, production
+deployment, public release, and mobile-embedded secrets remain unauthorized.
 
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
@@ -310,38 +318,39 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.5.5.1 — review and commit the default-off Flutter capture/upload
-integration boundary before adding the real SHA-256 adapter or UI/E2E wiring.
+Phase 8.5.6.1 - review and commit the Flutter SHA-256 runtime adapter before
+adding token/capture UI, extraction, or physical-device E2E wiring.
 ```
 
-The review must verify the default-off Flutter flag, in-memory capability
-handling, distinct product/image/storage identities, FastAPI control-plane
-routes, token-free presigned PUT, safe structured errors/events, explicit
-SHA-256/UI/extraction follow-ups, and focused fake-transport tests. A later
-authorized device phase must validate both `API_BASE_URL` and the presigned
-storage host before any real-phone run. No phase may enable scoring, introduce
-an overall number, authorize production or release, or fall back to legacy
-base64/analysis paths.
+The review must verify the default-off Flutter flag, direct `crypto` dependency,
+lowercase SHA-256 known vectors, MIME signature checks, exact-byte metadata/PUT
+integration, ignored lockfile status, safe failures, and injectable test fakes.
+A later authorized device phase must validate both `API_BASE_URL` and the
+presigned storage host before any real-phone run. No phase may enable scoring,
+introduce an overall number, authorize production or release, or fall back to
+legacy base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.5.5 Flutter capture/upload integration
-    prior_verdict: READY_FOR_PHASE_8_5_5_FLUTTER_CAPTURE_UPLOAD_INTEGRATION
+    checkpoint: Phase 8.5.6 Flutter SHA-256 runtime adapter
+    prior_verdict: READY_FOR_PHASE_8_5_6_FLUTTER_SHA256_RUNTIME_ADAPTER
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
     backend_feature_flag: WYE_MOBILE_UPLOAD_FACADE_ENABLED — DEFAULT FALSE
     flutter_feature_flag: WYE_MOBILE_UPLOAD_ENABLED — DEFAULT FALSE
     backend_dev_implementation: IMPLEMENTED AND COMMITTED
-    flutter_runtime_implementation: IMPLEMENTED — REVIEW AND COMMIT PENDING
+    flutter_runtime_implementation: IMPLEMENTED AND COMMITTED
     flutter_token_storage: IN-MEMORY ONLY
-    runtime_sha256_adapter: BLOCKED PENDING DEPENDENCY AUTHORIZATION
+    runtime_sha256_adapter: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    sha256_dependency: crypto ^3.0.7 - DIRECT; RESOLVED OFFLINE
+    flutter_lockfile: PRESENT LOCALLY; IGNORED BY REPOSITORY POLICY
     flutter_ui_and_extraction: DEFERRED
-    next_recommended_subphase: Phase 8.5.5.1 review and commit Flutter integration
+    next_recommended_subphase: Phase 8.5.6.1 review and commit SHA-256 adapter
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: DEFAULT-OFF FLUTTER SERVICE/STATE BOUNDARY
+    implementation_completed_by_this_checkpoint: RUNTIME SHA-256 METADATA ADAPTER
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -349,5 +358,5 @@ base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_5_5_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_5_6_1_REVIEW_AND_COMMIT
 ```

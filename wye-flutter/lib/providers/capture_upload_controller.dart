@@ -4,11 +4,13 @@ import '../config/mobile_upload_config.dart';
 import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
 import '../services/capture_upload_gateway.dart';
+import '../services/image_metadata_service.dart';
 
 class CaptureUploadController extends ChangeNotifier {
   final MobileUploadConfig _config;
   final InMemoryMobileUploadTokenProvider _tokenProvider;
   final CaptureUploadGateway _gateway;
+  final ImageMetadataService _metadataService;
 
   UploadFlowState _state;
   ImageCaptureDraft? _draft;
@@ -18,9 +20,11 @@ class CaptureUploadController extends ChangeNotifier {
     required MobileUploadConfig config,
     required InMemoryMobileUploadTokenProvider tokenProvider,
     required CaptureUploadGateway gateway,
+    required ImageMetadataService metadataService,
   })  : _config = config,
         _tokenProvider = tokenProvider,
         _gateway = gateway,
+        _metadataService = metadataService,
         _state = UploadFlowState(
           step: !config.enabled
               ? UploadFlowStep.disabled
@@ -94,28 +98,63 @@ class CaptureUploadController extends ChangeNotifier {
     );
   }
 
-  void setMetadata(ImageMetadata metadata) {
+  Future<void> prepareMetadata() async {
+    if (!_canStartLocalFlow() || _transitionActive) {
+      return;
+    }
     final draft = _draft;
     if (draft == null) {
-      throw StateError('An image must be selected before metadata is set');
-    }
-    if (metadata.byteSize != draft.bytes.length) {
-      throw ArgumentError.value(
-        metadata.byteSize,
-        'metadata.byteSize',
-        'Must match the exact upload bytes',
+      _fail(
+        const CaptureUploadException(
+          kind: CaptureUploadFailureKind.invalidInput,
+          code: 'image_missing',
+          safeMessage: 'An image must be selected before metadata is prepared',
+          retryable: false,
+          lastStableStep: UploadFlowStep.idle,
+        ),
       );
+      return;
     }
-    _setState(
-      _state.copyWith(
-        step: UploadFlowStep.metadataReady,
-        metadata: metadata,
-      ),
-    );
+
+    _transitionActive = true;
+    try {
+      final metadata = await _metadataService.inspect(draft.bytes);
+      if (metadata.byteSize != draft.bytes.length) {
+        throw const CaptureUploadException(
+          kind: CaptureUploadFailureKind.contract,
+          code: 'image_metadata_size_mismatch',
+          safeMessage: 'Image metadata does not match upload bytes',
+          retryable: false,
+          lastStableStep: UploadFlowStep.imageSelected,
+        );
+      }
+      _setState(
+        _state.copyWith(
+          step: UploadFlowStep.metadataReady,
+          metadata: metadata,
+        ),
+      );
+    } on CaptureUploadException catch (error) {
+      _fail(error);
+    } on Object {
+      _fail(
+        const CaptureUploadException(
+          kind: CaptureUploadFailureKind.contract,
+          code: 'image_metadata_failed',
+          safeMessage: 'Image metadata could not be prepared',
+          retryable: false,
+          lastStableStep: UploadFlowStep.imageSelected,
+        ),
+      );
+    } finally {
+      _transitionActive = false;
+    }
   }
 
   Future<void> upload() async {
-    if (!_canStartLocalFlow() || _transitionActive) {
+    if (!_canStartLocalFlow() ||
+        _transitionActive ||
+        _state.step == UploadFlowStep.failedTerminal) {
       return;
     }
     final draft = _draft;

@@ -22,11 +22,13 @@ void main() {
       ),
       tokenProvider: InMemoryMobileUploadTokenProvider(),
       gateway: FakeCaptureUploadGateway(),
+      metadataService: _FakeImageMetadataService(),
     );
     final missingToken = CaptureUploadController(
       config: enabledConfig(),
       tokenProvider: InMemoryMobileUploadTokenProvider(),
       gateway: FakeCaptureUploadGateway(),
+      metadataService: _FakeImageMetadataService(),
     );
     addTearDown(disabled.dispose);
     addTearDown(missingToken.dispose);
@@ -40,6 +42,7 @@ void main() {
       config: enabledConfig(),
       tokenProvider: InMemoryMobileUploadTokenProvider(),
       gateway: FakeCaptureUploadGateway(),
+      metadataService: _FakeImageMetadataService(),
     );
     addTearDown(controller.dispose);
 
@@ -49,21 +52,6 @@ void main() {
     );
 
     expect(controller.state.step, UploadFlowStep.missingToken);
-  });
-
-  test('real SHA-256 metadata adapter fails closed until authorized', () async {
-    const service = Sha256MetadataUnavailableService();
-
-    await expectLater(
-      service.inspect(Uint8List.fromList([1, 2, 3])),
-      throwsA(
-        isA<CaptureUploadException>().having(
-          (error) => error.code,
-          'code',
-          'sha256_dependency_unavailable',
-        ),
-      ),
-    );
   });
 
   test('fake metadata adapter supplies deterministic test-only digest',
@@ -87,25 +75,20 @@ void main() {
       config: enabledConfig(),
       tokenProvider: tokenProvider,
       gateway: gateway,
+      metadataService: const Sha256ImageMetadataService(),
     );
     addTearDown(controller.dispose);
     final transitions = <UploadFlowStep>[];
     controller.addListener(() => transitions.add(controller.state.step));
     final identity = ProductIdentity(productId: 7, barcode: '7000000000001');
-    final bytes = Uint8List.fromList([1, 2, 3, 4]);
+    final bytes = Uint8List.fromList([0xff, 0xd8, 0xff, 1, 2, 3, 4]);
 
     controller.selectImage(
       productIdentity: identity,
       purpose: CaptureImagePurpose.ingredients,
       bytes: bytes,
     );
-    controller.setMetadata(
-      ImageMetadata(
-        mimeType: 'image/jpeg',
-        byteSize: bytes.length,
-        sha256: List.filled(64, 'a').join(),
-      ),
-    );
+    await controller.prepareMetadata();
     await controller.upload();
 
     expect(
@@ -121,6 +104,12 @@ void main() {
     );
     expect(gateway.calls, ['initialize', 'put', 'finalize']);
     expect(gateway.uploadedBytes, bytes);
+    expect(gateway.initializeRequest!.metadata.byteSize, bytes.length);
+    expect(gateway.initializeRequest!.metadata.mimeType, 'image/jpeg');
+    expect(
+      gateway.initializeRequest!.metadata.sha256,
+      const Sha256DigestService().hash(gateway.uploadedBytes!),
+    );
     expect(gateway.initializeRequest!.productIdentity.productId, 7);
     expect(gateway.initializeRequest!.productIdentity.barcode, '7000000000001');
     expect(controller.state.productImage!.productImageId, 401);
@@ -146,6 +135,7 @@ void main() {
       config: enabledConfig(),
       tokenProvider: tokenProvider,
       gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
     );
     addTearDown(controller.dispose);
     final bytes = Uint8List.fromList([1]);
@@ -154,13 +144,7 @@ void main() {
       purpose: CaptureImagePurpose.productFront,
       bytes: bytes,
     );
-    controller.setMetadata(
-      ImageMetadata(
-        mimeType: 'image/png',
-        byteSize: 1,
-        sha256: List.filled(64, 'b').join(),
-      ),
-    );
+    await controller.prepareMetadata();
 
     await controller.upload();
     expect(controller.state.step, UploadFlowStep.failedRetryable);
@@ -189,6 +173,7 @@ void main() {
       config: enabledConfig(),
       tokenProvider: tokenProvider,
       gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
     );
     addTearDown(controller.dispose);
     controller.selectImage(
@@ -196,13 +181,7 @@ void main() {
       purpose: CaptureImagePurpose.productFront,
       bytes: Uint8List.fromList([1]),
     );
-    controller.setMetadata(
-      ImageMetadata(
-        mimeType: 'image/jpeg',
-        byteSize: 1,
-        sha256: List.filled(64, 'e').join(),
-      ),
-    );
+    await controller.prepareMetadata();
 
     await controller.upload();
     expect(controller.state.step, UploadFlowStep.failedTerminal);
@@ -231,6 +210,7 @@ void main() {
       config: enabledConfig(),
       tokenProvider: tokenProvider,
       gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
     );
     addTearDown(controller.dispose);
     controller.selectImage(
@@ -238,18 +218,96 @@ void main() {
       purpose: CaptureImagePurpose.nutrition,
       bytes: Uint8List.fromList([1]),
     );
-    controller.setMetadata(
-      ImageMetadata(
-        mimeType: 'image/jpeg',
-        byteSize: 1,
-        sha256: List.filled(64, 'f').join(),
-      ),
-    );
+    await controller.prepareMetadata();
 
     await controller.upload();
 
     expect(controller.state.step, UploadFlowStep.missingToken);
     expect(controller.state.errorCode, 'mobile_token_missing');
+  });
+
+  test('metadata mismatch fails closed before any gateway call', () async {
+    final gateway = FakeCaptureUploadGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _MismatchedImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 11, barcode: 'barcode-11'),
+      purpose: CaptureImagePurpose.productFront,
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+
+    await controller.prepareMetadata();
+    await controller.upload();
+
+    expect(controller.state.step, UploadFlowStep.failedTerminal);
+    expect(controller.state.errorCode, 'image_metadata_size_mismatch');
+    expect(gateway.calls, isEmpty);
+  });
+
+  test('malformed metadata hash fails closed before any gateway call',
+      () async {
+    final gateway = FakeCaptureUploadGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _MalformedHashImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 13, barcode: 'barcode-13'),
+      purpose: CaptureImagePurpose.productFront,
+      bytes: Uint8List.fromList([1, 2, 3]),
+    );
+
+    await controller.prepareMetadata();
+    await controller.upload();
+
+    expect(controller.state.step, UploadFlowStep.failedTerminal);
+    expect(controller.state.errorCode, 'image_metadata_failed');
+    expect(gateway.calls, isEmpty);
+  });
+
+  test('upload without prepared metadata fails closed', () async {
+    final gateway = FakeCaptureUploadGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 12, barcode: 'barcode-12'),
+      purpose: CaptureImagePurpose.productFront,
+      bytes: Uint8List.fromList([1]),
+    );
+
+    await controller.upload();
+
+    expect(controller.state.step, UploadFlowStep.failedTerminal);
+    expect(controller.state.errorCode, 'image_metadata_missing');
+    expect(gateway.calls, isEmpty);
   });
 }
 
@@ -260,6 +318,28 @@ class _FakeImageMetadataService implements ImageMetadataService {
       mimeType: 'image/jpeg',
       byteSize: bytes.length,
       sha256: List.filled(64, 'c').join(),
+    );
+  }
+}
+
+class _MismatchedImageMetadataService implements ImageMetadataService {
+  @override
+  Future<ImageMetadata> inspect(Uint8List bytes) async {
+    return ImageMetadata(
+      mimeType: 'image/jpeg',
+      byteSize: bytes.length + 1,
+      sha256: List.filled(64, 'd').join(),
+    );
+  }
+}
+
+class _MalformedHashImageMetadataService implements ImageMetadataService {
+  @override
+  Future<ImageMetadata> inspect(Uint8List bytes) async {
+    return ImageMetadata(
+      mimeType: 'image/jpeg',
+      byteSize: bytes.length,
+      sha256: List.filled(63, 'e').join(),
     );
   }
 }

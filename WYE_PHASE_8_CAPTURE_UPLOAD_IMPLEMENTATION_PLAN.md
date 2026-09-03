@@ -624,11 +624,24 @@ token-entry or final capture UI is exposed in this slice. Extraction calls are
 also deferred; ingredient and nutrition uploads finish in an explicit
 `extractionDeferred` state.
 
-An `ImageMetadataService` boundary and deterministic test adapter are present.
-The runtime adapter fails closed because no direct SHA-256 dependency may be
-added without a separate dependency/lockfile and network authorization. Until
-that adapter and the UI hook are reviewed, the feature remains default-off and
-cannot perform a user-driven live upload.
+Phase 8.5.6 replaces the fail-closed runtime metadata adapter with
+`Sha256ImageMetadataService`. The authorized direct dependency is
+`crypto: ^3.0.7`, resolved from the local package cache. The pure digest layer
+produces deterministic lowercase hexadecimal SHA-256 values, including the
+standard empty-input digest. Upload-level validation remains separate: empty
+images and unsupported JPEG/PNG/WebP content signatures fail safely.
+
+The controller now asks the injected `ImageMetadataService` to inspect the
+immutable bytes held by `ImageCaptureDraft`; those exact bytes are subsequently
+sent by binary PUT. MIME, byte size, and digest therefore describe the same
+payload. Fake metadata services remain injectable for local controller tests.
+The repository ignores `wye-flutter/pubspec.lock` by established policy, so the
+locally refreshed lockfile is not a versioned Phase 8.5.6 artifact. Any change
+to that policy remains a separate documentation/repository decision.
+
+The token-entry/capture UI hook and extraction client remain unimplemented. The
+feature remains default-off and cannot perform a user-driven live upload in
+this phase.
 
 Phase 8.6 preparation must provide a temporary token out of band without
 persisting it, validate physical-device reachability of both `API_BASE_URL` and
@@ -636,31 +649,33 @@ the MinIO/S3 host embedded in the presigned URL, and retain sanitized logs only.
 This record grants no real-device run, production deployment, public release,
 scoring runtime, or numerical overall authority.
 
-## 15. Checkpoint
+## 15. Phase 8.5.6 SHA-256 runtime adapter checkpoint
 
-    checkpoint: Phase 8.5.5 Flutter capture/upload integration
-    prior_verdict: READY_FOR_PHASE_8_5_5_FLUTTER_CAPTURE_UPLOAD_INTEGRATION
+    checkpoint: Phase 8.5.6 Flutter SHA-256 runtime adapter
+    prior_verdict: READY_FOR_PHASE_8_5_6_FLUTTER_SHA256_RUNTIME_ADAPTER
     backend_dev_implementation: IMPLEMENTED AND COMMITTED
-    flutter_integration: IMPLEMENTED — REVIEW AND COMMIT PENDING
-    flutter_feature_flag: WYE_MOBILE_UPLOAD_ENABLED — DEFAULT FALSE
+    flutter_integration: IMPLEMENTED AND COMMITTED
+    flutter_feature_flag: WYE_MOBILE_UPLOAD_ENABLED - DEFAULT FALSE
     flutter_token_storage: IN-MEMORY ONLY; NO TOKEN ENTRY UI
     binary_upload: IMPLEMENTED WITH FAKE-TRANSPORT TESTS
     extraction_integration: DEFERRED
-    runtime_sha256_adapter: BLOCKED PENDING DEPENDENCY AUTHORIZATION
+    runtime_sha256_adapter: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    sha256_dependency: crypto ^3.0.7 - DIRECT; RESOLVED OFFLINE
+    flutter_lockfile: PRESENT LOCALLY; IGNORED BY REPOSITORY POLICY
     live_device_calls_performed: NONE
     selected_control_plane: FASTAPI MOBILE FACADE
     selected_data_plane: TEMPORARY PRESIGNED BINARY PUT
     shared_mobile_secret: PROHIBITED
-    current_live_integration_blocker: SHA256 ADAPTER AND UI HOOK NOT IMPLEMENTED
+    current_live_integration_blocker: TOKEN/CAPTURE UI HOOK NOT IMPLEMENTED
     endpoint_calls_performed: NONE
     scoring_runtime_connection: NONE
     overall_numerical_candidate: NONE / DEFERRED
     production_runtime_authority: NONE
     release_authority: NONE
-    next_recommended_subphase: Phase 8.5.5.1 review and commit Flutter integration
+    next_recommended_subphase: Phase 8.5.6.1 review and commit SHA-256 adapter
 
 Expected implementation verdict:
 
 ```text
-READY_FOR_PHASE_8_5_5_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_5_6_1_REVIEW_AND_COMMIT
 ```

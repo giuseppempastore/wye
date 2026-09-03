@@ -41,6 +41,7 @@ dependencies:
   badges: ^3.1.1
 
   # Utils
+  crypto: ^3.0.7
   intl: ^0.20.3
   logger: ^2.1.0
   image_cropper: ^12.2.1

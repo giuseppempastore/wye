@@ -8,6 +8,7 @@ import 'theme/app_theme.dart';
 import 'services/api_client.dart';
 import 'services/capture_upload_gateway.dart';
 import 'services/http_capture_upload_gateway.dart';
+import 'services/image_metadata_service.dart';
 import 'services/database_service.dart';
 import 'providers/app_providers.dart';
 import 'providers/capture_upload_controller.dart';
@@ -68,6 +69,9 @@ class _WyeAppState extends State<WyeApp> {
           ),
           dispose: (_, gateway) => gateway.close(),
         ),
+        Provider<ImageMetadataService>.value(
+          value: const Sha256ImageMetadataService(),
+        ),
 
         // Database Service
         Provider<DatabaseService>(create: (_) => widget.databaseService),
@@ -89,6 +93,7 @@ class _WyeAppState extends State<WyeApp> {
             config: _mobileUploadConfig,
             tokenProvider: _mobileTokenProvider,
             gateway: context.read<CaptureUploadGateway>(),
+            metadataService: context.read<ImageMetadataService>(),
           ),
         ),
       ],
