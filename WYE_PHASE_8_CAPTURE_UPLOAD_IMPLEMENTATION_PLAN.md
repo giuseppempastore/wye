@@ -679,3 +679,55 @@ Expected implementation verdict:
 ```text
 READY_FOR_PHASE_8_5_6_1_REVIEW_AND_COMMIT
 ```
+
+## 16. Phase 8.5.7 Flutter dev token and capture UI record
+
+Phase 8.5.7 adds two minimal surfaces that are built only when
+`WYE_MOBILE_UPLOAD_ENABLED` is `true`. Settings contains a clearly labelled
+development-only token panel. It accepts a short-lived mobile Bearer token and
+local expiry, immediately clears the visible input after confirmation, exposes
+only missing/present/expired state, and allows explicit removal. The token is
+held only by the existing in-memory provider; it is never written to Hive,
+shared preferences, files, logs, or widget text. Flutter does not request a
+session and never knows `X-WYE-Image-Key` or another server secret.
+
+The add-product screen contains a separate development upload panel. It reuses
+the existing image picker/cropper dependencies without invoking the legacy
+base64 analysis flow. The panel requires a positive `productId`, barcode,
+usable token, image bytes, and a selected purpose. It delegates metadata to
+`ImageMetadataService`, then follows initialize, exact-byte binary PUT, and
+finalize through `CaptureUploadController`. It renders neutral disabled,
+missing-token, expired-token, missing-identity, image/metadata, progress,
+associated, retryable, terminal, and extraction-deferred states. It never
+renders a token, local path, payload, full presigned URL, or query signature.
+
+Ingredients and nutrition uploads end at `extractionDeferred`; no extraction
+client was added. Physical-device reachability and sanitized log capture remain
+Phase 8.6 work. This phase grants no production deployment, public release,
+scoring runtime, formula, or numerical overall authority.
+
+## 17. Phase 8.5.7 checkpoint
+
+    checkpoint: Phase 8.5.7 Flutter dev-only token/capture UI
+    prior_verdict: READY_FOR_PHASE_8_5_7_FLUTTER_TOKEN_CAPTURE_UI
+    flutter_feature_flag: WYE_MOBILE_UPLOAD_ENABLED - DEFAULT FALSE
+    dev_token_ui: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    token_storage: IN-MEMORY ONLY
+    token_display: REDACTED; FULL VALUE NEVER RENDERED AFTER CONFIRMATION
+    capture_upload_ui: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    product_identity: POSITIVE PRODUCT ID REQUIRED; BARCODE REMAINS DISTINCT
+    image_purposes: INGREDIENTS, NUTRITION, PRODUCT FRONT
+    upload_path: FASTAPI INITIALIZE; PRESIGNED BINARY PUT; FASTAPI FINALIZE
+    extraction_integration: DEFERRED
+    live_device_calls_performed: NONE
+    scoring_runtime_connection: NONE
+    overall_numerical_candidate: NONE / DEFERRED
+    production_runtime_authority: NONE
+    release_authority: NONE
+    next_recommended_subphase: Phase 8.5.7.1 review and commit Flutter dev UI
+
+Expected implementation verdict:
+
+```text
+READY_FOR_PHASE_8_5_7_1_REVIEW_AND_COMMIT
+```

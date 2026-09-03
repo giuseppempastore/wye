@@ -6,6 +6,8 @@ import '../models/capture_upload_models.dart';
 import '../services/capture_upload_gateway.dart';
 import '../services/image_metadata_service.dart';
 
+enum DevMobileTokenState { missing, present, expired }
+
 class CaptureUploadController extends ChangeNotifier {
   final MobileUploadConfig _config;
   final InMemoryMobileUploadTokenProvider _tokenProvider;
@@ -15,6 +17,7 @@ class CaptureUploadController extends ChangeNotifier {
   UploadFlowState _state;
   ImageCaptureDraft? _draft;
   bool _transitionActive = false;
+  DateTime? _tokenExpiresAt;
 
   CaptureUploadController({
     required MobileUploadConfig config,
@@ -31,18 +34,33 @@ class CaptureUploadController extends ChangeNotifier {
               : tokenProvider.currentToken == null
                   ? UploadFlowStep.missingToken
                   : UploadFlowStep.idle,
-        );
+        ) {
+    _tokenExpiresAt = tokenProvider.currentToken?.expiresAt;
+  }
 
   UploadFlowState get state => _state;
 
   bool get isTransitionActive => _transitionActive;
+
+  DateTime? get tokenExpiresAt => _tokenExpiresAt;
+
+  DevMobileTokenState get tokenState {
+    final expiry = _tokenExpiresAt;
+    if (expiry != null && !expiry.isAfter(DateTime.now().toUtc())) {
+      return DevMobileTokenState.expired;
+    }
+    return _tokenProvider.currentToken == null
+        ? DevMobileTokenState.missing
+        : DevMobileTokenState.present;
+  }
 
   void setTemporaryToken(String token, {required DateTime expiresAt}) {
     if (!_config.enabled) {
       _setState(const UploadFlowState(step: UploadFlowStep.disabled));
       return;
     }
-    _tokenProvider.setToken(token, expiresAt: expiresAt);
+    _tokenExpiresAt = expiresAt.toUtc();
+    _tokenProvider.setToken(token, expiresAt: _tokenExpiresAt!);
     _setState(
       UploadFlowState(
         step: _tokenProvider.currentToken == null
@@ -53,6 +71,7 @@ class CaptureUploadController extends ChangeNotifier {
   }
 
   void clearTemporaryToken() {
+    _tokenExpiresAt = null;
     _tokenProvider.clear();
     _draft = null;
     _setState(
@@ -266,6 +285,7 @@ class CaptureUploadController extends ChangeNotifier {
       return;
     }
     if (error.kind == CaptureUploadFailureKind.missingToken) {
+      _tokenExpiresAt = null;
       _tokenProvider.clear();
       _setState(
         UploadFlowState(
@@ -295,6 +315,7 @@ class CaptureUploadController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _tokenExpiresAt = null;
     _tokenProvider.clear();
     _draft = null;
     super.dispose();

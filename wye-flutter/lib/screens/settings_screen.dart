@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import '../config/mobile_upload_config.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import '../widgets/dev_mobile_upload_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -14,6 +16,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
+    final mobileUploadEnabled = context.watch<MobileUploadConfig>().enabled;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Impostazioni'),
@@ -134,9 +137,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         'US': 'Stati Uniti',
                       };
 
-                      final countryValue = countries.keys.contains(userPref.country)
-                          ? userPref.country
-                          : 'IT';
+                      final countryValue =
+                          countries.keys.contains(userPref.country)
+                              ? userPref.country
+                              : 'IT';
 
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -228,15 +232,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             spacing: 8,
                             runSpacing: 8,
                             children: [
-                              for (String allergen
-                                  in userPref.userAllergies)
+                              for (String allergen in userPref.userAllergies)
                                 Chip(
                                   label: Text(allergen),
                                   onDeleted: () {
                                     userPref.removeAllergy(allergen);
                                   },
-                                  deleteIcon:
-                                      const Icon(Icons.close, size: 18),
+                                  deleteIcon: const Icon(Icons.close, size: 18),
                                   backgroundColor:
                                       AppColors.riskHigh.withOpacity(0.1),
                                   labelStyle: TextStyle(
@@ -303,6 +305,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              if (mobileUploadEnabled) ...[
+                Text(
+                  'Upload mobile - sviluppo',
+                  style: AppTypography.headline3,
+                ),
+                const SizedBox(height: 12),
+                const Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(16),
+                    child: DevMobileUploadTokenPanel(),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
 
               // App Info Section
               Text(

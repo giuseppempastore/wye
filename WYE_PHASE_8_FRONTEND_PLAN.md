@@ -274,9 +274,19 @@ byte size over the exact immutable bytes later passed to binary PUT. The
 controller receives the metadata service through Provider, while fakes remain
 available to tests. `wye-flutter/pubspec.lock` was refreshed locally but remains
 unversioned because the repository currently ignores it; changing that policy
-is outside this phase. The token-entry/capture UI hook, extraction calls, and
-physical-device Phase 8.6 validation remain follow-ups. Scoring, production
-deployment, public release, and mobile-embedded secrets remain unauthorized.
+is outside this phase.
+
+Phase 8.5.7 adds dev-only token and capture/upload panels, both visible only
+when `WYE_MOBILE_UPLOAD_ENABLED` is `true`. Settings accepts a short-lived token
+and expiry, clears the visible value after confirmation, retains it in memory
+only, and shows neutral missing/present/expired state. The add-product screen
+hosts a separate upload panel requiring positive `productId`, barcode, token,
+purpose, and image. It uses the typed metadata/controller/gateway path for
+initialize, exact-byte PUT, and finalize without invoking legacy base64
+analysis. Ingredient and nutrition uploads remain explicitly
+`extractionDeferred`. Extraction calls and physical-device Phase 8.6 validation
+remain follow-ups. Scoring, production deployment, public release, and
+mobile-embedded secrets remain unauthorized.
 
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
@@ -318,22 +328,22 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.5.6.1 - review and commit the Flutter SHA-256 runtime adapter before
-adding token/capture UI, extraction, or physical-device E2E wiring.
+Phase 8.5.7.1 - review and commit the Flutter dev-only token/capture UI before
+adding extraction or physical-device E2E wiring.
 ```
 
-The review must verify the default-off Flutter flag, direct `crypto` dependency,
-lowercase SHA-256 known vectors, MIME signature checks, exact-byte metadata/PUT
-integration, ignored lockfile status, safe failures, and injectable test fakes.
-A later authorized device phase must validate both `API_BASE_URL` and the
+The review must verify hidden-by-default surfaces, in-memory redacted token
+handling, explicit expiry/removal, required product identity, purpose selection,
+neutral flow states, exact-byte metadata/PUT integration, and fake-only widget
+tests. A later authorized device phase must validate both `API_BASE_URL` and the
 presigned storage host before any real-phone run. No phase may enable scoring,
 introduce an overall number, authorize production or release, or fall back to
 legacy base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.5.6 Flutter SHA-256 runtime adapter
-    prior_verdict: READY_FOR_PHASE_8_5_6_FLUTTER_SHA256_RUNTIME_ADAPTER
+    checkpoint: Phase 8.5.7 Flutter dev-only token/capture UI
+    prior_verdict: READY_FOR_PHASE_8_5_7_FLUTTER_TOKEN_CAPTURE_UI
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
@@ -342,15 +352,18 @@ legacy base64/analysis paths.
     backend_dev_implementation: IMPLEMENTED AND COMMITTED
     flutter_runtime_implementation: IMPLEMENTED AND COMMITTED
     flutter_token_storage: IN-MEMORY ONLY
-    runtime_sha256_adapter: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    runtime_sha256_adapter: IMPLEMENTED AND COMMITTED
     sha256_dependency: crypto ^3.0.7 - DIRECT; RESOLVED OFFLINE
     flutter_lockfile: PRESENT LOCALLY; IGNORED BY REPOSITORY POLICY
-    flutter_ui_and_extraction: DEFERRED
-    next_recommended_subphase: Phase 8.5.6.1 review and commit SHA-256 adapter
+    dev_token_ui: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    capture_upload_ui: IMPLEMENTED - REVIEW AND COMMIT PENDING
+    token_storage: IN-MEMORY ONLY; FULL VALUE NOT RENDERED AFTER CONFIRMATION
+    extraction_integration: DEFERRED
+    next_recommended_subphase: Phase 8.5.7.1 review and commit Flutter dev UI
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: RUNTIME SHA-256 METADATA ADAPTER
+    implementation_completed_by_this_checkpoint: DEFAULT-OFF DEV TOKEN/CAPTURE UI
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -358,5 +371,5 @@ legacy base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_5_6_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_5_7_1_REVIEW_AND_COMMIT
 ```

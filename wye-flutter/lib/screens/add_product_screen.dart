@@ -7,9 +7,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
+import '../config/mobile_upload_config.dart';
 import '../providers/app_providers.dart';
 import '../services/api_client.dart';
 import '../theme/app_theme.dart';
+import '../widgets/dev_mobile_upload_widgets.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({Key? key}) : super(key: key);
@@ -79,7 +81,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     ImageSource source, {
     bool isProductPhoto = false,
   }) async {
-    final pickedFile = await _picker.pickImage(source: source, imageQuality: 85);
+    final pickedFile =
+        await _picker.pickImage(source: source, imageQuality: 85);
     if (pickedFile == null) return;
 
     XFile finalFile = pickedFile;
@@ -216,7 +219,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       await recognizer.close();
 
       final barcodeValue = _extractBarcodeValue(rawText);
-      if (isProductPhoto && barcodeValue != null && _isValidBarcode(barcodeValue)) {
+      if (isProductPhoto &&
+          barcodeValue != null &&
+          _isValidBarcode(barcodeValue)) {
         _barcodeController.text = barcodeValue;
       }
 
@@ -228,13 +233,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       final productName = (normalized['product_name'] as String?)?.trim();
       final brandName = (normalized['brand_name'] as String?)?.trim();
-      final category = (normalized['category'] as String?)?.trim().toLowerCase();
-      final productType = (normalized['product_type'] as String?)?.trim().toLowerCase();
-      final nutrition = normalized['nutrition'] as Map<String, dynamic>? ?? const {};
-      final ingredients = (normalized['ingredients'] as List?)?.whereType<String>().toList() ?? const <String>[];
+      final category =
+          (normalized['category'] as String?)?.trim().toLowerCase();
+      final productType =
+          (normalized['product_type'] as String?)?.trim().toLowerCase();
+      final nutrition =
+          normalized['nutrition'] as Map<String, dynamic>? ?? const {};
+      final ingredients =
+          (normalized['ingredients'] as List?)?.whereType<String>().toList() ??
+              const <String>[];
 
-      if (isProductPhoto && category != null && category.isNotEmpty && category != 'food' && category != 'foods') {
-        throw Exception('Il prodotto non risulta essere un food. Il processo è stato interrotto.');
+      if (isProductPhoto &&
+          category != null &&
+          category.isNotEmpty &&
+          category != 'food' &&
+          category != 'foods') {
+        throw Exception(
+            'Il prodotto non risulta essere un food. Il processo è stato interrotto.');
       }
 
       if (isProductPhoto) {
@@ -256,7 +271,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
         _ingredientsController.text = ingredients.join(', ');
       }
 
-      if (isProductPhoto && ingredients.isNotEmpty && _ingredientsController.text.trim().isEmpty) {
+      if (isProductPhoto &&
+          ingredients.isNotEmpty &&
+          _ingredientsController.text.trim().isEmpty) {
         _ingredientsController.text = ingredients.join(', ');
       }
 
@@ -278,7 +295,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
 
       if (mounted) {
-        final hasData = barcodeValue != null || ingredients.isNotEmpty || productName != null || brandName != null || nutrition.isNotEmpty;
+        final hasData = barcodeValue != null ||
+            ingredients.isNotEmpty ||
+            productName != null ||
+            brandName != null ||
+            nutrition.isNotEmpty;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -298,7 +319,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       if (mounted) {
         final errText = error?.toString() ?? '';
-        final isFoodValidationError = errText.contains('non risulta essere un food');
+        final isFoodValidationError =
+            errText.contains('non risulta essere un food');
         final isNetworkError = errText.toLowerCase().contains('network') ||
             errText.toLowerCase().contains('socket') ||
             errText.toLowerCase().contains('timeout') ||
@@ -409,10 +431,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Future<void> _submit() async {
     final categoryValue = _categoryController.text.trim().toLowerCase();
-    if (categoryValue.isNotEmpty && categoryValue != 'food' && categoryValue != 'foods') {
+    if (categoryValue.isNotEmpty &&
+        categoryValue != 'food' &&
+        categoryValue != 'foods') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Il prodotto non è classificato come food. Il salvataggio è stato interrotto.'),
+          content: Text(
+              'Il prodotto non è classificato come food. Il salvataggio è stato interrotto.'),
           backgroundColor: AppColors.riskHigh,
         ),
       );
@@ -427,7 +452,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     ];
 
     for (final field in requiredNutritionFields) {
-      final validatorMessage = _validateNumericField(field.text, required: true);
+      final validatorMessage =
+          _validateNumericField(field.text, required: true);
       if (validatorMessage != null) {
         field.text = '';
       }
@@ -490,7 +516,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: provider.error == null ? AppColors.success : AppColors.riskHigh,
+            backgroundColor:
+                provider.error == null ? AppColors.success : AppColors.riskHigh,
           ),
         );
 
@@ -507,6 +534,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final mobileUploadEnabled = context.watch<MobileUploadConfig>().enabled;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Aggiungi Prodotto'),
@@ -531,11 +559,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   decoration: BoxDecoration(
                     color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                    border:
+                        Border.all(color: AppColors.primary.withOpacity(0.3)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.camera_alt_outlined, color: AppColors.primary),
+                      const Icon(Icons.camera_alt_outlined,
+                          color: AppColors.primary),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -547,18 +577,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
                 _ImagePickerTile(
-                  label: _productImage == null ? 'Scatta/Carica foto prodotto' : 'Foto prodotto pronta',
+                  label: _productImage == null
+                      ? 'Scatta/Carica foto prodotto'
+                      : 'Foto prodotto pronta',
                   file: _productImage,
                   onTap: () async {
                     final source = await _chooseImageSource();
                     if (source == null) return;
-                    await _pickImage((file) => _productImage = file, source, isProductPhoto: true);
+                    await _pickImage((file) => _productImage = file, source,
+                        isProductPhoto: true);
                   },
                 ),
                 const SizedBox(height: 16),
-
                 Text('Brand', style: AppTypography.label),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -567,11 +598,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     hintText: 'Es: Bio Natura',
                     prefixIcon: Icon(Icons.business),
                   ),
-                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Inserisci il brand' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Inserisci il brand'
+                      : null,
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 16),
-
                 Text('Nome prodotto', style: AppTypography.label),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -580,11 +612,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     hintText: 'Es: Granola al cacao',
                     prefixIcon: Icon(Icons.shopping_bag),
                   ),
-                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Inserisci il nome del prodotto' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Inserisci il nome del prodotto'
+                      : null,
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 16),
-
                 Text('Categoria', style: AppTypography.label),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -593,15 +626,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     hintText: 'food',
                     prefixIcon: Icon(Icons.category),
                   ),
-                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Inserisci la categoria' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Inserisci la categoria'
+                      : null,
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 16),
-
                 Text('Tipo prodotto', style: AppTypography.label),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _productTypeController.text.trim().isNotEmpty ? _productTypeController.text.trim() : null,
+                  value: _productTypeController.text.trim().isNotEmpty
+                      ? _productTypeController.text.trim()
+                      : null,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(Icons.inventory_2),
                   ),
@@ -618,10 +654,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       _productTypeController.text = value;
                     }
                   },
-                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Inserisci il tipo prodotto' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Inserisci il tipo prodotto'
+                      : null,
                 ),
                 const SizedBox(height: 16),
-
                 Text('Barcode', style: AppTypography.label),
                 const SizedBox(height: 8),
                 TextFormField(
@@ -631,7 +668,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     hintText: 'Barcode rilevato automaticamente dalla foto',
                     prefixIcon: Icon(Icons.qr_code),
                   ),
-                  validator: (value) => (value == null || value.trim().isEmpty) ? 'Inserisci il barcode' : null,
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? 'Inserisci il barcode'
+                      : null,
                   onChanged: (_) => setState(() {}),
                 ),
                 const SizedBox(height: 8),
@@ -641,38 +680,43 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   label: const Text('Leggi barcode con scanner'),
                 ),
                 const SizedBox(height: 24),
-
                 Text('Ingredienti', style: AppTypography.label),
                 const SizedBox(height: 8),
                 TextFormField(
                   controller: _ingredientsController,
                   maxLines: 5,
                   decoration: const InputDecoration(
-                    hintText: 'Gli ingredienti vengono precompilati da foto e possono essere corretti manualmente.',
+                    hintText:
+                        'Gli ingredienti vengono precompilati da foto e possono essere corretti manualmente.',
                     prefixIcon: Icon(Icons.list_alt),
                   ),
                 ),
                 const SizedBox(height: 8),
                 _ImagePickerTile(
-                  label: _ingredientsImage == null ? 'Scatta/Carica foto ingredienti' : 'Foto ingredienti pronta',
+                  label: _ingredientsImage == null
+                      ? 'Scatta/Carica foto ingredienti'
+                      : 'Foto ingredienti pronta',
                   file: _ingredientsImage,
                   onTap: () async {
                     final source = await _chooseImageSource();
                     if (source == null) return;
-                    await _pickImage((file) => _ingredientsImage = file, source, isProductPhoto: false);
+                    await _pickImage((file) => _ingredientsImage = file, source,
+                        isProductPhoto: false);
                   },
                 ),
                 const SizedBox(height: 24),
-
                 Text('Valori nutrizionali', style: AppTypography.headline3),
                 const SizedBox(height: 8),
                 _ImagePickerTile(
-                  label: _nutritionImage == null ? 'Scatta/Carica foto valori nutrizionali' : 'Foto valori nutrizionali pronta',
+                  label: _nutritionImage == null
+                      ? 'Scatta/Carica foto valori nutrizionali'
+                      : 'Foto valori nutrizionali pronta',
                   file: _nutritionImage,
                   onTap: () async {
                     final source = await _chooseImageSource();
                     if (source == null) return;
-                    await _pickImage((file) => _nutritionImage = file, source, isProductPhoto: true);
+                    await _pickImage((file) => _nutritionImage = file, source,
+                        isProductPhoto: true);
                   },
                 ),
                 const SizedBox(height: 12),
@@ -701,18 +745,22 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       controller: _carbsController,
                       label: 'Carboidrati g',
                     ),
-                    _NumberField(controller: _sugarController, label: 'Zuccheri g'),
+                    _NumberField(
+                        controller: _sugarController, label: 'Zuccheri g'),
                     _NumberField(
                       controller: _fatController,
                       label: 'Grassi g',
                     ),
-                    _NumberField(controller: _saturatedFatController, label: 'Grassi saturi g'),
-                    _NumberField(controller: _sodiumController, label: 'Sodio mg'),
-                    _NumberField(controller: _fiberController, label: 'Fibre g'),
+                    _NumberField(
+                        controller: _saturatedFatController,
+                        label: 'Grassi saturi g'),
+                    _NumberField(
+                        controller: _sodiumController, label: 'Sodio mg'),
+                    _NumberField(
+                        controller: _fiberController, label: 'Fibre g'),
                   ],
                 ),
                 const SizedBox(height: 24),
-
                 if (_isProcessingImage)
                   const Padding(
                     padding: EdgeInsets.only(bottom: 12),
@@ -724,7 +772,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       ),
                     ),
                   ),
-
+                if (mobileUploadEnabled) ...[
+                  const DevMobileCaptureUploadPanel(),
+                  const SizedBox(height: 24),
+                ],
                 ElevatedButton.icon(
                   onPressed: _isSubmitting ? null : _submit,
                   icon: _isSubmitting
@@ -734,7 +785,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save_alt),
-                  label: Text(_isSubmitting ? 'Salvataggio...' : 'Salva prodotto nel database'),
+                  label: Text(_isSubmitting
+                      ? 'Salvataggio...'
+                      : 'Salva prodotto nel database'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -754,7 +807,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Storico'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Impostazioni'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.settings), label: 'Impostazioni'),
         ],
         currentIndex: 0,
         onTap: (index) {
@@ -800,7 +854,8 @@ class _ImagePickerTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(file == null ? Icons.add_a_photo_outlined : Icons.check_circle, color: AppColors.primary),
+            Icon(file == null ? Icons.add_a_photo_outlined : Icons.check_circle,
+                color: AppColors.primary),
             const SizedBox(width: 12),
             Expanded(child: Text(label, style: AppTypography.bodyMedium)),
           ],
