@@ -304,6 +304,17 @@ represented. Physical-device reachability and sanitized log capture remain
 Phase 8.6 prerequisites; runtime scoring, production, and release remain
 unauthorized.
 
+Phase 8.6.0 prepares the sanitized real-phone E2E runbook and separate log
+template for the dev-only capture/upload/finalize/extraction path. It records
+LAN reachability, single-process backend/session constraints, out-of-band
+temporary token handling, storage-host reachability, manual test states,
+redacted evidence, failure triage, stop conditions, and shutdown checks. The
+current Flutter application uses `NoOpCaptureFlowLogger`, so the runbook treats
+backend structured events and manual UI observations as the available evidence
+and requires a separate authorization if additional frontend instrumentation is
+needed. No backend service, physical-device run, endpoint call, scoring runtime,
+production deployment, or release is authorized or performed by this phase.
+
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
 
@@ -344,22 +355,23 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.5.8.1 - review and commit the Flutter extraction client before
-physical-device E2E wiring.
+Phase 8.6.1 - review and commit the Mobile E2E runbook and sanitized log
+template before authorizing any real-device execution.
 ```
 
-The review must verify hidden-by-default surfaces, in-memory redacted token
-handling, strict identifier separation, mobile-facade-only start/list/get
-routes, allowlisted response mapping, supported-purpose/finalize gates, neutral
-flow states, safe logs, and fake-only tests. A later authorized device phase
-must validate both `API_BASE_URL` and the presigned storage host before any
-real-phone run. No phase may enable scoring, introduce an overall number,
-authorize production or release, or fall back to legacy base64/analysis paths.
+The review must verify placeholder-only commands, default-off flags,
+single-process token lifetime, LAN/API/storage reachability gates, prohibited
+log content, the current frontend logging limitation, bounded retry/triage,
+stop conditions, and an exact sanitized paste-back format. A later explicitly
+authorized device phase must validate both `API_BASE_URL` and the presigned
+storage host before upload. No phase may enable scoring, introduce an overall
+number, authorize production or release, or fall back to legacy
+base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.5.8 Flutter extraction client
-    prior_verdict: READY_FOR_PHASE_8_5_8_FLUTTER_EXTRACTION_CLIENT
+    checkpoint: Phase 8.6.0 Mobile E2E test preparation and log runbook
+    prior_verdict: READY_FOR_PHASE_8_6_MOBILE_E2E_TEST_PREP
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
@@ -374,15 +386,20 @@ authorize production or release, or fall back to legacy base64/analysis paths.
     dev_token_ui: IMPLEMENTED AND COMMITTED
     capture_upload_ui: IMPLEMENTED AND COMMITTED
     token_storage: IN-MEMORY ONLY; FULL VALUE NOT RENDERED AFTER CONFIRMATION
-    extraction_integration: IMPLEMENTED THROUGH MOBILE FACADE - REVIEW PENDING
+    extraction_integration: IMPLEMENTED AND COMMITTED THROUGH MOBILE FACADE
     extraction_routes: START, LIST, GET UNDER MOBILE DEV CAPTURE PREFIX
     extraction_models: STRICT FRONTEND ALLOWLIST; NO PROVIDER PAYLOADS OR SCORES
     extraction_ui: MINIMAL DEV-ONLY START, REFRESH, STATUS, ALLOWLISTED ITEMS
-    next_recommended_subphase: Phase 8.5.8.1 review and commit extraction client
+    mobile_e2e_runbook: CREATED - REVIEW AND COMMIT PENDING
+    mobile_e2e_log_template: CREATED - EMPTY AND SANITIZED
+    real_device_test_executed: NO
+    endpoint_calls_performed: NONE
+    frontend_structured_logger: NO-OP IN CURRENT APP WIRING
+    next_recommended_subphase: Phase 8.6.1 review and commit runbook
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: DEFAULT-OFF FLUTTER EXTRACTION CLIENT
+    implementation_completed_by_this_checkpoint: DOCUMENTATION/PREPARATION ONLY
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -390,5 +407,5 @@ authorize production or release, or fall back to legacy base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_5_8_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_6_1_REVIEW_AND_COMMIT_RUNBOOK
 ```
