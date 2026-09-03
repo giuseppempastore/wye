@@ -85,7 +85,7 @@ token responses, full URLs, or verbose HTTP output.
 | Phone visible to Flutter | `<PASS|FAIL>` | `<NOTE>` |
 | Temporary token TTL/scopes verified | `<PASS|FAIL>` | `<TTL_AND_SCOPES_ONLY>` |
 | Backend/body/header debug logging disabled | `<PASS|FAIL>` | `<NOTE>` |
-| Frontend structured logger limitation accepted | `<PASS|FAIL>` | `Current app wiring is NoOp` |
+| Frontend bounded sanitized logger enabled | `<PASS|FAIL>` | `Dev-only; latest 200 events; in-memory only` |
 
 ## 6. Test identity and safe IDs
 
@@ -132,16 +132,30 @@ allowed.
 
 ## 9. Sanitized frontend evidence
 
-Current application wiring emits no structured `CaptureFlowEvent` sink.
-Record only non-verbose process observations and UI-state summaries.
+The dev-enabled application exposes a bounded, in-memory structured
+`CaptureFlowEvent` panel. Review its output before copying, paste only the
+minimal relevant lines, then clear both the panel and clipboard. The event
+model contains no token, URL, image content/path, payload, or extracted text.
 
     flutter_process_log_class: <LIFECYCLE_ONLY|SAFE_ERROR_CODE|NONE>
     ui_state_sequence: <COMMA_SEPARATED_STATE_NAMES>
-    structured_capture_events_available: NO
+    structured_capture_events_available: <YES|NO>
+    structured_event_buffer_limit: 200
+    structured_event_lines_reviewed: <YES|NO>
     raw_log_excerpt: <OMIT_BY_DEFAULT>
 
-If an excerpt is essential, include at most the minimal reviewed line and
-replace every address/path/query/body/text value with a descriptive redaction.
+Safe structured fields are exactly `timestamp`, `step`, `status_class`,
+`product_id`, `image_purpose`, safe `request_id`, `product_image_id`,
+`storage_object_id`, `extraction_run_id`, `item_count`, `http_status_code`,
+`retry_count`, `latency_ms`, `error_code`, and `error_category`. Omit any line
+that contains anything else or fails the prohibited-content audit.
+
+    sanitized_frontend_events:
+      - <MINIMAL_REVIEWED_JSON_LINE_OR_NONE>
+
+If a process-log excerpt is essential, include at most the minimal reviewed
+line and replace every address/path/query/body/text value with a descriptive
+redaction. Never substitute raw OCR/provider text into a structured event.
 
 ## 10. Expected versus actual
 
@@ -189,6 +203,7 @@ authorizes a reviewed sanitized artifact.
 ## 14. Shutdown confirmation
 
     flutter_token_cleared: <YES|NO>
+    frontend_in_memory_log_cleared: <YES|NO>
     clipboard_cleared: <YES|NO>
     backend_stopped: <YES|NO>
     backend_facade_returned_default_off: <YES|NO>

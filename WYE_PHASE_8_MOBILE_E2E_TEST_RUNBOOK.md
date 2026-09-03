@@ -79,15 +79,20 @@ the temporary binary PUT. Flutter must never send `X-WYE-Image-Key`.
 ### 3.3 Logging reality
 
 The backend emits sanitized `mobile_facade` events with request/session IDs,
-product/image/storage/run IDs, status, and latency. The Flutter gateway defines
-sanitized `CaptureFlowEvent` values, but current application wiring uses
-`NoOpCaptureFlowLogger`; therefore no structured gateway events are emitted by
-the app at runtime. Flutter process logs and manual UI-state observations may be
-captured, but must not be mistaken for structured flow telemetry.
+product/image/storage/run IDs, status, and latency. Phase 8.6.2 locally wires a
+sanitized Flutter event sink when `WYE_MOBILE_UPLOAD_ENABLED=true`. It retains
+only the latest 200 allowlisted events in process memory and exposes explicit
+copy and clear actions in the dev upload panel. It performs no file, database,
+preferences, backend, or analytics persistence. When the feature flag is
+false, recording remains a no-op.
 
-Before authorizing the real run, decide whether sanitized backend events plus
-manual UI-state evidence are sufficient. If structured frontend correlation is
-mandatory, stop and authorize a narrow reviewed logging adapter first.
+The safe frontend fields are: UTC timestamp, step, status class, safe
+request/correlation ID, numeric product/image/storage/extraction-run IDs, image
+purpose, item count, HTTP status code, retry count, latency, and sanitized
+error code/category. Token values, authorization headers, `X-WYE-Image-Key`,
+full or signed URLs, query signatures, upload/image bytes, base64, local image
+paths, request/response bodies, and raw OCR/provider text are outside the event
+model and must remain absent from copied output.
 
 ## 4. Prerequisites checklist
 
@@ -140,7 +145,7 @@ FAIL blocks the run.
 
 ## 5. Backend startup plan
 
-Do not execute these commands during Phase 8.6.0. In the later authorized run,
+Do not execute these commands during Phase 8.6.2. In the later authorized run,
 use a dedicated PowerShell whose transcript/history will not capture secret
 values.
 
@@ -224,7 +229,7 @@ token. If the token appears anywhere unintended, stop under Section 11.
 
 ## 7. Flutter run and log plan
 
-Do not execute these commands during Phase 8.6.0.
+Do not execute these commands during Phase 8.6.2.
 
 ```powershell
 Set-Location C:\Projects\wye\wye-flutter
@@ -243,10 +248,13 @@ flutter logs -d <DEVICE_ID> 2>&1 |
   Tee-Object -FilePath '<SAFE_LOG_DIR>\flutter-mobile-e2e.log'
 ```
 
-The log above is a process/device log, not a structured capture-flow log.
-Observe and record UI states manually. Before sharing, scan the local logs and
-remove the complete artifact if any prohibited content is found; do not attempt
-to preserve a partially redacted secret-bearing original in the repository.
+The log above is a process/device log and remains distinct from the structured
+capture-flow panel. Expand **Log tecnici sanitizzati** in the dev upload panel
+to inspect the bounded in-memory events. Copy only after completing the
+forbidden-content audit, paste only the minimal relevant lines into the log
+template, and then use **Svuota**. Before sharing any process log, scan it and
+remove the complete artifact if prohibited content is found; do not preserve a
+partially redacted secret-bearing original in the repository.
 
 ## 8. Manual test scenario and expected observations
 
@@ -260,9 +268,9 @@ is an allowed alternative. Do not use `product_front` for extraction.
 | 2 | Paste temporary token and set matching local validity | `Token presente` with expiry; token field cleared | Prior operator call: `session_create`, `created`, HTTP 201 | UI state only | Do not record token |
 | 3 | Enter/scan barcode and enter existing positive product ID | Image selection becomes available | Product lookup may be separate from facade; do not invoke legacy analysis | Record resolved/matched state | Barcode, productId |
 | 4 | Select `ingredients` or `nutrition`; capture/select image | `Preparazione metadati`, then `Immagine pronta per upload` | None | UI state; no image/path in logs | Purpose only |
-| 5 | Start upload | Initialize, binary send, finalize progress states | `upload_initialize`/`created` HTTP 201; storage PUT 2xx; `upload_finalize`/`finalized` HTTP 2xx | UI progress; Flutter structured event currently none | productId, productImageId, storageObjectId |
+| 5 | Start upload | Initialize, binary send, finalize progress states | `upload_initialize`/`created` HTTP 201; storage PUT 2xx; `upload_finalize`/`finalized` HTTP 2xx | Sanitized started/succeeded/failed event lines | productId, productImageId, storageObjectId |
 | 6 | Confirm association | `Upload associato; estrazione non avviata` | Finalize event contains distinct image/storage IDs | UI state | productImageId != storageObjectId is not required, but identities must remain separate |
-| 7 | Start extraction | `Avvio estrazione`, then completed or loading | `extraction_create`/`completed` HTTP 201 | UI state only | extractionRunId |
+| 7 | Start extraction | `Avvio estrazione`, then completed or loading | `extraction_create`/`completed` HTTP 201 | Sanitized extraction event/status; no extracted text | extractionRunId |
 | 8 | If loading, select refresh with bounded manual retries | `Estrazione in elaborazione`, then completed/failure | `extraction_get`/`completed` HTTP 200 per refresh | Record retry count and state sequence | extractionRunId unchanged |
 | 9 | Inspect result summary | Completed state and allowlisted item count/text; no score | No scoring event or endpoint | Record state and item count, not raw text | run ID only |
 | 10 | Clear token | `Token mancante`; further actions blocked | No new facade call | UI state | None |
@@ -280,16 +288,16 @@ manually with a small recorded retry count and no automatic retry storm.
 - No numerical overall score appears or changes.
 - No token, full signed URL, query signature, image path/bytes/base64, raw
   provider response, or secret-bearing stack trace appears in logs or shared
-  evidence. The UI may show allowlisted extracted item text, but that text is
-  not copied into the test report.
+  evidence. The UI may show allowlisted normalized item text, never the raw
+  OCR/provider fallback, and that text is not copied into the test report.
 - `product_front` shows extraction unavailable and provides no start action.
 
 ## 9. Log capture and sanitation procedure
 
 Use `WYE_PHASE_8_MOBILE_E2E_TEST_LOG_TEMPLATE.md` for the shareable record.
 
-1. Capture backend and Flutter logs only into `<SAFE_LOG_DIR>`, outside the
-   repository.
+1. Capture backend and Flutter process logs only into `<SAFE_LOG_DIR>`, outside
+   the repository. Structured frontend events remain in app memory only.
 2. Stop the run before inspecting or copying logs.
 3. Search locally for authorization headers, token fragments, secret variable
    values, URL query markers/signature names, image paths, base64 markers, raw
@@ -298,10 +306,12 @@ Use `WYE_PHASE_8_MOBILE_E2E_TEST_LOG_TEMPLATE.md` for the shareable record.
    in Section 11. Do not share or commit that log.
 5. Copy only reviewed, minimal event lines into the template. Prefer summaries
    over complete logs.
-6. Screenshots are optional and must exclude/blur token fields, notifications,
+6. After copying the reviewed structured frontend lines, clear the in-memory
+   panel and clear the clipboard after transferring the sanitized evidence.
+7. Screenshots are optional and must exclude/blur token fields, notifications,
    addresses, full URLs, local paths, product/provider text not needed for the
    assertion, and other personal data.
-7. Re-run `git status --short` before any later review; logs and screenshots
+8. Re-run `git status --short` before any later review; logs and screenshots
    must remain untracked and outside the repository unless a separately
    reviewed sanitized artifact is explicitly authorized.
 
@@ -373,8 +383,8 @@ Follow the first matching branch and do not bypass a failed prerequisite.
 10. **Logs are insufficient**
     - Preserve the safe manual state/status summary.
     - Do not enable verbose body/header logging.
-    - If structured Flutter correlation is required, stop and request a narrow
-      reviewed logging-adapter phase.
+    - Use the existing bounded structured panel; if it remains insufficient,
+      stop and request a separately reviewed instrumentation change.
 
 11. **Possible secret exposure**
     - Stop app, logging, and test traffic immediately.
@@ -421,7 +431,7 @@ and a short command summary in this exact order:
 4. commands executed with placeholders retained and secrets omitted;
 5. prerequisite PASS/FAIL results;
 6. ordered UI states;
-7. HTTP status classes and safe backend event summaries;
+7. HTTP status classes plus minimal safe backend and frontend event summaries;
 8. productId, purpose, productImageId, storageObjectId, extractionRunId, and
    retry count;
 9. expected versus actual outcome;
@@ -437,6 +447,7 @@ provider content, or unreviewed screenshots.
 ## 13. Post-run shutdown checklist
 
 - [ ] Clear token in Flutter.
+- [ ] Clear the in-memory structured frontend log panel.
 - [ ] Clear clipboard and remove the in-memory PowerShell session object.
 - [ ] Stop Flutter log capture.
 - [ ] Stop the single local FastAPI process.
@@ -451,10 +462,11 @@ provider content, or unreviewed screenshots.
 - [ ] Do not run cleanup, prune, or destructive database/storage operations as
   part of this runbook.
 
-## 14. Phase 8.6.0 checkpoint
+## 14. Phase 8.6.2 checkpoint
 
-    checkpoint: Phase 8.6.0 Mobile E2E test preparation and log runbook
-    runbook_status: PREPARED - REVIEW AND COMMIT PENDING
+    checkpoint: Phase 8.6.2 sanitized frontend log capture hooks
+    implementation_status: IMPLEMENTED LOCALLY - REVIEW AND COMMIT PENDING
+    runbook_status: UPDATED LOCALLY
     real_device_test_executed: NO
     endpoint_calls_performed: NONE
     backend_services_started: NONE
@@ -462,16 +474,17 @@ provider content, or unreviewed screenshots.
     flutter_feature_flag_default: FALSE
     mobile_token_transport: OUT-OF-BAND; IN-MEMORY ONLY
     required_mobile_scopes: UPLOAD, EXTRACTION
-    frontend_structured_logger: NO-OP IN CURRENT APP WIRING
+    frontend_structured_logger: DEV-ONLY; IN-MEMORY; SANITIZED; LATEST 200 EVENTS
+    frontend_log_export: DEV PANEL COPY AND CLEAR; NO PERSISTENCE
     server_secrets_in_flutter: PROHIBITED
     raw_payload_logging: PROHIBITED
     scoring_runtime_authority: NONE
     production_runtime_authority: NONE
     release_authority: NONE
-    next_recommended_subphase: Phase 8.6.1 review and commit runbook
+    next_recommended_subphase: Phase 8.6.2.1 review and commit log hooks
 
-Expected preparation verdict:
+Expected implementation verdict:
 
 ```text
-READY_FOR_PHASE_8_6_1_REVIEW_AND_COMMIT_RUNBOOK
+READY_FOR_PHASE_8_6_2_1_REVIEW_AND_COMMIT_LOG_HOOKS
 ```

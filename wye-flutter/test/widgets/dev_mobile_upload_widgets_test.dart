@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemChannels;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:wye/config/mobile_upload_config.dart';
@@ -12,6 +13,7 @@ import 'package:wye/providers/capture_upload_controller.dart';
 import 'package:wye/screens/add_product_screen.dart';
 import 'package:wye/screens/settings_screen.dart';
 import 'package:wye/services/fake_capture_upload_gateway.dart';
+import 'package:wye/services/capture_flow_logger.dart';
 import 'package:wye/services/image_metadata_service.dart';
 import 'package:wye/widgets/dev_mobile_upload_widgets.dart';
 
@@ -31,6 +33,9 @@ void main() {
           ChangeNotifierProvider<CaptureUploadController>.value(
             value: harness.controller,
           ),
+          ChangeNotifierProvider<SanitizedInMemoryCaptureFlowLogger>.value(
+            value: harness.logger,
+          ),
         ],
         child: const MaterialApp(home: SettingsScreen()),
       ),
@@ -46,6 +51,7 @@ void main() {
       ),
     );
     expect(find.byKey(const Key('dev-mobile-capture-panel')), findsNothing);
+    expect(find.byKey(const Key('dev-mobile-log-panel')), findsNothing);
   });
 
   testWidgets('dev token and capture surfaces are visible when enabled',
@@ -63,6 +69,9 @@ void main() {
           ChangeNotifierProvider<CaptureUploadController>.value(
             value: harness.controller,
           ),
+          ChangeNotifierProvider<SanitizedInMemoryCaptureFlowLogger>.value(
+            value: harness.logger,
+          ),
         ],
         child: const MaterialApp(home: SettingsScreen()),
       ),
@@ -76,11 +85,15 @@ void main() {
           ChangeNotifierProvider<CaptureUploadController>.value(
             value: harness.controller,
           ),
+          ChangeNotifierProvider<SanitizedInMemoryCaptureFlowLogger>.value(
+            value: harness.logger,
+          ),
         ],
         child: const MaterialApp(home: AddProductScreen()),
       ),
     );
     expect(find.byKey(const Key('dev-mobile-capture-panel')), findsOneWidget);
+    expect(find.byKey(const Key('dev-mobile-log-panel')), findsOneWidget);
   });
 
   testWidgets('token can be entered, is redacted, and can be cleared',
@@ -282,6 +295,12 @@ void main() {
           normalizedText: 'sale',
           status: ExtractionItemStatus.detected,
         ),
+        ExtractionItem(
+          extractionItemId: 602,
+          type: ExtractionItemType.ingredient,
+          rawText: 'raw-provider-private-text',
+          status: ExtractionItemStatus.detected,
+        ),
       ],
     );
     await _pumpPanels(
@@ -325,9 +344,10 @@ void main() {
 
     expect(
         harness.controller.extractionState.step, ExtractionFlowStep.succeeded);
-    expect(find.text('Estrazione completata: 1 elementi disponibili'),
+    expect(find.text('Estrazione completata: 2 elementi disponibili'),
         findsOneWidget);
     expect(find.text('sale'), findsOneWidget);
+    expect(find.text('raw-provider-private-text'), findsNothing);
     expect(harness.gateway.calls.last, 'extraction-start');
     final visibleText = tester
         .widgetList<Text>(find.byType(Text))
@@ -370,6 +390,66 @@ void main() {
     expect(_uploadButton(tester).onPressed, isNull);
     expect(find.textContaining('Upload bloccato'), findsOneWidget);
   });
+
+  testWidgets('dev log panel exports only sanitized in-memory events',
+      (tester) async {
+    String? copiedText;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') {
+        copiedText =
+            (call.arguments as Map<Object?, Object?>)['text'] as String;
+      }
+      return null;
+    });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    final harness = _Harness();
+    addTearDown(harness.dispose);
+    harness.logger.record(
+      const CaptureFlowEvent(
+        step: 'upload_initialize_failed',
+        statusClass: 'failure',
+        requestId:
+            'https://storage.invalid/object?X-Amz-Signature=secret-value',
+        errorCode: 'transport_error',
+      ),
+    );
+
+    await _pumpPanels(tester, harness);
+    await tester.ensureVisible(find.byKey(const Key('dev-mobile-log-panel')));
+    await tester.tap(find.byKey(const Key('dev-mobile-log-panel')));
+    await tester.pumpAndSettle();
+
+    final output = tester.widget<SelectableText>(
+      find.byKey(const Key('dev-mobile-log-output')),
+    );
+    expect(output.data, contains('<redacted>'));
+    expect(output.data, isNot(contains('secret-value')));
+    expect(output.data, isNot(contains('storage.invalid')));
+
+    await tester.ensureVisible(find.byKey(const Key('dev-mobile-log-copy')));
+    expect(
+      tester
+          .widget<OutlinedButton>(
+            find.byKey(const Key('dev-mobile-log-copy')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+    await tester.tap(find.byKey(const Key('dev-mobile-log-copy')));
+    await tester.pump();
+    expect(copiedText, harness.logger.exportText);
+    expect(copiedText, isNot(contains('secret-value')));
+    expect(find.text('Log sanitizzati copiati'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('dev-mobile-log-clear')));
+    await tester.pump();
+    expect(harness.logger.events, isEmpty);
+    expect(find.text('Nessun evento acquisito'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpPanels(
@@ -378,8 +458,15 @@ Future<void> _pumpPanels(
   DevImageBytesPicker? pickImageBytes,
 }) async {
   await tester.pumpWidget(
-    ChangeNotifierProvider<CaptureUploadController>.value(
-      value: harness.controller,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<CaptureUploadController>.value(
+          value: harness.controller,
+        ),
+        ChangeNotifierProvider<SanitizedInMemoryCaptureFlowLogger>.value(
+          value: harness.logger,
+        ),
+      ],
       child: MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
@@ -414,6 +501,7 @@ class _Harness {
   late final MobileUploadConfig config;
   late final InMemoryMobileUploadTokenProvider tokenProvider;
   late final FakeCaptureUploadGateway gateway;
+  late final SanitizedInMemoryCaptureFlowLogger logger;
   late final CaptureUploadController controller;
 
   _Harness({
@@ -426,11 +514,13 @@ class _Harness {
     );
     tokenProvider = InMemoryMobileUploadTokenProvider();
     gateway = FakeCaptureUploadGateway();
+    logger = SanitizedInMemoryCaptureFlowLogger(enabled: enabled);
     controller = CaptureUploadController(
       config: config,
       tokenProvider: tokenProvider,
       gateway: gateway,
       metadataService: metadataService,
+      logger: logger,
     );
   }
 
@@ -443,6 +533,7 @@ class _Harness {
 
   void dispose() {
     controller.dispose();
+    logger.dispose();
     gateway.close();
   }
 }

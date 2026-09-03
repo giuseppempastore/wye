@@ -5,6 +5,7 @@ import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
 import '../services/capture_upload_gateway.dart';
+import '../services/capture_flow_logger.dart';
 import '../services/image_metadata_service.dart';
 
 enum DevMobileTokenState { missing, present, expired }
@@ -14,6 +15,7 @@ class CaptureUploadController extends ChangeNotifier {
   final InMemoryMobileUploadTokenProvider _tokenProvider;
   final CaptureUploadGateway _gateway;
   final ImageMetadataService _metadataService;
+  final CaptureFlowLogger _logger;
 
   UploadFlowState _state;
   ExtractionFlowState _extractionState = const ExtractionFlowState(
@@ -22,16 +24,20 @@ class CaptureUploadController extends ChangeNotifier {
   ImageCaptureDraft? _draft;
   bool _transitionActive = false;
   DateTime? _tokenExpiresAt;
+  int _uploadRetryCount = 0;
+  int _extractionRetryCount = 0;
 
   CaptureUploadController({
     required MobileUploadConfig config,
     required InMemoryMobileUploadTokenProvider tokenProvider,
     required CaptureUploadGateway gateway,
     required ImageMetadataService metadataService,
+    CaptureFlowLogger logger = const NoOpCaptureFlowLogger(),
   })  : _config = config,
         _tokenProvider = tokenProvider,
         _gateway = gateway,
         _metadataService = metadataService,
+        _logger = logger,
         _state = UploadFlowState(
           step: !config.enabled
               ? UploadFlowStep.disabled
@@ -77,6 +83,11 @@ class CaptureUploadController extends ChangeNotifier {
             : UploadFlowStep.idle,
       ),
     );
+    _record(
+      'token_state_changed',
+      statusClass: _tokenProvider.currentToken == null ? 'failure' : 'success',
+      errorCode: _tokenProvider.currentToken == null ? 'token_expired' : null,
+    );
   }
 
   void clearTemporaryToken() {
@@ -93,6 +104,7 @@ class CaptureUploadController extends ChangeNotifier {
             : UploadFlowStep.disabled,
       ),
     );
+    _record('token_cleared', statusClass: 'success');
   }
 
   void markProductResolving() {
@@ -120,6 +132,8 @@ class CaptureUploadController extends ChangeNotifier {
       purpose: purpose,
       bytes: bytes,
     );
+    _uploadRetryCount = 0;
+    _extractionRetryCount = 0;
     _extractionState = const ExtractionFlowState(
       step: ExtractionFlowStep.notStarted,
     );
@@ -129,6 +143,12 @@ class CaptureUploadController extends ChangeNotifier {
         productIdentity: productIdentity,
         purpose: purpose,
       ),
+    );
+    _record(
+      'image_selected',
+      statusClass: 'success',
+      productId: productIdentity.productId,
+      purpose: purpose,
     );
   }
 
@@ -167,6 +187,12 @@ class CaptureUploadController extends ChangeNotifier {
           step: UploadFlowStep.metadataReady,
           metadata: metadata,
         ),
+      );
+      _record(
+        'metadata_prepared',
+        statusClass: 'success',
+        productId: draft.productIdentity.productId,
+        purpose: draft.purpose,
       );
     } on CaptureUploadException catch (error) {
       _fail(error);
@@ -274,6 +300,14 @@ class CaptureUploadController extends ChangeNotifier {
     if (_state.step != UploadFlowStep.failedRetryable) {
       return;
     }
+    _uploadRetryCount += 1;
+    _record(
+      'upload_retry',
+      statusClass: 'local',
+      retryCount: _uploadRetryCount,
+      productId: _state.productIdentity?.productId,
+      purpose: _state.purpose,
+    );
     _setState(_state.copyWith(step: UploadFlowStep.metadataReady));
     await upload();
   }
@@ -371,6 +405,17 @@ class CaptureUploadController extends ChangeNotifier {
     if (_extractionState.step != ExtractionFlowStep.failedRetryable) {
       return;
     }
+    _extractionRetryCount += 1;
+    _record(
+      'extraction_retry',
+      statusClass: 'local',
+      retryCount: _extractionRetryCount,
+      productId: _state.productIdentity?.productId,
+      purpose: _state.purpose,
+      productImageId: _state.productImage?.productImageId,
+      storageObjectId: _state.productImage?.storageObjectId,
+      extractionRunId: _extractionState.result?.run.extractionRunId,
+    );
     if (_extractionState.result?.run.extractionRunId case final int runId
         when runId > 0) {
       await refreshExtraction();
@@ -384,6 +429,8 @@ class CaptureUploadController extends ChangeNotifier {
     _extractionState = const ExtractionFlowState(
       step: ExtractionFlowStep.notStarted,
     );
+    _uploadRetryCount = 0;
+    _extractionRetryCount = 0;
     _setState(
       UploadFlowState(
         step: !_config.enabled
@@ -403,6 +450,11 @@ class CaptureUploadController extends ChangeNotifier {
           errorCode: 'mobile_upload_disabled',
         ),
       );
+      _record(
+        'extraction_unavailable',
+        statusClass: 'failure',
+        errorCode: 'mobile_upload_disabled',
+      );
       return null;
     }
     if (_tokenProvider.currentToken == null) {
@@ -411,6 +463,11 @@ class CaptureUploadController extends ChangeNotifier {
           step: ExtractionFlowStep.failedTerminal,
           errorCode: 'mobile_token_missing',
         ),
+      );
+      _record(
+        'extraction_failed',
+        statusClass: 'failure',
+        errorCode: 'mobile_token_missing',
       );
       return null;
     }
@@ -424,6 +481,11 @@ class CaptureUploadController extends ChangeNotifier {
           errorCode: 'extraction_image_not_finalized',
         ),
       );
+      _record(
+        'extraction_failed',
+        statusClass: 'failure',
+        errorCode: 'extraction_image_not_finalized',
+      );
       return null;
     }
     if (purpose != CaptureImagePurpose.ingredients &&
@@ -434,6 +496,15 @@ class CaptureUploadController extends ChangeNotifier {
           errorCode: 'extraction_purpose_unsupported',
         ),
       );
+      _record(
+        'extraction_unavailable',
+        statusClass: 'failure',
+        productId: identity.productId,
+        purpose: purpose,
+        productImageId: image.productImageId,
+        storageObjectId: image.storageObjectId,
+        errorCode: 'extraction_purpose_unsupported',
+      );
       return null;
     }
     if (_state.step != UploadFlowStep.extractionDeferred) {
@@ -442,6 +513,15 @@ class CaptureUploadController extends ChangeNotifier {
           step: ExtractionFlowStep.failedTerminal,
           errorCode: 'extraction_image_not_finalized',
         ),
+      );
+      _record(
+        'extraction_failed',
+        statusClass: 'failure',
+        productId: identity.productId,
+        purpose: purpose,
+        productImageId: image.productImageId,
+        storageObjectId: image.storageObjectId,
+        errorCode: 'extraction_image_not_finalized',
       );
       return null;
     }
@@ -464,6 +544,21 @@ class CaptureUploadController extends ChangeNotifier {
         errorCode: result.run.errorCode,
       ),
     );
+    _record(
+      'extraction_result',
+      statusClass: result.run.status == ExtractionStatus.succeeded
+          ? 'success'
+          : result.run.status == ExtractionStatus.failed
+              ? 'failure'
+              : 'local',
+      productId: _state.productIdentity?.productId,
+      purpose: _state.purpose,
+      productImageId: _state.productImage?.productImageId,
+      storageObjectId: _state.productImage?.storageObjectId,
+      extractionRunId: result.run.extractionRunId,
+      itemCount: result.items.length,
+      errorCode: result.run.errorCode,
+    );
   }
 
   void _failExtraction(CaptureUploadException error) {
@@ -475,6 +570,12 @@ class CaptureUploadController extends ChangeNotifier {
         result: _extractionState.result,
         errorCode: error.code,
       ),
+    );
+    _recordFailure(
+      error.retryable
+          ? 'extraction_flow_failed_retryable'
+          : 'extraction_flow_failed_terminal',
+      error,
     );
   }
 
@@ -491,6 +592,12 @@ class CaptureUploadController extends ChangeNotifier {
   }
 
   void _fail(CaptureUploadException error) {
+    _recordFailure(
+      error.retryable
+          ? 'upload_flow_failed_retryable'
+          : 'upload_flow_failed_terminal',
+      error,
+    );
     if (error.kind == CaptureUploadFailureKind.disabled) {
       _setState(const UploadFlowState(step: UploadFlowStep.disabled));
       return;
@@ -527,6 +634,58 @@ class CaptureUploadController extends ChangeNotifier {
   void _setExtractionState(ExtractionFlowState value) {
     _extractionState = value;
     notifyListeners();
+  }
+
+  void _recordFailure(String step, CaptureUploadException error) {
+    _record(
+      step,
+      statusClass: error.statusCode == null
+          ? 'failure'
+          : '${error.statusCode! ~/ 100}xx',
+      productId: _state.productIdentity?.productId,
+      purpose: _state.purpose,
+      productImageId: _state.productImage?.productImageId,
+      storageObjectId: _state.productImage?.storageObjectId,
+      extractionRunId: _extractionState.result?.run.extractionRunId,
+      httpStatusCode: error.statusCode,
+      retryCount: step.startsWith('extraction')
+          ? _extractionRetryCount
+          : _uploadRetryCount,
+      errorCode: error.code,
+      errorCategory: error.kind.name.toLowerCase(),
+    );
+  }
+
+  void _record(
+    String step, {
+    required String statusClass,
+    int? productId,
+    CaptureImagePurpose? purpose,
+    int? productImageId,
+    int? storageObjectId,
+    int? extractionRunId,
+    int? itemCount,
+    int? httpStatusCode,
+    int? retryCount,
+    String? errorCode,
+    String? errorCategory,
+  }) {
+    _logger.record(
+      CaptureFlowEvent(
+        step: step,
+        statusClass: statusClass,
+        productId: productId,
+        purpose: purpose,
+        productImageId: productImageId,
+        storageObjectId: storageObjectId,
+        extractionRunId: extractionRunId,
+        itemCount: itemCount,
+        httpStatusCode: httpStatusCode,
+        retryCount: retryCount,
+        errorCode: errorCode,
+        errorCategory: errorCategory,
+      ),
+    );
   }
 
   @override

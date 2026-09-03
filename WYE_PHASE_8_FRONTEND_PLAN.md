@@ -309,11 +309,26 @@ template for the dev-only capture/upload/finalize/extraction path. It records
 LAN reachability, single-process backend/session constraints, out-of-band
 temporary token handling, storage-host reachability, manual test states,
 redacted evidence, failure triage, stop conditions, and shutdown checks. The
-current Flutter application uses `NoOpCaptureFlowLogger`, so the runbook treats
-backend structured events and manual UI observations as the available evidence
-and requires a separate authorization if additional frontend instrumentation is
-needed. No backend service, physical-device run, endpoint call, scoring runtime,
-production deployment, or release is authorized or performed by this phase.
+Flutter application used `NoOpCaptureFlowLogger` at that checkpoint, so the
+initial runbook treated backend structured events and manual UI observations as
+the available evidence and required a separate authorization for frontend
+instrumentation. No backend service, physical-device run, endpoint call,
+scoring runtime, production deployment, or release was authorized or performed
+by that phase.
+
+Phase 8.6.2 locally implements the reviewed frontend log-capture follow-up.
+When `WYE_MOBILE_UPLOAD_ENABLED` is true, one shared Flutter logger retains only
+the latest 200 allowlisted `CaptureFlowEvent` records in process memory. The
+controller and upload/extraction gateway record token-state changes without a
+token value, image and metadata milestones without a path or bytes, network
+operation lifecycle/status, safe identifiers, retries, latency, and sanitized
+error metadata. Extraction records contain status and counts only, never raw
+OCR/provider text; the dev extraction UI also no longer falls back to raw text
+when normalized text is absent. A small dev-only panel provides sanitized copy
+and explicit clear actions using built-in Flutter services. When the feature is disabled,
+the logger is a no-op. No log persistence, endpoint call, physical-device run,
+scoring runtime, production deployment, or release is authorized or performed
+by this phase.
 
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
@@ -355,14 +370,15 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.6.1 - review and commit the Mobile E2E runbook and sanitized log
-template before authorizing any real-device execution.
+Phase 8.6.2.1 - review and commit the sanitized frontend log capture hooks and
+updated E2E documentation before authorizing any real-device execution.
 ```
 
 The review must verify placeholder-only commands, default-off flags,
 single-process token lifetime, LAN/API/storage reachability gates, prohibited
-log content, the current frontend logging limitation, bounded retry/triage,
-stop conditions, and an exact sanitized paste-back format. A later explicitly
+log content, the bounded in-memory frontend logger, allowlisted event schema,
+redaction tests, copy/clear behavior, bounded retry/triage, stop conditions,
+and an exact sanitized paste-back format. A later explicitly
 authorized device phase must validate both `API_BASE_URL` and the presigned
 storage host before upload. No phase may enable scoring, introduce an overall
 number, authorize production or release, or fall back to legacy
@@ -370,8 +386,8 @@ base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.6.0 Mobile E2E test preparation and log runbook
-    prior_verdict: READY_FOR_PHASE_8_6_MOBILE_E2E_TEST_PREP
+    checkpoint: Phase 8.6.2 sanitized frontend log capture hooks
+    prior_verdict: READY_FOR_PHASE_8_6_2_FRONTEND_LOG_CAPTURE_HOOKS
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
@@ -390,16 +406,18 @@ base64/analysis paths.
     extraction_routes: START, LIST, GET UNDER MOBILE DEV CAPTURE PREFIX
     extraction_models: STRICT FRONTEND ALLOWLIST; NO PROVIDER PAYLOADS OR SCORES
     extraction_ui: MINIMAL DEV-ONLY START, REFRESH, STATUS, ALLOWLISTED ITEMS
-    mobile_e2e_runbook: CREATED - REVIEW AND COMMIT PENDING
-    mobile_e2e_log_template: CREATED - EMPTY AND SANITIZED
+    mobile_e2e_runbook: REVIEWED AND COMMITTED
+    mobile_e2e_log_template: REVIEWED AND COMMITTED - EMPTY AND SANITIZED
     real_device_test_executed: NO
     endpoint_calls_performed: NONE
-    frontend_structured_logger: NO-OP IN CURRENT APP WIRING
-    next_recommended_subphase: Phase 8.6.1 review and commit runbook
+    frontend_structured_logger: DEV-ONLY; IN-MEMORY; SANITIZED; LATEST 200 EVENTS
+    frontend_log_hooks: IMPLEMENTED LOCALLY - REVIEW AND COMMIT PENDING
+    frontend_log_export: DEV PANEL COPY AND CLEAR; NO PERSISTENCE
+    next_recommended_subphase: Phase 8.6.2.1 review and commit log hooks
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: DOCUMENTATION/PREPARATION ONLY
+    implementation_completed_by_this_checkpoint: FRONTEND LOG HOOKS AND DOCUMENTATION ONLY
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -407,5 +425,5 @@ base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_6_1_REVIEW_AND_COMMIT_RUNBOOK
+READY_FOR_PHASE_8_6_2_1_REVIEW_AND_COMMIT_LOG_HOOKS
 ```

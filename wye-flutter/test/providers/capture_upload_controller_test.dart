@@ -6,6 +6,7 @@ import 'package:wye/models/capture_upload_error.dart';
 import 'package:wye/models/capture_upload_models.dart';
 import 'package:wye/models/extraction_models.dart';
 import 'package:wye/providers/capture_upload_controller.dart';
+import 'package:wye/services/capture_flow_logger.dart';
 import 'package:wye/services/fake_capture_upload_gateway.dart';
 import 'package:wye/services/image_metadata_service.dart';
 
@@ -313,6 +314,8 @@ void main() {
 
   test('extraction starts only after finalize and maps allowlisted items',
       () async {
+    final logger = SanitizedInMemoryCaptureFlowLogger(enabled: true);
+    addTearDown(logger.dispose);
     final gateway = FakeCaptureUploadGateway()
       ..extractionResult = ExtractionResultSummary(
         run: const ExtractionRunRef(
@@ -339,6 +342,7 @@ void main() {
       tokenProvider: tokenProvider,
       gateway: gateway,
       metadataService: _FakeImageMetadataService(),
+      logger: logger,
     );
     addTearDown(controller.dispose);
     controller.selectImage(
@@ -366,6 +370,20 @@ void main() {
       gateway.calls,
       ['initialize', 'put', 'finalize', 'extraction-start'],
     );
+    expect(
+      logger.events.map((event) => event.step),
+      containsAll(<String>[
+        'image_selected',
+        'metadata_prepared',
+        'extraction_failed',
+        'extraction_result',
+      ]),
+    );
+    expect(logger.events.last.itemCount, 1);
+    expect(logger.exportText, isNot(contains('temporary-token')));
+    expect(logger.exportText, isNot(contains('barcode-7')));
+    expect(logger.exportText, isNot(contains('sale')));
+    expect(logger.exportText, isNot(contains('score')));
   });
 
   test('running extraction can be refreshed without changing upload state',

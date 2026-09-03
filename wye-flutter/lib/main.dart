@@ -6,9 +6,11 @@ import 'models/capture_upload_models.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'services/api_client.dart';
+import 'services/capture_flow_logger.dart';
 import 'services/capture_upload_gateway.dart';
 import 'services/http_capture_upload_gateway.dart';
 import 'services/image_metadata_service.dart';
+import 'services/logging_capture_upload_gateway.dart';
 import 'services/database_service.dart';
 import 'providers/app_providers.dart';
 import 'providers/capture_upload_controller.dart';
@@ -32,6 +34,7 @@ class WyeApp extends StatefulWidget {
 
 class _WyeAppState extends State<WyeApp> {
   late final MobileUploadConfig _mobileUploadConfig;
+  late final SanitizedInMemoryCaptureFlowLogger _captureFlowLogger;
   final InMemoryMobileUploadTokenProvider _mobileTokenProvider =
       InMemoryMobileUploadTokenProvider();
 
@@ -41,11 +44,16 @@ class _WyeAppState extends State<WyeApp> {
     _mobileUploadConfig = MobileUploadConfig.fromEnvironment(
       apiBaseUrl: ApiConfig.baseUrl,
     );
+    _captureFlowLogger = SanitizedInMemoryCaptureFlowLogger(
+      enabled: _mobileUploadConfig.enabled,
+      capacity: 200,
+    );
   }
 
   @override
   void dispose() {
     _mobileTokenProvider.clear();
+    _captureFlowLogger.dispose();
     widget.databaseService.close();
     super.dispose();
   }
@@ -61,11 +69,18 @@ class _WyeAppState extends State<WyeApp> {
         Provider<InMemoryMobileUploadTokenProvider>.value(
           value: _mobileTokenProvider,
         ),
+        ChangeNotifierProvider<SanitizedInMemoryCaptureFlowLogger>.value(
+          value: _captureFlowLogger,
+        ),
         Provider<CaptureUploadGateway>(
-          create: (_) => HttpCaptureUploadGateway(
-            client: http.Client(),
-            config: _mobileUploadConfig,
-            tokenProvider: _mobileTokenProvider,
+          create: (_) => LoggingCaptureUploadGateway(
+            delegate: HttpCaptureUploadGateway(
+              client: http.Client(),
+              config: _mobileUploadConfig,
+              tokenProvider: _mobileTokenProvider,
+              logger: _captureFlowLogger,
+            ),
+            logger: _captureFlowLogger,
           ),
           dispose: (_, gateway) => gateway.close(),
         ),
@@ -94,6 +109,7 @@ class _WyeAppState extends State<WyeApp> {
             tokenProvider: _mobileTokenProvider,
             gateway: context.read<CaptureUploadGateway>(),
             metadataService: context.read<ImageMetadataService>(),
+            logger: _captureFlowLogger,
           ),
         ),
       ],

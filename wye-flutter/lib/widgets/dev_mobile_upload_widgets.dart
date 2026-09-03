@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
 import '../providers/capture_upload_controller.dart';
+import '../services/capture_flow_logger.dart';
 import '../theme/app_theme.dart';
 
 typedef DevImageBytesPicker = Future<Uint8List?> Function();
@@ -315,6 +316,9 @@ class _DevMobileCaptureUploadPanelState
                   const SizedBox(height: 12),
                   const LinearProgressIndicator(),
                 ],
+                const SizedBox(height: 12),
+                const Divider(),
+                const DevCaptureFlowLogPanel(),
               ],
             ),
           ),
@@ -508,7 +512,7 @@ class _DevMobileCaptureUploadPanelState
           dense: true,
           contentPadding: EdgeInsets.zero,
           key: Key('dev-mobile-extraction-item-${item.extractionItemId}'),
-          title: Text(item.normalizedText ?? item.rawText),
+          title: Text(item.normalizedText ?? _itemTypeLabel(item.type)),
           subtitle: Text(
             '${_itemTypeLabel(item.type)} · ${item.status.name}',
           ),
@@ -526,5 +530,78 @@ class _DevMobileCaptureUploadPanelState
       ExtractionItemType.unit => 'Unita',
       ExtractionItemType.other => 'Altro',
     };
+  }
+}
+
+class DevCaptureFlowLogPanel extends StatelessWidget {
+  const DevCaptureFlowLogPanel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<SanitizedInMemoryCaptureFlowLogger>(
+      builder: (context, logger, _) {
+        final export = logger.exportText;
+        return ExpansionTile(
+          key: const Key('dev-mobile-log-panel'),
+          tilePadding: EdgeInsets.zero,
+          childrenPadding: EdgeInsets.zero,
+          title: const Text('Log tecnici sanitizzati'),
+          subtitle: Text('${logger.events.length} eventi in memoria'),
+          children: [
+            if (logger.events.isEmpty)
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text('Nessun evento acquisito'),
+              )
+            else
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 240),
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    export,
+                    key: const Key('dev-mobile-log-output'),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    key: const Key('dev-mobile-log-copy'),
+                    onPressed: logger.events.isEmpty
+                        ? null
+                        : () => _copy(context, export),
+                    icon: const Icon(Icons.copy_outlined),
+                    label: const Text('Copia'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  key: const Key('dev-mobile-log-clear'),
+                  onPressed: logger.events.isEmpty ? null : logger.clear,
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Svuota'),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _copy(BuildContext context, String export) async {
+    await Clipboard.setData(ClipboardData(text: export));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Log sanitizzati copiati')),
+    );
   }
 }

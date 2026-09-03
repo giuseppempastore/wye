@@ -66,6 +66,7 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
           productId: request.productIdentity.productId,
           purpose: request.purpose,
           requestId: response.headers['x-request-id'],
+          httpStatusCode: response.statusCode,
           latencyMs: DateTime.now().difference(started).inMilliseconds,
         ),
       );
@@ -129,6 +130,7 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
         CaptureFlowEvent(
           step: 'binary_upload',
           statusClass: '${streamed.statusCode ~/ 100}xx',
+          httpStatusCode: streamed.statusCode,
           latencyMs: DateTime.now().difference(started).inMilliseconds,
         ),
       );
@@ -183,6 +185,7 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
           statusClass: '${response.statusCode ~/ 100}xx',
           productId: request.productIdentity.productId,
           requestId: response.headers['x-request-id'],
+          httpStatusCode: response.statusCode,
           productImageId: result.productImage.productImageId,
           storageObjectId: result.productImage.storageObjectId,
           latencyMs: DateTime.now().difference(started).inMilliseconds,
@@ -445,6 +448,7 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
         storageObjectId: productImage.storageObjectId,
         extractionRunId: extractionRunId,
         requestId: response.headers['x-request-id'],
+        httpStatusCode: response.statusCode,
         latencyMs: DateTime.now().difference(started).inMilliseconds,
       ),
     );
