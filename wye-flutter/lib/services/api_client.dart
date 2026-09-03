@@ -405,6 +405,9 @@ Product _mapDbProductResponse(
       .toList();
 
   return Product(
+    productId: productData['id'] is int && productData['id'] > 0
+        ? productData['id'] as int
+        : null,
     barcode: productData['barcode']?.toString() ?? fallbackBarcode,
     productName: productData['product_name']?.toString() ?? 'Prodotto',
     brand: productData['brand_name']?.toString() ?? 'N/A',

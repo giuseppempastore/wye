@@ -1,6 +1,7 @@
 import 'score_evaluability_model.dart';
 
 class Product {
+  final int? productId;
   final String barcode;
   final String productName;
   final String brand;
@@ -15,6 +16,7 @@ class Product {
   final DateTime? fetchedAt;
 
   Product({
+    this.productId,
     required this.barcode,
     required this.productName,
     required this.brand,
@@ -27,7 +29,11 @@ class Product {
     this.nutritionFacts,
     this.imageUrl,
     this.fetchedAt,
-  });
+  }) {
+    if (productId != null && productId! <= 0) {
+      throw RangeError.value(productId!, 'productId', 'Must be positive');
+    }
+  }
 
   factory Product.fromJson(Map<String, dynamic> json) {
     final barcodeValue = (json['barcode'] ?? '').toString();
@@ -38,6 +44,7 @@ class Product {
     final categoryValue = (json['category'] ?? 'food').toString();
 
     return Product(
+      productId: _positiveProductId(json['id'] ?? json['product_id']),
       barcode: barcodeValue,
       productName: productNameValue,
       brand: brandValue,
@@ -65,6 +72,7 @@ class Product {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': productId,
       'barcode': barcode,
       'product_name': productName,
       'brand': brand,
@@ -81,7 +89,12 @@ class Product {
   }
 
   @override
-  String toString() => 'Product(barcode: $barcode, productName: $productName)';
+  String toString() => 'Product(productId: $productId, barcode: $barcode, '
+      'productName: $productName)';
+}
+
+int? _positiveProductId(Object? value) {
+  return value is int && value > 0 ? value : null;
 }
 
 class NutritionFacts {

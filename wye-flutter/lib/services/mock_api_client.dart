@@ -9,6 +9,7 @@ class MockApiClient extends ApiClient {
   /// Mock database di prodotti per testing
   static final Map<String, Product> mockDatabase = {
     '8718206112001': Product(
+      productId: 1001,
       barcode: '8718206112001',
       productName: 'Nutella',
       brand: 'Ferrero',
@@ -38,6 +39,7 @@ class MockApiClient extends ApiClient {
       allergens: ['Nocciole', 'Latte', 'Soia'],
     ),
     '5901234123457': Product(
+      productId: 1002,
       barcode: '5901234123457',
       productName: 'Biscotti al Cioccolato',
       brand: 'Brand Test 1',
@@ -65,6 +67,7 @@ class MockApiClient extends ApiClient {
       allergens: ['Glutine', 'Uova', 'Latte'],
     ),
     '4006381333931': Product(
+      productId: 1003,
       barcode: '4006381333931',
       productName: 'Snack Salato',
       brand: 'Brand Test 2',

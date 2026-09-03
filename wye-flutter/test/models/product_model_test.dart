@@ -3,6 +3,14 @@ import 'package:wye/models/product_model.dart';
 import 'package:wye/models/score_evaluability_model.dart';
 
 void main() {
+  test('positive product id remains distinct from barcode', () {
+    final product = Product.fromJson({..._productJson(), 'id': 73});
+
+    expect(product.productId, 73);
+    expect(product.barcode, 'fixture-product');
+    expect(product.toJson()['id'], 73);
+  });
+
   group('Product score parsing', () {
     test('missing component scores remain not_computable instead of zero', () {
       final product = Product.fromJson(_productJson());

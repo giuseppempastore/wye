@@ -255,12 +255,20 @@ a separately reviewed mobile facade/session exists.
 The mobile-boundary decision is recorded in
 `WYE_PHASE_8_MOBILE_UPLOAD_FACADE_DECISION.md`. Option A, a dev-only FastAPI
 facade, was approved on 2026-09-03 for local/dev MVP integration and real-device
-test preparation only. Phase 8.5.4 now implements the backend-only,
+test preparation only. Phase 8.5.4 implements the committed backend,
 disabled-by-default `/mobile/dev/v1/capture` facade with short-lived scoped
 Bearer capabilities. Its dev-only store is process-local, so backend restart
-invalidates all tokens and multi-worker sessions are unsupported. Review/commit
-and Flutter integration remain separate; scoring, production deployment,
-public release, and mobile-embedded secrets remain unauthorized.
+invalidates all tokens and multi-worker sessions are unsupported.
+
+Phase 8.5.5 now implements the Flutter integration boundary behind
+`WYE_MOBILE_UPLOAD_ENABLED`, default `false`. It includes typed capture/upload
+DTOs, in-memory token handling, FastAPI initialize/finalize calls, exact-byte
+presigned PUT, redacted events, and a Provider-backed state machine. The client
+never sends `X-WYE-Image-Key`, never logs the Bearer token or full presigned URL,
+and never invokes legacy image analysis or scoring from the new path. The real
+SHA-256 adapter, token-entry/UI hook, extraction calls, and physical-device E2E
+remain follow-ups. Scoring, production deployment, public release, and
+mobile-embedded secrets remain unauthorized.
 
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
@@ -302,33 +310,38 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.5.4.1 — review and commit the dev-only, mobile-safe FastAPI facade and
-its scoped authorization boundary before any Flutter integration.
+Phase 8.5.5.1 — review and commit the default-off Flutter capture/upload
+integration boundary before adding the real SHA-256 adapter or UI/E2E wiring.
 ```
 
-The review must verify the default-off feature flag, server-side operator
-authorization, hashed TTL-bound mobile capabilities, upload/extraction scope,
-safe structured errors/logs, service reuse, and focused fake-service tests. The
-following Flutter integration phase must validate both `API_BASE_URL` and the
-presigned storage host before a separately authorized real-phone run. Neither
-phase may enable scoring, introduce an overall number, authorize production or
-release, or fall back to legacy base64/analysis paths.
+The review must verify the default-off Flutter flag, in-memory capability
+handling, distinct product/image/storage identities, FastAPI control-plane
+routes, token-free presigned PUT, safe structured errors/events, explicit
+SHA-256/UI/extraction follow-ups, and focused fake-transport tests. A later
+authorized device phase must validate both `API_BASE_URL` and the presigned
+storage host before any real-phone run. No phase may enable scoring, introduce
+an overall number, authorize production or release, or fall back to legacy
+base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.5.4 dev/local mobile upload facade implementation
-    prior_verdict: READY_FOR_PHASE_8_5_4_MOBILE_FACADE_IMPLEMENTATION
+    checkpoint: Phase 8.5.5 Flutter capture/upload integration
+    prior_verdict: READY_FOR_PHASE_8_5_5_FLUTTER_CAPTURE_UPLOAD_INTEGRATION
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
-    feature_flag: WYE_MOBILE_UPLOAD_FACADE_ENABLED — DEFAULT FALSE
-    backend_dev_implementation: IMPLEMENTED — REVIEW AND COMMIT PENDING
-    flutter_runtime_implementation: NONE
-    next_recommended_subphase: Phase 8.5.4.1 review and commit mobile facade
+    backend_feature_flag: WYE_MOBILE_UPLOAD_FACADE_ENABLED — DEFAULT FALSE
+    flutter_feature_flag: WYE_MOBILE_UPLOAD_ENABLED — DEFAULT FALSE
+    backend_dev_implementation: IMPLEMENTED AND COMMITTED
+    flutter_runtime_implementation: IMPLEMENTED — REVIEW AND COMMIT PENDING
+    flutter_token_storage: IN-MEMORY ONLY
+    runtime_sha256_adapter: BLOCKED PENDING DEPENDENCY AUTHORIZATION
+    flutter_ui_and_extraction: DEFERRED
+    next_recommended_subphase: Phase 8.5.5.1 review and commit Flutter integration
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: DEV/LOCAL BACKEND FACADE ONLY
+    implementation_completed_by_this_checkpoint: DEFAULT-OFF FLUTTER SERVICE/STATE BOUNDARY
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -336,5 +349,5 @@ release, or fall back to legacy base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_5_4_1_REVIEW_AND_COMMIT
+READY_FOR_PHASE_8_5_5_1_REVIEW_AND_COMMIT
 ```

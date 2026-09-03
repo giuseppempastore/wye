@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'config/mobile_upload_config.dart';
+import 'models/capture_upload_models.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
 import 'services/api_client.dart';
+import 'services/capture_upload_gateway.dart';
+import 'services/http_capture_upload_gateway.dart';
 import 'services/database_service.dart';
 import 'providers/app_providers.dart';
+import 'providers/capture_upload_controller.dart';
 
 void main() async {
   // Inizializza database
@@ -24,8 +30,21 @@ class WyeApp extends StatefulWidget {
 }
 
 class _WyeAppState extends State<WyeApp> {
+  late final MobileUploadConfig _mobileUploadConfig;
+  final InMemoryMobileUploadTokenProvider _mobileTokenProvider =
+      InMemoryMobileUploadTokenProvider();
+
+  @override
+  void initState() {
+    super.initState();
+    _mobileUploadConfig = MobileUploadConfig.fromEnvironment(
+      apiBaseUrl: ApiConfig.baseUrl,
+    );
+  }
+
   @override
   void dispose() {
+    _mobileTokenProvider.clear();
     widget.databaseService.close();
     super.dispose();
   }
@@ -36,6 +55,19 @@ class _WyeAppState extends State<WyeApp> {
       providers: [
         // API Client
         Provider<ApiClient>(create: (_) => ApiClient()),
+
+        Provider<MobileUploadConfig>.value(value: _mobileUploadConfig),
+        Provider<InMemoryMobileUploadTokenProvider>.value(
+          value: _mobileTokenProvider,
+        ),
+        Provider<CaptureUploadGateway>(
+          create: (_) => HttpCaptureUploadGateway(
+            client: http.Client(),
+            config: _mobileUploadConfig,
+            tokenProvider: _mobileTokenProvider,
+          ),
+          dispose: (_, gateway) => gateway.close(),
+        ),
 
         // Database Service
         Provider<DatabaseService>(create: (_) => widget.databaseService),
@@ -50,6 +82,14 @@ class _WyeAppState extends State<WyeApp> {
         ChangeNotifierProvider(
           create: (context) =>
               BarcodeScannerProvider(context.read<ApiClient>()),
+        ),
+
+        ChangeNotifierProvider(
+          create: (context) => CaptureUploadController(
+            config: _mobileUploadConfig,
+            tokenProvider: _mobileTokenProvider,
+            gateway: context.read<CaptureUploadGateway>(),
+          ),
         ),
       ],
       child: MaterialApp.router(
