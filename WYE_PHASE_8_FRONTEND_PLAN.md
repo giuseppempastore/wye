@@ -241,6 +241,11 @@ claims.
 | 8.7 | Integration hardening | Versioned API contracts, authentication/authorization boundary, error semantics, idempotency, retries, accessibility, and tests |
 | 8.8 | Final UX/checkpoint review | Product, governance, and claim/disclosure review before seeking any runtime or release authorization |
 
+The detailed Phase 8.5 product-identity, binary-upload, finalization,
+provenance, extraction-recovery, mobile-security, and Phase 8.6 logging contract
+is recorded in `WYE_PHASE_8_CAPTURE_UPLOAD_FLOW.md`. That artifact is a
+specification only and does not authorize frontend or backend implementation.
+
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
 
