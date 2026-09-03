@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../models/product_model.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
-import '../widgets/score_widgets.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -55,13 +54,12 @@ class HistoryScreen extends StatelessWidget {
             itemCount: provider.scanHistory.length,
             itemBuilder: (context, index) {
               final scan = provider.scanHistory[index];
-              final color = getScoreColor(scan.finalScore);
 
               return Card(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  leading: _buildHistoryImage(scan, color),
+                  leading: _buildHistoryImage(context, scan),
                   title: Text(
                     scan.productName,
                     style: AppTypography.bodyLarge,
@@ -128,7 +126,7 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHistoryImage(ScanHistory scan, Color color) {
+  Widget _buildHistoryImage(BuildContext context, ScanHistory scan) {
     if (scan.imageUrl != null && scan.imageUrl!.startsWith('data:image')) {
       final bytes = const Base64Codec().decode(scan.imageUrl!.split(',').last);
       return ClipRRect(
@@ -142,22 +140,20 @@ class HistoryScreen extends StatelessWidget {
       );
     }
 
+    final neutralColor = Theme.of(context).colorScheme.outline;
+
     return Container(
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: neutralColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color, width: 2),
+        border: Border.all(color: neutralColor),
       ),
       child: Center(
-        child: Text(
-          '${scan.finalScore.toStringAsFixed(0)}',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+        child: Icon(
+          Icons.info_outline,
+          color: neutralColor,
         ),
       ),
     );

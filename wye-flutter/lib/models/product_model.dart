@@ -1,13 +1,12 @@
+import 'score_evaluability_model.dart';
+
 class Product {
   final String barcode;
   final String productName;
   final String brand;
   final String category;
-  final double ingredientScore;
-  final double? nutritionScore;
-  final double finalScore;
+  final ProductScoreView scoreView;
   final double? riskIndex; // 0-100 numeric danger index
-  final String riskLevel;
   final List<String> ingredients;
   final List<String> allergens;
   final List<String> dangerousSubstances;
@@ -20,11 +19,8 @@ class Product {
     required this.productName,
     required this.brand,
     required this.category,
-    required this.ingredientScore,
-    this.nutritionScore,
+    required this.scoreView,
     this.riskIndex,
-    required this.finalScore,
-    required this.riskLevel,
     required this.ingredients,
     required this.allergens,
     this.dangerousSubstances = const [],
@@ -35,8 +31,10 @@ class Product {
 
   factory Product.fromJson(Map<String, dynamic> json) {
     final barcodeValue = (json['barcode'] ?? '').toString();
-    final productNameValue = (json['product_name'] ?? json['name'] ?? 'Unnamed product').toString();
-    final brandValue = (json['brand'] ?? json['brand_name'] ?? 'Unknown Brand').toString();
+    final productNameValue =
+        (json['product_name'] ?? json['name'] ?? 'Unnamed product').toString();
+    final brandValue =
+        (json['brand'] ?? json['brand_name'] ?? 'Unknown Brand').toString();
     final categoryValue = (json['category'] ?? 'food').toString();
 
     return Product(
@@ -44,17 +42,16 @@ class Product {
       productName: productNameValue,
       brand: brandValue,
       category: categoryValue,
-      ingredientScore: (json['ingredient_score'] as num? ?? 0).toDouble(),
-      nutritionScore: json['nutrition_score'] != null
-          ? (json['nutrition_score'] as num).toDouble()
-          : null,
-      finalScore: (json['final_score'] as num? ?? 0).toDouble(),
-      riskLevel: (json['risk_level'] ?? 'unknown').toString(),
+      scoreView: _scoreViewFromJson(json),
       ingredients: json['ingredients'] is List
-          ? List<String>.from((json['ingredients'] as List).map((e) => e.toString()))
+          ? List<String>.from(
+              (json['ingredients'] as List).map((e) => e.toString()))
           : const [],
       allergens: List<String>.from(json['allergens'] as List? ?? []),
-      dangerousSubstances: List<String>.from(json['dangerous_substances'] as List? ?? json['hazardous_substances'] as List? ?? []),
+      dangerousSubstances: List<String>.from(
+          json['dangerous_substances'] as List? ??
+              json['hazardous_substances'] as List? ??
+              []),
       nutritionFacts: json['nutrition_facts'] != null
           ? NutritionFacts.fromJson(json['nutrition_facts'])
           : null,
@@ -72,11 +69,8 @@ class Product {
       'product_name': productName,
       'brand': brand,
       'category': category,
-      'ingredient_score': ingredientScore,
+      'score_view': scoreView.toJson(),
       'risk_index': riskIndex,
-      'nutrition_score': nutritionScore,
-      'final_score': finalScore,
-      'risk_level': riskLevel,
       'ingredients': ingredients,
       'nutrition_facts': nutritionFacts?.toJson(),
       'allergens': allergens,
@@ -145,7 +139,7 @@ class NutritionFacts {
 class ScanHistory {
   final String barcode;
   final String productName;
-  final double finalScore;
+  final ProductScoreView scoreView;
   final DateTime scannedAt;
   final String category;
   final String? imageUrl;
@@ -153,7 +147,7 @@ class ScanHistory {
   ScanHistory({
     required this.barcode,
     required this.productName,
-    required this.finalScore,
+    required this.scoreView,
     required this.scannedAt,
     required this.category,
     this.imageUrl,
@@ -163,7 +157,7 @@ class ScanHistory {
     return ScanHistory(
       barcode: product.barcode,
       productName: product.productName,
-      finalScore: product.finalScore,
+      scoreView: product.scoreView,
       scannedAt: DateTime.now(),
       category: product.category,
       imageUrl: product.imageUrl,
@@ -174,7 +168,7 @@ class ScanHistory {
     return ScanHistory(
       barcode: json['barcode'] as String,
       productName: json['product_name'] as String,
-      finalScore: (json['final_score'] as num).toDouble(),
+      scoreView: _scoreViewFromJson(json),
       scannedAt: DateTime.parse(json['scanned_at'] as String),
       category: json['category'] as String,
       imageUrl: json['image_url'] as String?,
@@ -185,12 +179,30 @@ class ScanHistory {
     return {
       'barcode': barcode,
       'product_name': productName,
-      'final_score': finalScore,
+      'score_view': scoreView.toJson(),
       'scanned_at': scannedAt.toIso8601String(),
       'category': category,
       'image_url': imageUrl,
     };
   }
+}
+
+ProductScoreView _scoreViewFromJson(Map<String, dynamic> json) {
+  final nestedScoreView = json['score_view'];
+  if (nestedScoreView is Map) {
+    return ProductScoreView.fromJson(
+      Map<String, dynamic>.from(nestedScoreView),
+    );
+  }
+
+  final hasTypedTopLevelScore = json['ingredient_goodness_percent'] is Map &&
+      json['nutrition_goodness_percent'] is Map &&
+      json['overall_score'] is Map;
+  if (hasTypedTopLevelScore) {
+    return ProductScoreView.fromJson(json);
+  }
+
+  return ProductScoreView.unavailable();
 }
 
 // --- Consumption program models for Premium users ---
@@ -221,7 +233,8 @@ class ConsumptionProgram {
           ? DateTime.parse(json['end_date'] as String)
           : null,
       period: json['period'] as String,
-      trackedProductBarcodes: List<String>.from(json['tracked_product_barcodes'] as List? ?? []),
+      trackedProductBarcodes:
+          List<String>.from(json['tracked_product_barcodes'] as List? ?? []),
     );
   }
 
@@ -264,7 +277,9 @@ class ConsumptionEntry {
       productName: json['product_name'] as String,
       consumedAt: DateTime.parse(json['consumed_at'] as String),
       quantity: (json['quantity'] as num).toDouble(),
-      riskIndex: json['risk_index'] != null ? (json['risk_index'] as num).toDouble() : null,
+      riskIndex: json['risk_index'] != null
+          ? (json['risk_index'] as num).toDouble()
+          : null,
     );
   }
 
@@ -305,7 +320,8 @@ class ConsumptionSummary {
       periodType: json['period_type'] as String,
       itemCount: json['item_count'] as int,
       aggregatedRiskScore: (json['aggregated_risk_score'] as num).toDouble(),
-      itemBreakdown: Map<String, int>.from(json['item_breakdown'] as Map? ?? {}),
+      itemBreakdown:
+          Map<String, int>.from(json['item_breakdown'] as Map? ?? {}),
     );
   }
 

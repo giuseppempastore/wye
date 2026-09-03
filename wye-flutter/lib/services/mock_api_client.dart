@@ -2,6 +2,7 @@
 /// Utile quando il backend non è disponibile
 
 import '../models/product_model.dart';
+import '../models/score_evaluability_model.dart';
 import 'api_client.dart';
 
 class MockApiClient extends ApiClient {
@@ -12,10 +13,7 @@ class MockApiClient extends ApiClient {
       productName: 'Nutella',
       brand: 'Ferrero',
       category: 'food',
-      ingredientScore: 32,
-      nutritionScore: 65,
-      finalScore: 42,
-      riskLevel: 'moderate',
+      scoreView: _mockComponentScores(ingredient: 32, nutrition: 65),
       ingredients: [
         'Zucchero',
         'Olio di palma',
@@ -44,10 +42,7 @@ class MockApiClient extends ApiClient {
       productName: 'Biscotti al Cioccolato',
       brand: 'Brand Test 1',
       category: 'food',
-      ingredientScore: 55,
-      nutritionScore: 62,
-      finalScore: 58,
-      riskLevel: 'moderate',
+      scoreView: _mockComponentScores(ingredient: 55, nutrition: 62),
       ingredients: [
         'Farina di frumento',
         'Zucchero',
@@ -74,10 +69,7 @@ class MockApiClient extends ApiClient {
       productName: 'Snack Salato',
       brand: 'Brand Test 2',
       category: 'snack',
-      ingredientScore: 45,
-      nutritionScore: 55,
-      finalScore: 50,
-      riskLevel: 'moderate',
+      scoreView: _mockComponentScores(ingredient: 45, nutrition: 55),
       ingredients: [
         'Patate',
         'Olio vegetale',
@@ -115,33 +107,14 @@ class MockApiClient extends ApiClient {
     // Simula analisi
     await Future.delayed(const Duration(seconds: 1));
 
-    final ingredientList = ingredients
-        .split(',')
-        .map((i) => i.trim())
-        .toList();
-
-    // Mock scoring logic
-    final hasRiskyIngredients = ingredientList
-        .any((i) => i.toLowerCase().contains('conservante') ||
-            i.toLowerCase().contains('artificiale'));
-
-    final ingredientScore = hasRiskyIngredients ? 35 : 65;
-    final nutritionScore = category == 'food' ? 60 : 0;
-    final finalScore = ((ingredientScore * 0.6) + (nutritionScore * 0.4)).toInt().toDouble();
+    final ingredientList = ingredients.split(',').map((i) => i.trim()).toList();
 
     return Product(
       barcode: 'mock_${DateTime.now().millisecondsSinceEpoch}',
       productName: productName,
       brand: 'Mock Brand',
       category: category ?? 'food',
-      ingredientScore: ingredientScore.toDouble(),
-      nutritionScore: category == 'food' ? nutritionScore.toDouble() : null,
-      finalScore: finalScore,
-      riskLevel: finalScore < 40
-          ? 'high'
-          : finalScore < 60
-              ? 'moderate'
-              : 'low',
+      scoreView: ProductScoreView.unavailable(),
       ingredients: ingredientList,
       allergens: [],
     );
@@ -153,4 +126,19 @@ class MockApiClient extends ApiClient {
     await Future.delayed(const Duration(milliseconds: 200));
     return true;
   }
+}
+
+ProductScoreView _mockComponentScores({
+  required int ingredient,
+  required int nutrition,
+}) {
+  return ProductScoreView(
+    ingredientGoodnessPercent: ScoreEvaluation.computable(
+      scoreValue: ingredient,
+    ),
+    nutritionGoodnessPercent: ScoreEvaluation.computable(
+      scoreValue: nutrition,
+    ),
+    overallScore: OverallScoreState.deferred(),
+  );
 }

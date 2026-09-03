@@ -126,6 +126,63 @@ class ScoreEvaluation {
     }
   }
 
+  factory ScoreEvaluation.computable({
+    required int scoreValue,
+    int? assessmentCoveragePercent,
+    String? confidenceState,
+    List<AssessmentDetail> missingInputs = const [],
+    List<AssessmentDetail> uncertainties = const [],
+    List<AssessmentDetail> explanations = const [],
+    List<AssessmentDetail> disclosures = const [],
+  }) {
+    return ScoreEvaluation(
+      evaluabilityStatus: EvaluabilityStatus.computable,
+      scoreValue: scoreValue,
+      assessmentCoveragePercent: assessmentCoveragePercent,
+      confidenceState: confidenceState,
+      missingInputs: missingInputs,
+      uncertainties: uncertainties,
+      explanations: explanations,
+      disclosures: disclosures,
+    );
+  }
+
+  factory ScoreEvaluation.notComputable({
+    int? assessmentCoveragePercent,
+    String? confidenceState,
+    List<AssessmentDetail> missingInputs = const [],
+    List<AssessmentDetail> uncertainties = const [],
+    List<AssessmentDetail> explanations = const [],
+    List<AssessmentDetail> disclosures = const [],
+  }) {
+    return ScoreEvaluation(
+      evaluabilityStatus: EvaluabilityStatus.notComputable,
+      scoreValue: null,
+      assessmentCoveragePercent: assessmentCoveragePercent,
+      confidenceState: confidenceState,
+      missingInputs: missingInputs,
+      uncertainties: uncertainties,
+      explanations: explanations,
+      disclosures: disclosures,
+    );
+  }
+
+  factory ScoreEvaluation.nonApplicable({
+    int? assessmentCoveragePercent,
+    String? confidenceState,
+    List<AssessmentDetail> explanations = const [],
+    List<AssessmentDetail> disclosures = const [],
+  }) {
+    return ScoreEvaluation(
+      evaluabilityStatus: EvaluabilityStatus.nonApplicable,
+      scoreValue: null,
+      assessmentCoveragePercent: assessmentCoveragePercent,
+      confidenceState: confidenceState,
+      explanations: explanations,
+      disclosures: disclosures,
+    );
+  }
+
   factory ScoreEvaluation.fromJson(Map<String, dynamic> json) {
     final rawStatus = json['evaluability_status'];
     if (rawStatus is! String) {
@@ -221,6 +278,17 @@ class OverallScoreState {
   })  : explanations = List.unmodifiable(explanations),
         disclosures = List.unmodifiable(disclosures);
 
+  factory OverallScoreState.deferred({
+    List<AssessmentDetail> explanations = const [],
+    List<AssessmentDetail> disclosures = const [],
+  }) {
+    return OverallScoreState(
+      availability: OverallScoreAvailability.deferred,
+      explanations: explanations,
+      disclosures: disclosures,
+    );
+  }
+
   factory OverallScoreState.fromJson(Map<String, dynamic> json) {
     for (final prohibitedField in const [
       'score_value',
@@ -262,6 +330,14 @@ class ProductScoreView {
     required this.nutritionGoodnessPercent,
     required this.overallScore,
   });
+
+  factory ProductScoreView.unavailable() {
+    return ProductScoreView(
+      ingredientGoodnessPercent: ScoreEvaluation.notComputable(),
+      nutritionGoodnessPercent: ScoreEvaluation.notComputable(),
+      overallScore: OverallScoreState.deferred(),
+    );
+  }
 
   factory ProductScoreView.fromJson(Map<String, dynamic> json) {
     return ProductScoreView(

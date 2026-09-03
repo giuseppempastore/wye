@@ -163,7 +163,8 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
                   prefixIcon: const Icon(Icons.category),
                 ),
                 items: [
-                  const DropdownMenuItem(value: 'food', child: Text('Alimento')),
+                  const DropdownMenuItem(
+                      value: 'food', child: Text('Alimento')),
                   const DropdownMenuItem(
                     value: 'beverage',
                     child: Text('Bevanda'),
@@ -283,9 +284,7 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
                       ),
                       const SizedBox(height: 16),
                       ScoreCard(
-                        score: product.finalScore,
-                        ingredientScore: product.ingredientScore,
-                        nutritionScore: product.nutritionScore,
+                        scoreView: product.scoreView,
                       ),
                       const SizedBox(height: 24),
 

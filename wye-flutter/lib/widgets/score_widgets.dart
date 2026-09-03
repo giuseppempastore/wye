@@ -1,159 +1,89 @@
 import 'package:flutter/material.dart';
+import '../models/score_evaluability_model.dart';
 import '../theme/app_theme.dart';
 
-/// Score Card - Mostra lo score finale con colore dinamico
+/// Component score container. Overall scoring remains unavailable/deferred.
 class ScoreCard extends StatelessWidget {
-  final double score;
-  final String? band;
-  final double? ingredientScore;
-  final double? nutritionScore;
+  final ProductScoreView scoreView;
   final VoidCallback? onTap;
 
   const ScoreCard({
     Key? key,
-    required this.score,
-    this.band,
-    this.ingredientScore,
-    this.nutritionScore,
+    required this.scoreView,
     this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final color = getScoreColor(score);
-    final bandName = band ?? getScoreBand(score);
+    final ingredient = scoreView.ingredientGoodnessPercent;
+    final nutrition = scoreView.nutritionGoodnessPercent;
+    final hasIngredientScore =
+        ingredient.evaluabilityStatus == EvaluabilityStatus.computable;
+    final hasNutritionScore =
+        nutrition.evaluabilityStatus == EvaluabilityStatus.computable;
+    final neutralColor = Theme.of(context).colorScheme.outline;
 
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 4,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: color, width: 2),
+          side: BorderSide(color: neutralColor),
         ),
-        child: Container(
+        child: Padding(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                color.withOpacity(0.1),
-                color.withOpacity(0.05),
-              ],
-            ),
-          ),
           child: Column(
             children: [
-              // Score principale
-              SizedBox(
-                height: 120,
-                width: 120,
-                child: Stack(
-                  children: [
-                    // Background circle
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: color.withOpacity(0.1),
-                      ),
-                    ),
-                    // Score text
-                    Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            '${score.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: color,
-                            ),
-                          ),
-                          Text(
-                            '/100',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: color.withOpacity(0.7),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Circle border
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: color,
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Band name
-              Text(
-                bandName,
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Ingredient e Nutrition scores (se disponibili)
-              if (ingredientScore != null || nutritionScore != null)
+              if (hasIngredientScore || hasNutritionScore)
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    if (ingredientScore != null)
-                      Column(
-                        children: [
-                          Text(
-                            'Ingredienti',
-                            style: AppTypography.labelSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${ingredientScore!.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: getScoreColor(ingredientScore!),
-                            ),
-                          ),
-                        ],
+                    if (hasIngredientScore)
+                      _ComponentScore(
+                        label: 'Ingredienti',
+                        value: ingredient.scoreValue!,
                       ),
-                    if (nutritionScore != null)
-                      Column(
-                        children: [
-                          Text(
-                            'Nutrizione',
-                            style: AppTypography.labelSmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${nutritionScore!.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: getScoreColor(nutritionScore!),
-                            ),
-                          ),
-                        ],
+                    if (hasNutritionScore)
+                      _ComponentScore(
+                        label: 'Nutrizione',
+                        value: nutrition.scoreValue!,
                       ),
                   ],
                 ),
+              if (!hasIngredientScore && !hasNutritionScore)
+                Icon(Icons.info_outline, color: neutralColor),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ComponentScore extends StatelessWidget {
+  final String label;
+  final int value;
+
+  const _ComponentScore({
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(label, style: AppTypography.labelSmall),
+        const SizedBox(height: 4),
+        Text(
+          '$value',
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -250,9 +180,8 @@ class AllergenBadge extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isUserSensitive
-                  ? AppColors.riskCritical
-                  : AppColors.riskHigh,
+              color:
+                  isUserSensitive ? AppColors.riskCritical : AppColors.riskHigh,
             ),
           ),
         ],
@@ -272,7 +201,8 @@ class LoadingShimmer extends StatelessWidget {
     this.height = 20,
     this.width = double.infinity,
     BorderRadius? borderRadius,
-  })  : borderRadius = borderRadius ?? const BorderRadius.all(Radius.circular(8)),
+  })  : borderRadius =
+            borderRadius ?? const BorderRadius.all(Radius.circular(8)),
         super(key: key);
 
   @override

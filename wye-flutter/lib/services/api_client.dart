@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:flutter/foundation.dart';
 import '../models/product_model.dart';
+import '../models/score_evaluability_model.dart';
+
 class ApiConfig {
   // Override opzionale:
   // flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000
@@ -48,8 +50,8 @@ class ApiClient {
 
       final response = await _client
           .get(
-            Uri.parse('${ApiConfig.baseUrl}/product/$barcode'),
-          )
+        Uri.parse('${ApiConfig.baseUrl}/product/$barcode'),
+      )
           .timeout(ApiConfig.connectionTimeout, onTimeout: () {
         throw TimeoutException(
             'Backend non risponde. Verifica la connessione.');
@@ -140,27 +142,31 @@ class ApiClient {
         'ingredients': ingredients,
         'nutrition': nutritionFacts ?? {},
         'source': source,
-        if (imageUrl != null && imageUrl.trim().isNotEmpty) 'image_url': imageUrl.trim(),
-        if (ingredientImageUrl != null && ingredientImageUrl.trim().isNotEmpty) 'ingredient_image_url': ingredientImageUrl.trim(),
-        if (nutritionImageUrl != null && nutritionImageUrl.trim().isNotEmpty) 'nutrition_image_url': nutritionImageUrl.trim(),
+        if (imageUrl != null && imageUrl.trim().isNotEmpty)
+          'image_url': imageUrl.trim(),
+        if (ingredientImageUrl != null && ingredientImageUrl.trim().isNotEmpty)
+          'ingredient_image_url': ingredientImageUrl.trim(),
+        if (nutritionImageUrl != null && nutritionImageUrl.trim().isNotEmpty)
+          'nutrition_image_url': nutritionImageUrl.trim(),
       };
 
       final response = await _client
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/products'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          )
+        Uri.parse('${ApiConfig.baseUrl}/products'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      )
           .timeout(ApiConfig.connectionTimeout, onTimeout: () {
-            throw TimeoutException('Creazione prodotto timeout - riprova');
-          });
+        throw TimeoutException('Creazione prodotto timeout - riprova');
+      });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
         final productData = jsonData['product'] as Map<String, dynamic>? ?? {};
 
         if (productData.isEmpty) {
-          throw ApiException('Risposta del server vuota durante la creazione prodotto');
+          throw ApiException(
+              'Risposta del server vuota durante la creazione prodotto');
         }
 
         final product = Product.fromJson(productData);
@@ -204,10 +210,10 @@ class ApiClient {
 
       final response = await _client
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/analyze'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(payload),
-          )
+        Uri.parse('${ApiConfig.baseUrl}/analyze'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(payload),
+      )
           .timeout(ApiConfig.connectionTimeout, onTimeout: () {
         throw TimeoutException('Analisi timeout - riprova');
       });
@@ -220,15 +226,15 @@ class ApiClient {
 
           // Caso backend scoring.py: ritorna score/verdict/warnings
           if (jsonData.containsKey('score') &&
-              !jsonData.containsKey('final_score')) {
+              jsonData['ingredients'] is List) {
             final product = _mapAnalyzeResponseToProduct(jsonData);
-            _logger.i('✅ Analysis complete: ${product.finalScore}');
+            _logger.i('✅ Legacy analysis response mapped without score');
             return product;
           }
 
           // Caso API già nel formato app
           final product = Product.fromJson(jsonData);
-          _logger.i('✅ Analysis complete: ${product.finalScore}');
+          _logger.i('✅ Analysis response parsed');
           return product;
         } catch (e) {
           _logger.e('❌ JSON parse error: $e');
@@ -236,7 +242,8 @@ class ApiClient {
         }
       } else if (response.statusCode == 400) {
         _logger.e('❌ Bad request: ${response.body}');
-        throw ApiException('Dati non validi. Controlla gli ingredienti inseriti.');
+        throw ApiException(
+            'Dati non validi. Controlla gli ingredienti inseriti.');
       } else {
         throw ApiException(
             'Errore nell\'analisi (${response.statusCode}): ${response.body}');
@@ -257,13 +264,13 @@ class ApiClient {
     try {
       final response = await _client
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/normalize-photo'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'raw_text': rawText}),
-          )
+        Uri.parse('${ApiConfig.baseUrl}/normalize-photo'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'raw_text': rawText}),
+      )
           .timeout(ApiConfig.connectionTimeout, onTimeout: () {
-            throw TimeoutException('Normalizzazione OCR timeout - riprova');
-          });
+        throw TimeoutException('Normalizzazione OCR timeout - riprova');
+      });
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
@@ -273,7 +280,8 @@ class ApiClient {
           'product_name': jsonData['product_name'] ?? jsonData['name'] ?? '',
           'brand_name': jsonData['brand_name'] ?? jsonData['brand'] ?? '',
           'category': jsonData['category'] ?? 'food',
-          'product_type': jsonData['product_type'] ?? jsonData['type'] ?? 'snack',
+          'product_type':
+              jsonData['product_type'] ?? jsonData['type'] ?? 'snack',
         };
       }
 
@@ -295,19 +303,20 @@ class ApiClient {
   }) async {
     try {
       _logger.i('📤 POST ${ApiConfig.baseUrl}/analyze-image');
-      _logger.d('Payload: imageUrl length=${imageUrl.length}, rawText length=${rawText?.length ?? 0}');
+      _logger.d(
+          'Payload: imageUrl length=${imageUrl.length}, rawText length=${rawText?.length ?? 0}');
       final response = await _client
           .post(
-            Uri.parse('${ApiConfig.baseUrl}/analyze-image'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'image_url': imageUrl,
-              if (rawText != null && rawText.trim().isNotEmpty) 'raw_text': rawText,
-            }),
-          )
+        Uri.parse('${ApiConfig.baseUrl}/analyze-image'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'image_url': imageUrl,
+          if (rawText != null && rawText.trim().isNotEmpty) 'raw_text': rawText,
+        }),
+      )
           .timeout(ApiConfig.connectionTimeout, onTimeout: () {
-            throw TimeoutException('Analisi immagine timeout - riprova');
-          });
+        throw TimeoutException('Analisi immagine timeout - riprova');
+      });
 
       _logger.i('Response status: ${response.statusCode}');
       _logger.d('Response body: ${response.body}');
@@ -320,7 +329,8 @@ class ApiClient {
           'product_name': jsonData['product_name'] ?? jsonData['name'] ?? '',
           'brand_name': jsonData['brand_name'] ?? jsonData['brand'] ?? '',
           'category': jsonData['category'] ?? 'food',
-          'product_type': jsonData['product_type'] ?? jsonData['type'] ?? 'snack',
+          'product_type':
+              jsonData['product_type'] ?? jsonData['type'] ?? 'snack',
         };
       }
 
@@ -360,13 +370,14 @@ class ApiClient {
   }
 }
 
-Product _mapDbProductResponse(Map<String, dynamic> jsonData, String fallbackBarcode) {
+Product _mapDbProductResponse(
+    Map<String, dynamic> jsonData, String fallbackBarcode) {
   final productData = (jsonData['product'] as Map<String, dynamic>? ?? {});
-  final scoreData = (jsonData['score'] as Map<String, dynamic>? ?? {});
   final ingredientsData = (jsonData['ingredients'] as List<dynamic>? ?? []);
 
   final ingredients = ingredientsData
-      .map((e) => (e as Map<String, dynamic>)['canonical_name']?.toString() ??
+      .map((e) =>
+          (e as Map<String, dynamic>)['canonical_name']?.toString() ??
           e['raw_name']?.toString() ??
           '')
       .where((e) => e.isNotEmpty)
@@ -374,31 +385,31 @@ Product _mapDbProductResponse(Map<String, dynamic> jsonData, String fallbackBarc
 
   final allergens = ingredientsData
       .where((e) => (e as Map<String, dynamic>)['allergen_flag'] == true)
-      .map((e) => (e as Map<String, dynamic>)['canonical_name']?.toString() ?? 'allergen')
+      .map((e) =>
+          (e as Map<String, dynamic>)['canonical_name']?.toString() ??
+          'allergen')
       .toSet()
       .toList();
 
   final dangerousSubstances = ingredientsData
-      .where((e) => (e as Map<String, dynamic>)['risky_flag'] == true ||
-          (e['risk_level'] != null && ['high','critical'].contains(e['risk_level'].toString().toLowerCase())))
-      .map((e) => (e as Map<String, dynamic>)['canonical_name']?.toString() ?? e['raw_name']?.toString() ?? 'sostanza pericolosa')
+      .where((e) =>
+          (e as Map<String, dynamic>)['risky_flag'] == true ||
+          (e['risk_level'] != null &&
+              ['high', 'critical']
+                  .contains(e['risk_level'].toString().toLowerCase())))
+      .map((e) =>
+          (e as Map<String, dynamic>)['canonical_name']?.toString() ??
+          e['raw_name']?.toString() ??
+          'sostanza pericolosa')
       .toSet()
       .toList();
-
-  final ingredientScore =
-      (scoreData['ingredient_score'] as num?)?.toDouble() ?? 0.0;
-  final nutritionScore = (scoreData['nutrition_score'] as num?)?.toDouble();
-  final finalScore = (scoreData['final_score'] as num?)?.toDouble() ?? ingredientScore;
 
   return Product(
     barcode: productData['barcode']?.toString() ?? fallbackBarcode,
     productName: productData['product_name']?.toString() ?? 'Prodotto',
     brand: productData['brand_name']?.toString() ?? 'N/A',
     category: productData['category']?.toString() ?? 'food',
-    ingredientScore: ingredientScore,
-    nutritionScore: nutritionScore,
-    finalScore: finalScore,
-    riskLevel: scoreData['score_band']?.toString() ?? _riskLevelFromScore(finalScore),
+    scoreView: ProductScoreView.unavailable(),
     ingredients: ingredients,
     allergens: allergens,
     dangerousSubstances: dangerousSubstances,
@@ -407,7 +418,6 @@ Product _mapDbProductResponse(Map<String, dynamic> jsonData, String fallbackBarc
 }
 
 Product _mapAnalyzeResponseToProduct(Map<String, dynamic> jsonData) {
-  final score = (jsonData['score'] as num?)?.toDouble() ?? 0.0;
   final ingredientItems = (jsonData['ingredients'] as List<dynamic>? ?? []);
 
   final ingredients = ingredientItems
@@ -420,21 +430,10 @@ Product _mapAnalyzeResponseToProduct(Map<String, dynamic> jsonData) {
     productName: jsonData['product_name']?.toString() ?? 'Analisi manuale',
     brand: 'Manual Entry',
     category: 'food',
-    ingredientScore: score,
-    nutritionScore: null,
-    finalScore: score,
-    riskLevel: jsonData['score_label']?.toString() ?? _riskLevelFromScore(score),
+    scoreView: ProductScoreView.unavailable(),
     ingredients: ingredients,
     allergens: const [],
   );
-}
-
-String _riskLevelFromScore(double score) {
-  if (score < 25) return 'critical';
-  if (score < 40) return 'high';
-  if (score < 60) return 'moderate';
-  if (score < 80) return 'low';
-  return 'excellent';
 }
 
 // Custom Exceptions

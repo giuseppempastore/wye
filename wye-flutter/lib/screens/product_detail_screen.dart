@@ -28,7 +28,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _loadProduct() async {
     final provider = context.read<BarcodeScannerProvider>();
-    if (provider.currentProduct == null || provider.currentProduct!.barcode != widget.barcode) {
+    if (provider.currentProduct == null ||
+        provider.currentProduct!.barcode != widget.barcode) {
       await provider.scanBarcode(widget.barcode);
     }
   }
@@ -129,9 +130,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
                       // Score Card
                       ScoreCard(
-                        score: product.finalScore,
-                        ingredientScore: product.ingredientScore,
-                        nutritionScore: product.nutritionScore,
+                        scoreView: product.scoreView,
                       ),
                       const SizedBox(height: 24),
 
@@ -148,7 +147,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                for (int i = 0; i < product.ingredients.length; i++)
+                                for (int i = 0;
+                                    i < product.ingredients.length;
+                                    i++)
                                   Padding(
                                     padding: EdgeInsets.only(
                                       bottom: i < product.ingredients.length - 1
@@ -217,13 +218,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                for (int i = 0; i < product.dangerousSubstances.length; i++)
+                                for (int i = 0;
+                                    i < product.dangerousSubstances.length;
+                                    i++)
                                   Padding(
                                     padding: EdgeInsets.only(
-                                      bottom: i < product.dangerousSubstances.length - 1 ? 12 : 0,
+                                      bottom: i <
+                                              product.dangerousSubstances
+                                                      .length -
+                                                  1
+                                          ? 12
+                                          : 0,
                                     ),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Icon(
                                           Icons.warning_amber_rounded,
