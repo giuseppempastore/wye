@@ -3,7 +3,7 @@ import logging
 import os
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import requests
 from moto.server import ThreadedMotoServer
@@ -151,6 +151,41 @@ class MotoLocalS3ReadinessTests(unittest.TestCase):
         self.assertNotIn(target.url, captured_output)
         self.assertNotIn(read_url, captured_output)
         self.assertNotIn("X-Amz-", captured_output)
+
+
+class PublicStorageEndpointTests(unittest.TestCase):
+    def test_presigned_urls_use_public_endpoint_but_storage_uses_internal(self):
+        settings = StorageSettings(
+            provider="minio",
+            endpoint="http://minio:9000",
+            bucket="wye-mobile-local",
+            region="us-east-1",
+            access_key="local-test",
+            secret_key="local-test",
+            force_path_style=True,
+            upload_ttl=300,
+            read_ttl=300,
+            max_image_bytes=1024 * 1024,
+            cleanup_after=1800,
+            public_endpoint="http://192.168.1.10:9000",
+        )
+        internal_client = MagicMock()
+        public_client = MagicMock()
+        public_client.generate_presigned_url.return_value = (
+            "http://192.168.1.10:9000/wye-mobile-local/test.jpg?signature=safe"
+        )
+
+        with patch(
+            "app.storage.s3.boto3.client",
+            side_effect=[internal_client, public_client],
+        ) as client_factory:
+            adapter = S3StorageAdapter(settings)
+            upload = adapter.create_upload("test.jpg", "image/jpeg", 60)
+
+        self.assertEqual(client_factory.call_args_list[0].kwargs["endpoint_url"], "http://minio:9000")
+        self.assertEqual(client_factory.call_args_list[1].kwargs["endpoint_url"], "http://192.168.1.10:9000")
+        self.assertTrue(upload.url.startswith("http://192.168.1.10:9000/"))
+        internal_client.generate_presigned_url.assert_not_called()
 
 
 if __name__ == "__main__":

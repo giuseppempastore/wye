@@ -7,9 +7,12 @@ from .base import StorageAdapter, UploadTarget, ObjectMetadata
 class S3StorageAdapter(StorageAdapter):
     def __init__(self, settings):
         self.settings=settings
-        self.client=boto3.client("s3",endpoint_url=settings.endpoint,region_name=settings.region,aws_access_key_id=settings.access_key,aws_secret_access_key=settings.secret_key,config=Config(signature_version="s3v4",s3={"addressing_style":"path" if settings.force_path_style else "auto"}))
+        client_options={"region_name":settings.region,"aws_access_key_id":settings.access_key,"aws_secret_access_key":settings.secret_key,"config":Config(signature_version="s3v4",s3={"addressing_style":"path" if settings.force_path_style else "auto"})}
+        self.client=boto3.client("s3",endpoint_url=settings.endpoint,**client_options)
+        public_endpoint=getattr(settings,"public_endpoint",None) or settings.endpoint
+        self.signing_client=self.client if public_endpoint==settings.endpoint else boto3.client("s3",endpoint_url=public_endpoint,**client_options)
     def create_upload(self,key,mime_type,ttl):
-        url=self.client.generate_presigned_url("put_object",Params={"Bucket":self.settings.bucket,"Key":key,"ContentType":mime_type},ExpiresIn=ttl)
+        url=self.signing_client.generate_presigned_url("put_object",Params={"Bucket":self.settings.bucket,"Key":key,"ContentType":mime_type},ExpiresIn=ttl)
         return UploadTarget(url,{"Content-Type":mime_type},datetime.now(timezone.utc)+timedelta(seconds=ttl))
     def head_object(self,key):
         try: r=self.client.head_object(Bucket=self.settings.bucket,Key=key)
@@ -23,5 +26,5 @@ class S3StorageAdapter(StorageAdapter):
     def put_object(self,key,source,mime_type,sha256):
         source.seek(0); self.client.upload_fileobj(source,self.settings.bucket,key,ExtraArgs={"ContentType":mime_type,"Metadata":{"wye-sha256":sha256}})
         return self.head_object(key)
-    def generate_read_url(self,key,ttl): return self.client.generate_presigned_url("get_object",Params={"Bucket":self.settings.bucket,"Key":key},ExpiresIn=ttl)
+    def generate_read_url(self,key,ttl): return self.signing_client.generate_presigned_url("get_object",Params={"Bucket":self.settings.bucket,"Key":key},ExpiresIn=ttl)
     def delete_object(self,key): self.client.delete_object(Bucket=self.settings.bucket,Key=key)

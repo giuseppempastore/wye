@@ -1,0 +1,15 @@
+.git
+.idea
+.continue
+.venv
+backend/.venv
+backend/venv
+wye-flutter/.dart_tool
+wye-flutter/build
+test_evidence
+__pycache__
+*.pyc
+*.log
+.env
+.env.*
+!*.env.example

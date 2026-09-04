@@ -12,6 +12,12 @@ __pycache__/
 .coverage
 htmlcov/
 
+# Local Phase 9 device-test evidence (may contain private diagnostic logs)
+test_evidence/
+python-3.11-install*.log
+phase9-pip.*.log
+.local/
+
 # Local environment files; examples remain versioned
 .env
 .env.*

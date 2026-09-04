@@ -1,0 +1,101 @@
+name: wye-mobile
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${WYE_POSTGRES_USER:?missing WYE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${WYE_POSTGRES_PASSWORD:?missing WYE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${WYE_POSTGRES_DB:-wye}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - wye_mobile_postgres_v18:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${WYE_MINIO_ROOT_USER:?missing WYE_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${WYE_MINIO_ROOT_PASSWORD:?missing WYE_MINIO_ROOT_PASSWORD}
+    ports:
+      - "0.0.0.0:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - wye_mobile_minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${WYE_MINIO_ROOT_USER:?missing WYE_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${WYE_MINIO_ROOT_PASSWORD:?missing WYE_MINIO_ROOT_PASSWORD}
+      WYE_STORAGE_BUCKET: ${WYE_STORAGE_BUCKET:-wye-mobile-local}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}" >/dev/null &&
+        mc mb --ignore-existing "local/$${WYE_STORAGE_BUCKET}" >/dev/null &&
+        echo minio_bucket_ready
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.mobile
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${WYE_POSTGRES_USER:?missing WYE_POSTGRES_USER}
+      PGPASSWORD: ${WYE_POSTGRES_PASSWORD:?missing WYE_POSTGRES_PASSWORD}
+      PGDATABASE: ${WYE_POSTGRES_DB:-wye}
+      WYE_IMAGE_API_KEY: ${WYE_IMAGE_API_KEY:?missing WYE_IMAGE_API_KEY}
+      WYE_MOBILE_UPLOAD_FACADE_ENABLED: "true"
+      WYE_MOBILE_UPLOAD_FACADE_SESSION_TTL_SECONDS: "900"
+      WYE_RUNTIME_ENVIRONMENT: e2e
+      WYE_EXTRACTION_PROVIDER: fake
+      WYE_STORAGE_PROVIDER: minio
+      WYE_STORAGE_ENDPOINT: http://minio:9000
+      WYE_STORAGE_PUBLIC_ENDPOINT: http://${WYE_MOBILE_HOST_IP:?missing WYE_MOBILE_HOST_IP}:9000
+      WYE_STORAGE_BUCKET: ${WYE_STORAGE_BUCKET:-wye-mobile-local}
+      WYE_STORAGE_REGION: us-east-1
+      WYE_STORAGE_ACCESS_KEY: ${WYE_MINIO_ROOT_USER:?missing WYE_MINIO_ROOT_USER}
+      WYE_STORAGE_SECRET_KEY: ${WYE_MINIO_ROOT_PASSWORD:?missing WYE_MINIO_ROOT_PASSWORD}
+      WYE_STORAGE_FORCE_PATH_STYLE: "true"
+      WYE_STORAGE_UPLOAD_TTL_SECONDS: "900"
+      WYE_STORAGE_READ_TTL_SECONDS: "300"
+      WYE_STORAGE_MAX_IMAGE_BYTES: "15728640"
+      WYE_STORAGE_CLEANUP_AFTER_SECONDS: "1800"
+    ports:
+      - "0.0.0.0:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  wye_mobile_postgres_v18:
+  wye_mobile_minio:
