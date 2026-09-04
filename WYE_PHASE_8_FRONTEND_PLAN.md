@@ -341,6 +341,17 @@ required; LAN/phone reachability and the real-device flow remain unexecuted and
 require separate authorization. Scoring, production, and release remain
 unauthorized.
 
+Phase 8.6.4 records a sanitized postmortem of the first real-device HTTP 500
+and adds a standalone operator self-test guide. The retained evidence shows
+that the attempt used the legacy `/analyze-image` control path and failed in
+the external-provider analysis call before mobile upload initialization. It
+contains no evidence of a mobile initialize, binary PUT, finalize, extraction,
+or Moto failure, so the mobile facade remains unverified on a real device. The
+runbook and log template now require explicit `DEV_MOBILE_PANEL` route
+confirmation and treat any legacy analysis call as a stop condition. Phase
+8.6.4 performs no runtime change, endpoint call, repeated device run, scoring,
+production deployment, or release.
+
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
 
@@ -378,28 +389,27 @@ made safe before visual refinement or live backend integration.
 
 ## 9. Next implementation candidate
 
-The safest next implementation subphase is:
+The safest next subphase is:
 
 ```text
-Phase 8.6.3a.3 - review and commit the Python 3.11 local Moto S3 and fail-closed
-fake extraction environment changes before authorizing any real-device
-execution.
+Phase 8.6.4.1 - review and commit the sanitized HTTP 500 postmortem, standalone
+self-test guide, and documentation guardrails; then separately authorize a
+targeted real-device retry through the dev mobile panel.
 ```
 
-The review must verify placeholder-only commands, default-off flags,
-single-process token lifetime, LAN/API/storage reachability gates, prohibited
-log content, the bounded in-memory frontend logger, allowlisted event schema,
-redaction tests, copy/clear behavior, bounded retry/triage, stop conditions,
-and an exact sanitized paste-back format. A later explicitly
-authorized device phase must validate both `API_BASE_URL` and the presigned
+The review must verify the evidence localization, placeholder-only commands,
+default-off flags, short-lived token handling, LAN/API/storage reachability
+gates, prohibited log content, explicit dev-panel UI path, bounded retries,
+stop conditions, shutdown, and the exact sanitized paste-back format. A later
+explicitly authorized device phase must validate both `API_BASE_URL` and the
 storage host before upload. No phase may enable scoring, introduce an overall
 number, authorize production or release, or fall back to legacy
 base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.6.3a.2 storage and fake extraction localization
-    prior_verdict: READY_FOR_PHASE_8_6_3A_2_STORAGE_AND_FAKE_EXTRACTION_LOCALIZATION
+    checkpoint: Phase 8.6.4 mobile E2E 500 postmortem and standalone self-test guide
+    prior_verdict: PHASE 8.6.3 LOCAL ENVIRONMENT REVIEWED AND COMMITTED
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
@@ -420,8 +430,12 @@ base64/analysis paths.
     extraction_ui: MINIMAL DEV-ONLY START, REFRESH, STATUS, ALLOWLISTED ITEMS
     mobile_e2e_runbook: REVIEWED AND COMMITTED
     mobile_e2e_log_template: REVIEWED AND COMMITTED - EMPTY AND SANITIZED
-    real_device_test_executed: NO
-    endpoint_calls_performed: NONE
+    first_real_device_attempt: APP LAUNCHED; PHOTO ACTION FAILED ON LEGACY ANALYZE-IMAGE PATH
+    mobile_facade_real_device_result: NOT TESTED BY THE FAILED ATTEMPT
+    postmortem_evidence: SANITIZED; NO RAW REQUEST/PROVIDER CONTENT
+    standalone_self_test_guide: CREATED LOCALLY
+    repeated_real_device_test_executed: NO
+    endpoint_calls_performed_by_phase_8_6_4: NONE
     frontend_structured_logger: DEV-ONLY; IN-MEMORY; SANITIZED; LATEST 200 EVENTS
     frontend_log_hooks: IMPLEMENTED AND COMMITTED
     frontend_log_export: DEV PANEL COPY AND CLEAR; NO PERSISTENCE
@@ -429,14 +443,20 @@ base64/analysis paths.
     local_storage: MOTO 5.1.11 - PC SMOKE READY; PHONE REACHABILITY NOT VALIDATED
     fake_extraction_runtime: EXPLICIT LOCAL/DEV/TEST/E2E ONLY; NON-LOCAL FAIL CLOSED
     external_provider_calls: NONE
-    next_recommended_subphase: Phase 8.6.3a.3 environment review and commit
+    next_recommended_subphase: Phase 8.6.4.1 review, commit, and targeted 500 debug authorization
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: LOCAL STORAGE AND FAKE EXTRACTION ENVIRONMENT PREPARATION
+    implementation_completed_by_this_checkpoint: DOCUMENTATION ONLY - POSTMORTEM AND SELF-TEST GUIDANCE
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
+
+Current documentation verdict:
+
+```text
+READY_FOR_PHASE_8_6_4_1_REVIEW_COMMIT_AND_500_DEBUG
+```
 
 Expected current verdict:
 

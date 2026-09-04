@@ -311,6 +311,12 @@ Use one non-sensitive packaged-food test product already represented by a
 positive `productId`. Prefer an ingredients image for the first run; nutrition
 is an allowed alternative. Do not use `product_front` for extraction.
 
+> **Route selection guard:** use only the separate dev-only `Upload mobile
+> locale` panel, including its `Seleziona immagine` and `Avvia upload` actions.
+> Do not use the ordinary Add Product `Scatta foto` or `Carica foto` tiles:
+> those controls invoke the legacy `/analyze-image` path and do not test the
+> mobile initialize/binary PUT/finalize facade.
+
 | Step | Operator action | Expected UI | Expected backend event/status | Frontend evidence | Safe IDs |
 | --- | --- | --- | --- | --- | --- |
 | 1 | Open the app built with the two approved defines | Dev token and mobile upload panels visible | None | Panel visibility recorded | None |
@@ -564,4 +570,45 @@ Expected environment-localization verdict:
 
 ```text
 READY_FOR_PHASE_8_6_3A_3_ENV_REVIEW_AND_COMMIT
+```
+
+## 16. Phase 8.6.4 sanitized HTTP 500 postmortem
+
+The first real-device photo attempt returned HTTP 500 but is not a valid
+mobile-facade result. Sanitized local evidence shows a frontend call to the
+legacy `/analyze-image` route and backend frames in `analyze_image` and
+`analyze_image_with_ai`, ending in the safe exception category
+`openai.BadRequestError`. There was no mobile initialize route, backend
+`mobile_facade` event, binary PUT event, finalize event, or extraction-run
+event in the retained evidence.
+
+This localizes the observed failure to the legacy image-analysis path before
+mobile upload initialization. It does not establish a Moto, storage,
+presigning, finalize, extraction, or scoring defect. Raw provider/request data
+is intentionally excluded, so the exact provider rejection detail is not
+asserted.
+
+The full sanitized finding is recorded in
+`WYE_PHASE_8_MOBILE_E2E_500_POSTMORTEM.md`. The standalone operator procedure
+is `WYE_MOBILE_E2E_SELF_TEST_GUIDE.md`. A future authorized run must record
+`ui_entry_path`, the failing stage, safe status/category, safe IDs, retry count,
+and whether backend `mobile_facade` events exist. It must stop if the legacy
+photo path is selected or prohibited content appears.
+
+    checkpoint: Phase 8.6.4 mobile E2E 500 postmortem and self-test guide
+    first_device_attempt: APP LAUNCHED; PHOTO ACTION FAILED ON LEGACY ANALYZE-IMAGE PATH
+    mobile_facade_result: NOT TESTED BY THE FAILED ATTEMPT
+    runtime_fix_applied: NO
+    repeated_device_run: NO
+    endpoint_calls_performed_by_postmortem: NONE
+    external_provider_calls_performed_by_postmortem: NONE
+    scoring_runtime_authority: NONE
+    production_runtime_authority: NONE
+    release_authority: NONE
+    next_recommended_subphase: Phase 8.6.4.1 review, commit, and targeted 500 debug authorization
+
+Postmortem documentation verdict:
+
+```text
+READY_FOR_PHASE_8_6_4_1_REVIEW_COMMIT_AND_500_DEBUG
 ```

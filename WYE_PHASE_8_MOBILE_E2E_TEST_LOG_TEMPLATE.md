@@ -104,6 +104,8 @@ token responses, full URLs, or verbose HTTP output.
 
 ## 6. Test identity and safe IDs
 
+    ui_entry_path: <DEV_MOBILE_PANEL|LEGACY_PHOTO_PATH>
+    legacy_analyze_image_called: <NO|YES_STOP>
     barcode: <BARCODE>
     product_id: <POSITIVE_INT>
     image_purpose: <ingredients|nutrition>
@@ -182,12 +184,20 @@ redaction. Never substitute raw OCR/provider text into a structured event.
 
 ## 11. Error record
 
+    exact_ui_step: <SAFE_DESCRIPTION_OR_NONE>
+    backend_route_name: <SAFE_ROUTE_NAME_OR_NOT_OBSERVED>
     safe_error_code: <CODE_OR_NONE>
     http_status_or_class: <STATUS_OR_NONE>
-    failed_step: <STEP_OR_NONE>
+    failed_step: <INITIALIZE|BINARY_PUT|FINALIZE|EXTRACTION_START|EXTRACTION_STATUS|LEGACY_ANALYZE_IMAGE|NONE>
     retryable: <YES|NO|UNKNOWN>
     retries_performed: <N>
     sanitized_description: <NO_RAW_BODY_OR_STACK_TRACE>
+    backend_mobile_facade_events_present: <YES|NO>
+    moto_operation_status_class: <SAFE_CLASS_STATUS_OR_NOT_OBSERVED>
+
+If `ui_entry_path` is `LEGACY_PHOTO_PATH`, or if
+`legacy_analyze_image_called` is `YES_STOP`, stop the run. The result does not
+validate initialize, binary PUT, finalize, or mobile-facade extraction.
 
 ## 12. Prohibited-content audit
 
@@ -205,6 +215,8 @@ Every item must be PASS before sharing this template.
 | Scoring endpoint/runtime absent | `<PASS|FAIL>` |
 | Numerical overall score absent | `<PASS|FAIL>` |
 | Unreviewed screenshots absent | `<PASS|FAIL>` |
+| Correct `DEV_MOBILE_PANEL` entry path confirmed | `<PASS|FAIL>` |
+| Legacy `/analyze-image` route absent | `<PASS|FAIL>` |
 
 ## 13. Optional screenshots
 
