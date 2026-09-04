@@ -1,5 +1,7 @@
 # WYE Mobile E2E — standalone self-test guide
 
+> **Phase 9 authority:** this remains a partial technical reference for the canonical dev-only mobile path. Execute acceptance only under `WYE_PHASE_9_APP_ACCEPTANCE_PLAN.md`, record state in `WYE_PHASE_9_FEATURE_ACCEPTANCE_MATRIX.md`, and share evidence through `WYE_PHASE_9_TEST_FEEDBACK_GUIDE.md`; see also `WYE_PHASE_8_TO_9_TRANSITION.md`.
+
 **Audience:** repository owner performing a local/dev real-phone test without Codex
 
 **Scope:** dev-only mobile upload facade on a trusted home LAN

@@ -1,5 +1,7 @@
 # WYE — Phase 8 Frontend / UX / Integration Plan
 
+> **Phase 9 transition:** Phase 8 is now the implementation/integration baseline, not final app acceptance. Remaining former 8.7/8.8 work is governed by `WYE_PHASE_8_TO_9_TRANSITION.md` and `WYE_PHASE_9_APP_ACCEPTANCE_PLAN.md`.
+
 ## 1. Document status
 
     phase: Phase 8 — Frontend / UX / integration
