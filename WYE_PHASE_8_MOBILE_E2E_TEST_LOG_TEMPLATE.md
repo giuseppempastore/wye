@@ -31,6 +31,7 @@ event lines here.
 
     api_base_url: http://<LAN_HOST>:8000
     storage_endpoint_host_only: <STORAGE_HOST>:<PORT>
+    storage_implementation: <MOTO_LOCAL|MINIO_LOCAL|OTHER_LOCAL>
     database_name_non_sensitive: <DATABASE_NAME>
     phone_pc_same_trusted_network: <PASS|FAIL|NOT_CHECKED>
     phone_fastapi_health_reachable: <PASS|FAIL|NOT_CHECKED>
@@ -39,6 +40,8 @@ event lines here.
     backend_facade_enabled_for_window: <YES|NO>
     backend_session_ttl_seconds: <30_TO_900>
     flutter_mobile_upload_enabled: <YES|NO>
+    runtime_environment: <E2E>
+    extraction_provider: <FAKE>
 
 Record environment names only, never values:
 
@@ -57,9 +60,19 @@ Record environment names only, never values:
       - WYE_STORAGE_REGION
       - WYE_STORAGE_ACCESS_KEY
       - WYE_STORAGE_SECRET_KEY
+      - WYE_STORAGE_FORCE_PATH_STYLE
+      - WYE_STORAGE_UPLOAD_TTL_SECONDS
+      - WYE_STORAGE_READ_TTL_SECONDS
+      - WYE_STORAGE_MAX_IMAGE_BYTES
+      - WYE_STORAGE_CLEANUP_AFTER_SECONDS
+      - WYE_RUNTIME_ENVIRONMENT
       - WYE_EXTRACTION_PROVIDER
-      - WYE_OPENAI_API_KEY
-      - WYE_OPENAI_EXTRACTION_MODEL
+      - WYE_EXTRACTION_TIMEOUT_SECONDS
+
+For the local fake run, `WYE_OPENAI_API_KEY` and
+`WYE_OPENAI_EXTRACTION_MODEL` are not required and no external provider may be
+called. Record their absence as a boolean check, never by dumping the
+environment.
 
 ## 4. Command summaries
 
@@ -78,7 +91,9 @@ token responses, full URLs, or verbose HTTP output.
 | --- | --- | --- |
 | Existing backend virtualenv | `<PASS|FAIL>` | `<NOTE>` |
 | PostgreSQL available | `<PASS|FAIL>` | `<NOTE>` |
-| MinIO/S3 available to backend | `<PASS|FAIL>` | `<NOTE>` |
+| Moto/local S3 available to backend | `<PASS|FAIL>` | `<NOTE>` |
+| Fake extraction selected in E2E mode | `<PASS|FAIL>` | `<NO_VALUES>` |
+| External extraction provider disabled | `<PASS|FAIL>` | `<NO_VALUES>` |
 | FastAPI reachable from PC LAN address | `<PASS|FAIL>` | `<NOTE>` |
 | FastAPI reachable from phone | `<PASS|FAIL>` | `<NOTE>` |
 | Storage host reachable from phone | `<PASS|FAIL>` | `<NOTE>` |

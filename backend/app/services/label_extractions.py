@@ -7,10 +7,18 @@ import psycopg2.extras
 from pydantic import ValidationError
 
 from app.db import get_connection
-from app.extraction.config import ExtractionSettings
+from app.extraction.config import (
+    LOCAL_FAKE_RUNTIME_ENVIRONMENTS,
+    ExtractionSettings,
+)
 from app.extraction.models import ExtractionRequest, LabelExtractionOutput
 from app.extraction.prompts.label_extraction_v1 import OUTPUT_SCHEMA, PROMPT_HASH, PROMPT_ID, SCHEMA_VERSION, instructions_for
-from app.extraction.providers import OpenAIExtractionProvider, ProviderError, ProviderTimeout
+from app.extraction.providers import (
+    FakeExtractionProvider,
+    OpenAIExtractionProvider,
+    ProviderError,
+    ProviderTimeout,
+)
 
 
 class ExtractionError(RuntimeError):
@@ -21,6 +29,13 @@ class ExtractionError(RuntimeError):
 def provider_from_settings(settings: ExtractionSettings):
     if settings.provider == "openai":
         return OpenAIExtractionProvider(settings.openai_api_key or "", settings.timeout_seconds)
+    if settings.provider == "fake":
+        if settings.runtime_environment not in LOCAL_FAKE_RUNTIME_ENVIRONMENTS:
+            raise RuntimeError(
+                "Fake extraction is restricted to explicit local/dev/test/e2e "
+                "runtime environments"
+            )
+        return FakeExtractionProvider()
     raise RuntimeError("Unsupported extraction provider")
 
 

@@ -1,6 +1,6 @@
 # WYE Phase 8.6 Mobile E2E Test Runbook
 
-Status: PREPARED - REAL-DEVICE EXECUTION REQUIRES EXPLICIT AUTHORIZATION
+Status: LOCAL ENVIRONMENT READY - REAL-DEVICE EXECUTION REQUIRES EXPLICIT AUTHORIZATION
 
 Preparation date: 2026-09-03
 
@@ -104,8 +104,8 @@ FAIL blocks the run.
 - [ ] Windows machine is on a trusted/private LAN.
 - [ ] Repository, branch, and application/backend commits are recorded.
 - [ ] Working tree is clean before starting the future run.
-- [ ] An existing backend virtualenv is activated; no dependency install is
-  performed as part of the E2E run.
+- [ ] The Python 3.11 backend virtualenv at `backend/venv/e2e311` is activated;
+  no dependency install is performed as part of the E2E run.
 - [ ] A restricted local log directory exists outside tracked source paths.
 - [ ] Shell transcription and HTTP debugging that could echo headers/bodies are
   disabled.
@@ -116,13 +116,29 @@ FAIL blocks the run.
   `PGPASSWORD`, and `PGDATABASE`; values are not printed.
 - [ ] The non-sensitive database name is recorded, normally `wye` unless the
   operator selected a dedicated local database.
-- [ ] MinIO/S3 is running and reachable from the backend.
+- [ ] Moto/local S3 is running and reachable from the backend.
 - [ ] `WYE_STORAGE_PROVIDER`, `WYE_STORAGE_ENDPOINT`,
   `WYE_STORAGE_BUCKET`, `WYE_STORAGE_REGION`,
   `WYE_STORAGE_FORCE_PATH_STYLE`, upload TTL, and size limits are present.
 - [ ] Storage access/secret keys are present server-side but never printed.
 - [ ] Extraction provider configuration is present server-side but provider
   credentials, prompts, and raw responses are never printed or copied.
+
+Phase 8.6.3a.2 establishes the following local-only baseline:
+
+- Moto 5.1.11 is available from `backend/venv/e2e311` without Docker or an
+  external download;
+- use `WYE_STORAGE_PROVIDER=s3` and
+  `WYE_STORAGE_FORCE_PATH_STYLE=true` for Moto;
+- bind Moto to `0.0.0.0`, but set `WYE_STORAGE_ENDPOINT` to
+  `http://<LAN_IP>:5000` so generated presigned URLs contain a host reachable
+  by the phone rather than `localhost`;
+- set `WYE_RUNTIME_ENVIRONMENT=e2e` and
+  `WYE_EXTRACTION_PROVIDER=fake` together for the explicitly authorized local
+  fake runtime;
+- the fake provider is rejected when the runtime environment is absent,
+  `staging`, or `production`; the default environment is `production`;
+- do not configure or call an external extraction provider for this E2E run.
 
 ### 4.3 LAN and phone
 
@@ -145,13 +161,41 @@ FAIL blocks the run.
 
 ## 5. Backend startup plan
 
-Do not execute these commands during Phase 8.6.2. In the later authorized run,
-use a dedicated PowerShell whose transcript/history will not capture secret
-values.
+Do not execute the real-device flow without separate authorization. In that
+later authorized run, use dedicated PowerShell processes whose
+transcript/history will not capture secret values.
+
+Start Moto in its own process before FastAPI:
 
 ```powershell
 Set-Location C:\Projects\wye\backend
-& .\<BACKEND_VENV>\Scripts\Activate.ps1
+& .\venv\e2e311\Scripts\moto_server.exe -H 0.0.0.0 -p 5000
+```
+
+In the trusted backend process, configure these non-secret choices:
+
+```powershell
+$env:WYE_RUNTIME_ENVIRONMENT = 'e2e'
+$env:WYE_EXTRACTION_PROVIDER = 'fake'
+$env:WYE_STORAGE_PROVIDER = 's3'
+$env:WYE_STORAGE_ENDPOINT = 'http://<LAN_IP>:5000'
+$env:WYE_STORAGE_BUCKET = 'wye-local-e2e'
+$env:WYE_STORAGE_REGION = 'us-east-1'
+$env:WYE_STORAGE_FORCE_PATH_STYLE = 'true'
+```
+
+Set non-production Moto access/secret values only in the trusted process and
+never echo or record them. Create the bucket without printing configuration:
+
+```powershell
+& .\venv\e2e311\Scripts\python.exe -c "from app.storage import StorageSettings,get_storage_adapter; s=StorageSettings.from_env(); get_storage_adapter(s).client.create_bucket(Bucket=s.bucket); print('bucket_ready')"
+```
+
+Then start FastAPI:
+
+```powershell
+Set-Location C:\Projects\wye\backend
+& .\venv\e2e311\Scripts\Activate.ps1
 
 $env:WYE_MOBILE_UPLOAD_FACADE_ENABLED = 'true'
 $env:WYE_MOBILE_UPLOAD_FACADE_SESSION_TTL_SECONDS = '300'
@@ -188,6 +232,11 @@ For local MinIO, ensure the configured `WYE_STORAGE_ENDPOINT` uses a host the
 phone can reach and that MinIO is bound accordingly. Record only
 `<STORAGE_HOST>:<PORT>`. Do not copy a presigned path or query string into any
 log, command summary, screenshot, or report.
+
+The same rule applies to Moto: the endpoint used by `S3StorageAdapter` is also
+the host embedded in generated presigned URLs. A successful PC loopback smoke
+does not prove phone reachability; validate `<LAN_IP>:5000` from the phone
+before any upload attempt.
 
 ## 6. Mobile token preparation
 
@@ -451,6 +500,7 @@ provider content, or unreviewed screenshots.
 - [ ] Clear clipboard and remove the in-memory PowerShell session object.
 - [ ] Stop Flutter log capture.
 - [ ] Stop the single local FastAPI process.
+- [ ] Stop the local Moto process.
 - [ ] Restore `WYE_MOBILE_UPLOAD_FACADE_ENABLED` to absent/false for later
   processes.
 - [ ] End the Flutter build/run; normal builds remain default-off.
@@ -462,7 +512,7 @@ provider content, or unreviewed screenshots.
 - [ ] Do not run cleanup, prune, or destructive database/storage operations as
   part of this runbook.
 
-## 14. Phase 8.6.2 checkpoint
+## 14. Historical Phase 8.6.2 checkpoint
 
     checkpoint: Phase 8.6.2 sanitized frontend log capture hooks
     implementation_status: IMPLEMENTED LOCALLY - REVIEW AND COMMIT PENDING
@@ -483,8 +533,35 @@ provider content, or unreviewed screenshots.
     release_authority: NONE
     next_recommended_subphase: Phase 8.6.2.1 review and commit log hooks
 
-Expected implementation verdict:
+Historical implementation verdict:
 
 ```text
 READY_FOR_PHASE_8_6_2_1_REVIEW_AND_COMMIT_LOG_HOOKS
+```
+
+## 15. Phase 8.6.3a.2 local-environment checkpoint
+
+    checkpoint: Phase 8.6.3a.2 storage and fake extraction localization
+    backend_python: 3.11.5
+    backend_virtualenv: backend/venv/e2e311
+    storage_runtime: MOTO 5.1.11 - LOCAL ONLY
+    storage_provider_value: s3
+    storage_path_style: TRUE
+    presigned_put_smoke: PASSED ON PC LOOPBACK
+    phone_storage_reachability: NOT YET VALIDATED
+    extraction_runtime_environment: WYE_RUNTIME_ENVIRONMENT=e2e
+    extraction_provider: WYE_EXTRACTION_PROVIDER=fake
+    fake_non_local_behavior: FAIL CLOSED
+    external_provider_calls: NONE
+    backend_health_smoke: PASSED ON PC LOOPBACK
+    real_device_test_executed: NO
+    scoring_runtime_authority: NONE
+    production_runtime_authority: NONE
+    release_authority: NONE
+    next_recommended_subphase: Phase 8.6.3a.3 environment review and commit
+
+Expected environment-localization verdict:
+
+```text
+READY_FOR_PHASE_8_6_3A_3_ENV_REVIEW_AND_COMMIT
 ```

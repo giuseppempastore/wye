@@ -330,6 +330,17 @@ the logger is a no-op. No log persistence, endpoint call, physical-device run,
 scoring runtime, production deployment, or release is authorized or performed
 by this phase.
 
+Phase 8.6.3a.1 restores the pinned backend development dependencies in the
+ignored Python 3.11 environment at `backend/venv/e2e311`. Phase 8.6.3a.2 then
+prepares local Moto S3 and makes `FakeExtractionProvider` runtime-selectable
+only when both the provider and an explicit local/dev/test/E2E environment are
+configured. Missing, staging, and production-like configuration fails closed.
+The existing OpenAI path remains available but is not invoked by the local E2E
+preparation. PC-only Moto presigned PUT/read and backend health smoke checks are
+required; LAN/phone reachability and the real-device flow remain unexecuted and
+require separate authorization. Scoring, production, and release remain
+unauthorized.
+
 The roadmap order is intentional: result semantics and explicit absence must be
 made safe before visual refinement or live backend integration.
 
@@ -370,8 +381,9 @@ made safe before visual refinement or live backend integration.
 The safest next implementation subphase is:
 
 ```text
-Phase 8.6.2.1 - review and commit the sanitized frontend log capture hooks and
-updated E2E documentation before authorizing any real-device execution.
+Phase 8.6.3a.3 - review and commit the Python 3.11 local Moto S3 and fail-closed
+fake extraction environment changes before authorizing any real-device
+execution.
 ```
 
 The review must verify placeholder-only commands, default-off flags,
@@ -386,8 +398,8 @@ base64/analysis paths.
 
 ## 10. Checkpoint record
 
-    checkpoint: Phase 8.6.2 sanitized frontend log capture hooks
-    prior_verdict: READY_FOR_PHASE_8_6_2_FRONTEND_LOG_CAPTURE_HOOKS
+    checkpoint: Phase 8.6.3a.2 storage and fake extraction localization
+    prior_verdict: READY_FOR_PHASE_8_6_3A_2_STORAGE_AND_FAKE_EXTRACTION_LOCALIZATION
     approved_option: OPTION A — DEV-ONLY FASTAPI MOBILE FACADE
     approval_date: 2026-09-03
     approval_scope: LOCAL/DEV MVP INTEGRATION AND REAL-DEVICE TEST PREPARATION ONLY
@@ -411,13 +423,17 @@ base64/analysis paths.
     real_device_test_executed: NO
     endpoint_calls_performed: NONE
     frontend_structured_logger: DEV-ONLY; IN-MEMORY; SANITIZED; LATEST 200 EVENTS
-    frontend_log_hooks: IMPLEMENTED LOCALLY - REVIEW AND COMMIT PENDING
+    frontend_log_hooks: IMPLEMENTED AND COMMITTED
     frontend_log_export: DEV PANEL COPY AND CLEAR; NO PERSISTENCE
-    next_recommended_subphase: Phase 8.6.2.1 review and commit log hooks
+    backend_python_environment: backend/venv/e2e311 - PYTHON 3.11
+    local_storage: MOTO 5.1.11 - PC SMOKE READY; PHONE REACHABILITY NOT VALIDATED
+    fake_extraction_runtime: EXPLICIT LOCAL/DEV/TEST/E2E ONLY; NON-LOCAL FAIL CLOSED
+    external_provider_calls: NONE
+    next_recommended_subphase: Phase 8.6.3a.3 environment review and commit
     production_runtime_authority: NONE
     release_authority: NONE
     scoring_runtime_authority: NONE
-    implementation_completed_by_this_checkpoint: FRONTEND LOG HOOKS AND DOCUMENTATION ONLY
+    implementation_completed_by_this_checkpoint: LOCAL STORAGE AND FAKE EXTRACTION ENVIRONMENT PREPARATION
     overall_numerical_candidate: NONE / DEFERRED
     production_deployment_authority: NONE
     git_push_authority: NONE
@@ -425,5 +441,5 @@ base64/analysis paths.
 Expected current verdict:
 
 ```text
-READY_FOR_PHASE_8_6_2_1_REVIEW_AND_COMMIT_LOG_HOOKS
+READY_FOR_PHASE_8_6_3A_3_ENV_REVIEW_AND_COMMIT
 ```
