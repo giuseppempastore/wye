@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/product_model.dart';
 import '../services/api_client.dart';
 
 // State per il barcode scanning
 class BarcodeScannerProvider extends ChangeNotifier {
   final ApiClient _apiClient;
-  
+
   Product? _currentProduct;
   bool _isLoading = false;
   String? _error;
@@ -124,6 +123,7 @@ class BarcodeScannerProvider extends ChangeNotifier {
 
   /// Aggiunge un prodotto allo storico
   void _addToHistory(Product product) {
+    _scanHistory.removeWhere((item) => item.barcode == product.barcode);
     _scanHistory.insert(0, ScanHistory.fromProduct(product));
     if (_scanHistory.length > 50) {
       _scanHistory.removeLast(); // Limita a 50 ultimi

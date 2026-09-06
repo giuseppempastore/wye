@@ -5,7 +5,7 @@ import 'package:logger/logger.dart';
 class DatabaseService {
   static const String productsBoxName = 'products';
   static const String historyBoxName = 'scan_history';
-  
+
   late Box<String> _productsBox;
   late Box<String> _historyBox;
   final Logger _logger = Logger();
@@ -14,12 +14,12 @@ class DatabaseService {
   Future<void> init() async {
     try {
       _logger.i('🗄️ Initializing Hive database...');
-      
+
       await Hive.initFlutter();
-      
+
       _productsBox = await Hive.openBox<String>(productsBoxName);
       _historyBox = await Hive.openBox<String>(historyBoxName);
-      
+
       _logger.i('✅ Database initialized');
     } catch (e) {
       _logger.e('❌ Database init error: $e');
@@ -30,12 +30,12 @@ class DatabaseService {
   /// Salva un prodotto nella cache
   Future<void> saveProduct(Product product) async {
     try {
-      _logger.i('💾 Saving product: ${product.barcode}');
-      
+      _logger.i('Saving product locally');
+
       final json = _productToJson(product);
       await _productsBox.put(product.barcode, json);
-      
-      _logger.d('✅ Product cached: ${product.barcode}');
+
+      _logger.d('Product cached');
     } catch (e) {
       _logger.e('❌ Save product error: $e');
     }
@@ -44,16 +44,16 @@ class DatabaseService {
   /// Recupera un prodotto dalla cache
   Product? getProduct(String barcode) {
     try {
-      _logger.d('🔍 Getting product from cache: $barcode');
-      
+      _logger.d('Getting product from cache');
+
       final json = _productsBox.get(barcode);
       if (json == null) {
-        _logger.d('⚠️ Product not in cache: $barcode');
+        _logger.d('Product not in cache');
         return null;
       }
-      
+
       final product = _jsonToProduct(json);
-      _logger.d('✅ Product from cache: $barcode');
+      _logger.d('Product found in cache');
       return product;
     } catch (e) {
       _logger.e('❌ Get product error: $e');
@@ -64,12 +64,12 @@ class DatabaseService {
   /// Salva storico scansione
   Future<void> addToHistory(ScanHistory scan) async {
     try {
-      _logger.i('📝 Adding to history: ${scan.barcode}');
-      
+      _logger.i('Adding product to local history');
+
       final key = '${scan.barcode}_${scan.scannedAt.millisecondsSinceEpoch}';
       final json = _historyToJson(scan);
       await _historyBox.put(key, json);
-      
+
       _logger.d('✅ History added');
     } catch (e) {
       _logger.e('❌ Add to history error: $e');
@@ -80,14 +80,13 @@ class DatabaseService {
   List<ScanHistory> getHistory() {
     try {
       _logger.d('📖 Getting scan history');
-      
-      final history = _historyBox.values
-          .map((json) => _jsonToHistory(json))
-          .toList();
-      
+
+      final history =
+          _historyBox.values.map((json) => _jsonToHistory(json)).toList();
+
       // Ordina per data più recente
       history.sort((a, b) => b.scannedAt.compareTo(a.scannedAt));
-      
+
       _logger.d('✅ History loaded: ${history.length} items');
       return history;
     } catch (e) {
@@ -99,14 +98,14 @@ class DatabaseService {
   /// Pulisci un elemento dallo storico
   Future<void> removeFromHistory(String barcode) async {
     try {
-      _logger.i('🗑️ Removing from history: $barcode');
-      
+      _logger.i('Removing product from history');
+
       final keysToRemove = _historyBox.keys
           .where((key) => key.toString().startsWith(barcode))
           .toList();
-      
+
       await _historyBox.deleteAll(keysToRemove);
-      
+
       _logger.d('✅ Removed ${keysToRemove.length} items');
     } catch (e) {
       _logger.e('❌ Remove from history error: $e');
@@ -117,10 +116,10 @@ class DatabaseService {
   Future<void> clearAll() async {
     try {
       _logger.w('🧹 Clearing all cache');
-      
+
       await _productsBox.clear();
       await _historyBox.clear();
-      
+
       _logger.i('✅ Cache cleared');
     } catch (e) {
       _logger.e('❌ Clear cache error: $e');
@@ -144,7 +143,6 @@ class DatabaseService {
   /// Conversione JSON string → Product
   Product _jsonToProduct(String jsonString) {
     // Parse il toString della Map
-    final mapString = jsonString;
     // In production, userai json.decode() qui
     // Per ora, ripassa il prodotto originale
     throw UnimplementedError(

@@ -33,7 +33,7 @@ def run() -> None:
                 )
                 row = cursor.fetchone()
         connection.commit()
-        print(f"mobile_fixture_ready product_id={row[0]} barcode={BARCODE}")
+        print(f"mobile_fixture_ready product_id={row[0]}")
     finally:
         connection.close()
 

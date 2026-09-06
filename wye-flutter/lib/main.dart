@@ -63,7 +63,11 @@ class _WyeAppState extends State<WyeApp> {
     return MultiProvider(
       providers: [
         // API Client
-        Provider<ApiClient>(create: (_) => ApiClient()),
+        Provider<ApiClient>(
+          create: (_) => ApiClient(
+            mobileTokenProvider: _mobileTokenProvider,
+          ),
+        ),
 
         Provider<MobileUploadConfig>.value(value: _mobileUploadConfig),
         Provider<InMemoryMobileUploadTokenProvider>.value(

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:logger/logger.dart';
 import 'package:flutter/foundation.dart';
+import '../models/capture_upload_models.dart';
 import '../models/product_model.dart';
 import '../models/score_evaluability_model.dart';
 
@@ -37,16 +38,18 @@ class ApiConfig {
 
 class ApiClient {
   final Logger _logger = Logger();
+  final MobileUploadTokenProvider? _mobileTokenProvider;
   late http.Client _client;
 
-  ApiClient() {
+  ApiClient({MobileUploadTokenProvider? mobileTokenProvider})
+      : _mobileTokenProvider = mobileTokenProvider {
     _client = http.Client();
   }
 
   /// Fetch prodotto da barcode
   Future<Product> getProductByBarcode(String barcode) async {
     try {
-      _logger.i('📦 Fetching product for barcode: $barcode');
+      _logger.i('Fetching product by barcode');
 
       final response = await _client
           .get(
@@ -58,7 +61,6 @@ class ApiClient {
       });
 
       _logger.d('Response status: ${response.statusCode}');
-      _logger.d('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         try {
@@ -73,30 +75,35 @@ class ApiClient {
 
           // Caso backend DB: { product, score, ingredients }
           if (jsonData.containsKey('product')) {
-            final product = _mapDbProductResponse(jsonData, barcode);
-            _logger.i('✅ Product found: ${product.productName}');
+            final imageUrl = await _resolveCanonicalImageUrl(jsonData);
+            final product = _mapDbProductResponse(
+              jsonData,
+              barcode,
+              imageUrlOverride: imageUrl,
+            );
+            _logger.i('Product found');
             return product;
           }
 
           // Caso API già nel formato app
           final product = Product.fromJson(jsonData);
-          _logger.i('✅ Product found: ${product.productName}');
+          _logger.i('Product found');
           return product;
         } on ProductNotFoundException {
           rethrow;
         } catch (e) {
-          _logger.e('❌ JSON parse error: $e');
+          _logger.e('Product response parsing failed');
           throw ApiException('Errore nel parsing della risposta del server');
         }
       } else if (response.statusCode == 404) {
-        _logger.w('⚠️ Product not found: $barcode');
+        _logger.w('Product not found');
         throw ProductNotFoundException(
             'Prodotto non trovato nel database. Prova a inserirlo manualmente nella sezione Premium.');
       } else if (response.statusCode >= 500) {
         _logger.e('❌ Server error: ${response.statusCode}');
         throw ApiException('Errore del server. Riprova tra poco.');
       } else {
-        _logger.e('❌ Error: ${response.statusCode} - ${response.body}');
+        _logger.e('Product lookup failed with status ${response.statusCode}');
         throw ApiException(
             'Errore nel recupero del prodotto (${response.statusCode})');
       }
@@ -111,10 +118,10 @@ class ApiClient {
         '3. Sei sulla stessa rete',
       );
     } on TimeoutException catch (e) {
-      _logger.e('❌ Timeout: $e');
+      _logger.e('Product lookup timed out');
       throw NetworkException(e.message ?? 'Timeout della richiesta');
     } catch (e) {
-      _logger.e('❌ Unexpected exception: $e');
+      _logger.e('Product lookup failed');
       rethrow;
     }
   }
@@ -169,22 +176,22 @@ class ApiClient {
               'Risposta del server vuota durante la creazione prodotto');
         }
 
-        final product = Product.fromJson(productData);
-        _logger.i('✅ Product created: ${product.productName}');
+        final product = await getProductByBarcode(barcode.trim());
+        _logger.i('Product created');
         return product;
       }
 
       throw ApiException(
-          'Errore nella creazione prodotto (${response.statusCode}): ${response.body}');
+          'Errore nella creazione prodotto (${response.statusCode})');
     } on SocketException {
       _logger.e('❌ Network error while creating product');
       throw NetworkException(
           'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
     } on TimeoutException catch (e) {
-      _logger.e('❌ Timeout while creating product: $e');
+      _logger.e('Product creation timed out');
       throw NetworkException(e.message ?? 'Timeout della creazione prodotto');
     } catch (e) {
-      _logger.e('❌ Exception creating product: $e');
+      _logger.e('Product creation failed');
       rethrow;
     }
   }
@@ -197,7 +204,7 @@ class ApiClient {
     String? category,
   }) async {
     try {
-      _logger.i('🔬 Analyzing ingredients for: $productName');
+      _logger.i('Analyzing manually entered ingredients');
 
       final payload = {
         'product_name': productName,
@@ -206,7 +213,6 @@ class ApiClient {
         if (category != null) 'category': category,
       };
 
-      _logger.d('Payload: $payload');
 
       final response = await _client
           .post(
@@ -237,23 +243,22 @@ class ApiClient {
           _logger.i('✅ Analysis response parsed');
           return product;
         } catch (e) {
-          _logger.e('❌ JSON parse error: $e');
+          _logger.e('Analysis response parsing failed');
           throw ApiException('Errore nel parsing della risposta');
         }
       } else if (response.statusCode == 400) {
-        _logger.e('❌ Bad request: ${response.body}');
+        _logger.e('Analysis request rejected');
         throw ApiException(
             'Dati non validi. Controlla gli ingredienti inseriti.');
       } else {
-        throw ApiException(
-            'Errore nell\'analisi (${response.statusCode}): ${response.body}');
+        throw ApiException('Errore nell\'analisi (${response.statusCode})');
       }
     } on SocketException {
       _logger.e('❌ Network error');
       throw NetworkException(
           'Errore di connessione. Controlla la rete e riprova.');
     } catch (e) {
-      _logger.e('❌ Exception: $e');
+      _logger.e('Analysis request failed');
       rethrow;
     }
   }
@@ -286,7 +291,7 @@ class ApiClient {
       }
 
       throw ApiException(
-          'Errore nella normalizzazione foto (${response.statusCode}): ${response.body}');
+          'Errore nella normalizzazione foto (${response.statusCode})');
     } on SocketException {
       throw NetworkException(
           'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
@@ -319,7 +324,6 @@ class ApiClient {
       });
 
       _logger.i('Response status: ${response.statusCode}');
-      _logger.d('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final jsonData = jsonDecode(response.body) as Map<String, dynamic>;
@@ -335,7 +339,7 @@ class ApiClient {
       }
 
       throw ApiException(
-          'Errore nell\'analisi immagine (${response.statusCode}): ${response.body}');
+          'Errore nell\'analisi immagine (${response.statusCode})');
     } on SocketException {
       throw NetworkException(
           'Impossibile raggiungere il server. Verifica che il backend sia attivo.');
@@ -344,6 +348,61 @@ class ApiClient {
     } catch (e) {
       rethrow;
     }
+  }
+
+  Future<String?> _resolveCanonicalImageUrl(
+    Map<String, dynamic> response,
+  ) async {
+    final product = response['product'];
+    final fallback = product is Map ? product['image_url']?.toString() : null;
+    final imageRef = response['product_image'];
+    final token = _mobileTokenProvider?.currentToken;
+    if (product is! Map || imageRef is! Map || token == null) {
+      return _absoluteOrEmbeddedImageUrl(fallback);
+    }
+
+    final productId = product['id'];
+    final imageId = imageRef['id'];
+    if (productId is! int ||
+        productId <= 0 ||
+        imageId is! int ||
+        imageId <= 0) {
+      return _absoluteOrEmbeddedImageUrl(fallback);
+    }
+
+    try {
+      final response = await _client.get(
+        Uri.parse(
+          '${ApiConfig.baseUrl}/mobile/dev/v1/capture/products/'
+          '$productId/images/$imageId/access',
+        ),
+        headers: {'Authorization': token.authorizationHeader},
+      ).timeout(ApiConfig.connectionTimeout);
+      if (response.statusCode != 200) {
+        return _absoluteOrEmbeddedImageUrl(fallback);
+      }
+      final body = jsonDecode(response.body);
+      final rawUrl = body is Map ? body['url']?.toString() : null;
+      final url = rawUrl == null ? null : Uri.tryParse(rawUrl);
+      if (url == null ||
+          !url.hasScheme ||
+          (url.scheme != 'http' && url.scheme != 'https')) {
+        return _absoluteOrEmbeddedImageUrl(fallback);
+      }
+      return url.toString();
+    } catch (_) {
+      return _absoluteOrEmbeddedImageUrl(fallback);
+    }
+  }
+
+  String? _absoluteOrEmbeddedImageUrl(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    if (trimmed.startsWith('data:image')) return trimmed;
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null && uri.hasScheme) return trimmed;
+    if (trimmed.startsWith('/')) return '${ApiConfig.baseUrl}$trimmed';
+    return null;
   }
 
   /// Health check del backend
@@ -359,7 +418,7 @@ class ApiClient {
       _logger.i(isHealthy ? '✅ Backend online' : '⚠️ Backend unhealthy');
       return isHealthy;
     } catch (e) {
-      _logger.w('⚠️ Health check failed: $e');
+      _logger.w('Health check failed');
       return false;
     }
   }
@@ -371,7 +430,10 @@ class ApiClient {
 }
 
 Product _mapDbProductResponse(
-    Map<String, dynamic> jsonData, String fallbackBarcode) {
+  Map<String, dynamic> jsonData,
+  String fallbackBarcode, {
+  String? imageUrlOverride,
+}) {
   final productData = (jsonData['product'] as Map<String, dynamic>? ?? {});
   final ingredientsData = (jsonData['ingredients'] as List<dynamic>? ?? []);
 
@@ -404,6 +466,9 @@ Product _mapDbProductResponse(
       .toSet()
       .toList();
 
+  final scoreData = jsonData['score_view'];
+  final nutritionData = jsonData['nutrition_facts'];
+
   return Product(
     productId: productData['id'] is int && productData['id'] > 0
         ? productData['id'] as int
@@ -412,11 +477,26 @@ Product _mapDbProductResponse(
     productName: productData['product_name']?.toString() ?? 'Prodotto',
     brand: productData['brand_name']?.toString() ?? 'N/A',
     category: productData['category']?.toString() ?? 'food',
-    scoreView: ProductScoreView.unavailable(),
+    scoreView: scoreData is Map
+        ? ProductScoreView.fromJson(Map<String, dynamic>.from(scoreData))
+        : ProductScoreView.unavailable(),
     ingredients: ingredients,
     allergens: allergens,
     dangerousSubstances: dangerousSubstances,
-    imageUrl: productData['image_url']?.toString(),
+    nutritionFacts: nutritionData is Map
+        ? NutritionFacts.fromJson({
+            'serving_size': nutritionData['serving_size'],
+            'energy_kcal': nutritionData['energy_kcal'],
+            'protein': nutritionData['protein_g'],
+            'carbs': nutritionData['carbs_g'],
+            'sugar': nutritionData['sugar_g'],
+            'fat': nutritionData['fat_g'],
+            'saturated_fat': nutritionData['saturated_fat_g'],
+            'sodium': nutritionData['sodium_mg'],
+            'fiber': nutritionData['fiber_g'],
+          })
+        : null,
+    imageUrl: imageUrlOverride ?? productData['image_url']?.toString(),
   );
 }
 

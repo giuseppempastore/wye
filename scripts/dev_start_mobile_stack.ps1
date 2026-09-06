@@ -151,7 +151,6 @@ Set-Content -LiteralPath (Join-Path $EvidenceDir 'stack-info.txt') -Encoding ASC
     'backend_emulator=http://10.0.2.2:8000'
     "minio_s3=http://${hostIp}:9000"
     'minio_console=http://127.0.0.1:9001'
-    "fixture_barcode=9876543210987"
     "fixture_product_id=$productId"
     'mobile_facade=true_local_e2e_only'
 )
@@ -164,5 +163,5 @@ Write-Host 'API emulatore:   http://10.0.2.2:8000'
 Write-Host "API telefono:    http://${hostIp}:8000"
 Write-Host "MinIO S3:        http://${hostIp}:9000"
 Write-Host 'MinIO console:   http://127.0.0.1:9001'
-Write-Host "Fixture:         barcode 9876543210987, Product ID $productId"
+Write-Host "Fixture:         Product ID $productId"
 Write-Host "Log sessione:    $EvidenceDir"

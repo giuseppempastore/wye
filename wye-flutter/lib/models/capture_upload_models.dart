@@ -69,7 +69,7 @@ class ProductIdentity {
 
   @override
   String toString() =>
-      'ProductIdentity(productId: $productId, barcode: $barcode)';
+      'ProductIdentity(productId: $productId, barcode: <redacted>)';
 }
 
 enum CaptureImagePurpose {

@@ -111,6 +111,10 @@ class MobileUploadFacadeTests(unittest.TestCase):
                 f"/mobile/dev/v1/capture/products/7/images/uploads/{upload_id}/finalize",
                 headers={"Authorization": "Bearer unused"},
             ),
+            self.client.get(
+                "/mobile/dev/v1/capture/products/7/images/8/access",
+                headers={"Authorization": "Bearer unused"},
+            ),
             self.client.post(
                 "/mobile/dev/v1/capture/products/7/images/8/extractions",
                 json={},
@@ -359,6 +363,36 @@ class MobileUploadFacadeTests(unittest.TestCase):
         self.assertNotIn("must-not-leave-server", captured_logs)
         self.assertNotIn("signature=temporary", captured_logs)
         self.assertNotIn("status=created", captured_logs)
+
+    def test_image_access_requires_mobile_session_and_keeps_url_out_of_logs(self):
+        self._enable()
+        token = self._create_session(["upload"]).json()["access_token"]
+        signed_url = (
+            "https://storage.invalid/wye/object"
+            "?X-Amz-Signature=never-log-this-read-signature"
+        )
+        self.upload_service.access.return_value = {
+            "url": signed_url,
+            "expires_at": self.clock.now + timedelta(minutes=5),
+        }
+
+        missing = self.client.get(
+            "/mobile/dev/v1/capture/products/7/images/401/access"
+        )
+        with self.assertLogs("app.routes.mobile_upload", level="INFO") as logs:
+            response = self.client.get(
+                "/mobile/dev/v1/capture/products/7/images/401/access",
+                headers=self._bearer(token),
+            )
+
+        self.assertEqual(missing.status_code, 401)
+        self.assertEqual(response.status_code, 200, response.text)
+        self.assertEqual(response.json()["url"], signed_url)
+        self.upload_service.access.assert_called_once_with(7, 401)
+        captured_logs = "\n".join(logs.output)
+        self.assertNotIn(token, captured_logs)
+        self.assertNotIn(signed_url, captured_logs)
+        self.assertNotIn("never-log-this-read-signature", captured_logs)
 
     def test_unexpected_upload_error_is_structured_and_redacted(self):
         self._enable()

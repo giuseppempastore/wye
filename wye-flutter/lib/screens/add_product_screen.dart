@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
@@ -8,8 +9,10 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
 import '../config/mobile_upload_config.dart';
+import '../models/capture_upload_models.dart';
 import '../providers/app_providers.dart';
-import '../services/api_client.dart';
+import '../providers/capture_upload_controller.dart';
+import '../services/photo_field_mapper.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dev_mobile_upload_widgets.dart';
 
@@ -54,8 +57,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
   XFile? _nutritionImage;
   bool _isSubmitting = false;
   bool _isProcessingImage = false;
+  String _imageFlowStatus = '';
+  String? _photoReviewMessage;
+  int? _savedProductId;
+  String? _savedProductBarcode;
 
   final ImagePicker _picker = ImagePicker();
+  final PhotoFieldMapper _photoFieldMapper = const PhotoFieldMapper();
 
   @override
   void dispose() {
@@ -79,26 +87,45 @@ class _AddProductScreenState extends State<AddProductScreen> {
   Future<void> _pickImage(
     void Function(XFile?) setter,
     ImageSource source, {
-    bool isProductPhoto = false,
+    required ProductPhotoPurpose purpose,
   }) async {
-    final pickedFile =
-        await _picker.pickImage(source: source, imageQuality: 85);
-    if (pickedFile == null) return;
-
-    XFile finalFile = pickedFile;
     try {
-      final croppedFile = await _cropImage(pickedFile);
-      if (croppedFile != null) {
-        finalFile = croppedFile;
+      setState(() {
+        _isProcessingImage = true;
+        _imageFlowStatus = source == ImageSource.camera
+            ? 'Apertura fotocamera...'
+            : 'Apertura galleria...';
+        _photoReviewMessage = null;
+      });
+      // Paint the transition surface before Android opens a native activity.
+      // When camera returns, the user sees this state instead of the form.
+      await WidgetsBinding.instance.endOfFrame;
+
+      final pickedFile =
+          await _picker.pickImage(source: source, imageQuality: 85);
+      if (pickedFile == null) return;
+
+      if (mounted) {
+        setState(() => _imageFlowStatus = 'Apertura editor immagine...');
       }
+      final croppedFile = await _cropImage(pickedFile);
+      final finalFile = croppedFile == null ? pickedFile : croppedFile;
+
+      setter(finalFile);
+      if (mounted) {
+        setState(() => _imageFlowStatus = 'Lettura del testo visibile...');
+      }
+      await _mapTextFromPhoto(finalFile, purpose: purpose);
     } catch (error) {
-      debugPrint('Crop not available: $error');
+      debugPrint('Photo flow failed: ${error.runtimeType}');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingImage = false;
+          _imageFlowStatus = '';
+        });
+      }
     }
-
-    setter(finalFile);
-    setState(() {});
-
-    await _extractTextFromPhoto(finalFile, isProductPhoto: isProductPhoto);
   }
 
   Future<XFile?> _cropImage(XFile file) async {
@@ -127,7 +154,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
       return XFile(croppedFile.path);
     } on Exception catch (error) {
-      debugPrint('Image cropper failed: $error');
+      debugPrint('Image cropper failed: ${error.runtimeType}');
       return null;
     }
   }
@@ -201,6 +228,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
+  // ignore: unused_element
   Future<void> _extractTextFromPhoto(
     XFile file, {
     required bool isProductPhoto,
@@ -208,10 +236,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _isProcessingImage = true);
 
     try {
-      final bytes = await file.readAsBytes();
-      final imageUrl = 'data:image/jpeg;base64,${base64Encode(bytes)}';
-      debugPrint('Sending image to backend (${bytes.length} bytes) for OCR');
-
       final image = InputImage.fromFilePath(file.path);
       final recognizer = TextRecognizer();
       final recognizedText = await recognizer.processImage(image);
@@ -225,11 +249,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
         _barcodeController.text = barcodeValue;
       }
 
-      final normalized = await ApiClient().analyzeProductImage(
-        imageUrl: imageUrl,
-        rawText: rawText,
-      );
-      debugPrint('Backend returned normalized: $normalized');
+      // Kept only for compatibility with older widget states. The active
+      // capture path uses the purpose-specific conservative mapper below.
+      const normalized = <String, dynamic>{};
 
       final productName = (normalized['product_name'] as String?)?.trim();
       final brandName = (normalized['brand_name'] as String?)?.trim();
@@ -313,12 +335,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ),
         );
       }
-    } catch (error, stackTrace) {
-      debugPrint('Photo analysis failed: $error');
-      debugPrint('Photo analysis stack trace: $stackTrace');
+    } catch (error) {
+      debugPrint('Photo analysis failed: ${error.runtimeType}');
 
       if (mounted) {
-        final errText = error?.toString() ?? '';
+        final errText = error.toString();
         final isFoodValidationError =
             errText.contains('non risulta essere un food');
         final isNetworkError = errText.toLowerCase().contains('network') ||
@@ -343,6 +364,104 @@ class _AddProductScreenState extends State<AddProductScreen> {
       if (mounted) {
         setState(() => _isProcessingImage = false);
       }
+    }
+  }
+
+  Future<void> _mapTextFromPhoto(
+    XFile file, {
+    required ProductPhotoPurpose purpose,
+  }) async {
+    final image = InputImage.fromFilePath(file.path);
+    final recognizer = TextRecognizer();
+    try {
+      final recognizedText = await recognizer.processImage(image);
+      final rawText = recognizedText.text.trim();
+      final barcodeValue = _extractBarcodeValue(rawText);
+      if (purpose == ProductPhotoPurpose.identity && barcodeValue != null) {
+        _barcodeController.text = barcodeValue;
+      }
+
+      final mapping = _photoFieldMapper.map(rawText, purpose);
+      if (purpose == ProductPhotoPurpose.identity) {
+        if (mapping.productName case final value?) {
+          _productNameController.text = value;
+        }
+        if (mapping.brandName case final value?) {
+          _brandController.text = value;
+        }
+        if (mapping.category case final value?) {
+          _categoryController.text = value;
+        }
+        if (mapping.productType case final value?) {
+          _productTypeController.text = value;
+        }
+      } else if (purpose == ProductPhotoPurpose.ingredients) {
+        if (mapping.ingredientListText case final value?) {
+          _ingredientsController.text = value;
+        }
+      } else {
+        final controllers = <String, TextEditingController>{
+          'energy_kcal': _energyController,
+          'protein_g': _proteinController,
+          'carbs_g': _carbsController,
+          'sugar_g': _sugarController,
+          'fat_g': _fatController,
+          'saturated_fat_g': _saturatedFatController,
+          'sodium_mg': _sodiumController,
+          'fiber_g': _fiberController,
+        };
+        for (final entry in controllers.entries) {
+          final value = mapping.nutrition[entry.key];
+          if (value != null) {
+            entry.value.text = value.toString();
+          }
+        }
+      }
+
+      final hasData = switch (purpose) {
+        ProductPhotoPurpose.identity =>
+          barcodeValue != null || mapping.hasIdentity,
+        ProductPhotoPurpose.ingredients => mapping.hasIngredients,
+        ProductPhotoPurpose.nutrition => mapping.hasNutrition,
+      };
+      final successMessage = switch (purpose) {
+        ProductPhotoPurpose.identity =>
+          'Identita rilevata solo da etichette esplicite. Controlla i valori.',
+        ProductPhotoPurpose.ingredients =>
+          'Lista ingredienti rilevata. Controlla il testo prima di salvare.',
+        ProductPhotoPurpose.nutrition =>
+          'Valori nutrizionali rilevati. Controllali prima di salvare.',
+      };
+      final emptyMessage = switch (purpose) {
+        ProductPhotoPurpose.identity =>
+          'Identita da verificare: compila Brand, Nome e Tipo.',
+        ProductPhotoPurpose.ingredients =>
+          'Ingredienti da verificare: il campo resta vuoto.',
+        ProductPhotoPurpose.nutrition =>
+          'Valori nutrizionali da verificare: i campi restano vuoti.',
+      };
+      final message = hasData ? successMessage : emptyMessage;
+      if (mounted) {
+        setState(() => _photoReviewMessage = message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: AppColors.primary),
+        );
+      }
+    } catch (error) {
+      debugPrint('Local OCR mapping failed: ${error.runtimeType}');
+      if (mounted) {
+        const message =
+            'Testo non leggibile con sufficiente sicurezza: nessun campo e stato modificato.';
+        setState(() => _photoReviewMessage = message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(message),
+            backgroundColor: AppColors.riskHigh,
+          ),
+        );
+      }
+    } finally {
+      await recognizer.close();
     }
   }
 
@@ -444,18 +563,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
       return;
     }
 
-    final requiredNutritionFields = [
+    final nutritionFields = [
       _energyController,
       _proteinController,
       _carbsController,
       _fatController,
     ];
 
-    for (final field in requiredNutritionFields) {
-      final validatorMessage =
-          _validateNumericField(field.text, required: true);
+    for (final field in nutritionFields) {
+      final validatorMessage = _validateNumericField(field.text);
       if (validatorMessage != null) {
-        field.text = '';
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Correggi i valori nutrizionali non numerici oppure lasciali vuoti.',
+            ),
+            backgroundColor: AppColors.riskHigh,
+          ),
+        );
+        return;
       }
     }
 
@@ -474,8 +600,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     try {
       final provider = context.read<BarcodeScannerProvider>();
+      final captureController = context.read<CaptureUploadController>();
+      final managedProductPhoto = _productImage != null &&
+          context.read<MobileUploadConfig>().enabled &&
+          captureController.tokenState == DevMobileTokenState.present;
       String? imageUrl;
-      if (_productImage != null) {
+      if (_productImage != null && !managedProductPhoto) {
         final bytes = await _productImage!.readAsBytes();
         final base64 = base64Encode(bytes);
         imageUrl = 'data:image/jpeg;base64,$base64';
@@ -508,10 +638,39 @@ class _AddProductScreenState extends State<AddProductScreen> {
         nutritionImageUrl: nutritionImageUrl,
       );
 
+      String? photoUploadError;
+      if (provider.error == null && managedProductPhoto) {
+        final product = provider.currentProduct;
+        if (product?.productId == null) {
+          photoUploadError = 'product_id_missing';
+        } else {
+          captureController.reset();
+          captureController.selectImage(
+            productIdentity: ProductIdentity(
+              productId: product!.productId!,
+              barcode: product.barcode,
+            ),
+            purpose: CaptureImagePurpose.productFront,
+            bytes: await _productImage!.readAsBytes(),
+          );
+          await captureController.prepareMetadata();
+          await captureController.upload();
+          if (captureController.state.step ==
+              UploadFlowStep.uploadedAssociated) {
+            await provider.scanBarcode(product.barcode);
+          } else {
+            photoUploadError =
+                captureController.state.errorCode ?? 'photo_upload_incomplete';
+          }
+        }
+      }
+
       if (mounted) {
-        final message = provider.error == null
-            ? 'Prodotto salvato correttamente nel database.'
-            : provider.error ?? 'Errore durante il salvataggio';
+        final message = provider.error == null && photoUploadError == null
+            ? 'Prodotto e foto salvati correttamente.'
+            : provider.error == null
+                ? 'Prodotto salvato; foto da riprovare ($photoUploadError).'
+                : provider.error ?? 'Errore durante il salvataggio';
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -522,7 +681,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
         );
 
         if (provider.error == null) {
-          context.go('/');
+          setState(() {
+            _savedProductId = provider.currentProduct?.productId;
+            _savedProductBarcode = provider.currentProduct?.barcode;
+          });
         }
       }
     } finally {
@@ -545,263 +707,371 @@ class _AddProductScreenState extends State<AddProductScreen> {
           onPressed: () => context.go('/'),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: AppColors.primary.withOpacity(0.3)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.camera_alt_outlined,
-                          color: AppColors.primary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Barcode e ingredienti possono essere precompilati dalle foto. I valori nutrizionali vanno inseriti manualmente e le calorie, proteine, carboidrati e grassi sono obbligatori.',
-                          style: AppTypography.bodyMedium,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.camera_alt_outlined,
+                              color: AppColors.primary),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Ogni foto compila solo la propria sezione. Se il testo non e abbastanza chiaro, i campi restano vuoti e vanno verificati.',
+                              style: AppTypography.bodyMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _ImagePickerTile(
+                      label: _productImage == null
+                          ? 'Scatta/Carica foto prodotto'
+                          : 'Foto prodotto pronta',
+                      file: _productImage,
+                      onTap: () async {
+                        final source = await _chooseImageSource();
+                        if (source == null) return;
+                        await _pickImage(
+                          (file) => _productImage = file,
+                          source,
+                          purpose: ProductPhotoPurpose.identity,
+                        );
+                      },
+                    ),
+                    if (_photoReviewMessage != null) ...[
+                      const SizedBox(height: 12),
+                      Semantics(
+                        liveRegion: true,
+                        child: Container(
+                          key: const ValueKey('photo-review-status'),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Text(
+                            _photoReviewMessage!,
+                            style: AppTypography.bodySmall,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _ImagePickerTile(
-                  label: _productImage == null
-                      ? 'Scatta/Carica foto prodotto'
-                      : 'Foto prodotto pronta',
-                  file: _productImage,
-                  onTap: () async {
-                    final source = await _chooseImageSource();
-                    if (source == null) return;
-                    await _pickImage((file) => _productImage = file, source,
-                        isProductPhoto: true);
-                  },
-                ),
-                const SizedBox(height: 16),
-                Text('Brand', style: AppTypography.label),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _brandController,
-                  decoration: const InputDecoration(
-                    hintText: 'Es: Bio Natura',
-                    prefixIcon: Icon(Icons.business),
-                  ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Inserisci il brand'
-                      : null,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 16),
-                Text('Nome prodotto', style: AppTypography.label),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _productNameController,
-                  decoration: const InputDecoration(
-                    hintText: 'Es: Granola al cacao',
-                    prefixIcon: Icon(Icons.shopping_bag),
-                  ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Inserisci il nome del prodotto'
-                      : null,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 16),
-                Text('Categoria', style: AppTypography.label),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _categoryController,
-                  decoration: const InputDecoration(
-                    hintText: 'food',
-                    prefixIcon: Icon(Icons.category),
-                  ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Inserisci la categoria'
-                      : null,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 16),
-                Text('Tipo prodotto', style: AppTypography.label),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _productTypeController.text.trim().isNotEmpty
-                      ? _productTypeController.text.trim()
-                      : null,
-                  decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.inventory_2),
-                  ),
-                  items: _productTypeOptions
-                      .map(
-                        (type) => DropdownMenuItem<String>(
-                          value: type,
-                          child: Text(type),
+                    const SizedBox(height: 16),
+                    Text('Brand', style: AppTypography.label),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _brandController,
+                      decoration: const InputDecoration(
+                        hintText: 'Es: Bio Natura',
+                        prefixIcon: Icon(Icons.business),
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? 'Inserisci il brand'
+                              : null,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Nome prodotto', style: AppTypography.label),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _productNameController,
+                      decoration: const InputDecoration(
+                        hintText: 'Es: Granola al cacao',
+                        prefixIcon: Icon(Icons.shopping_bag),
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? 'Inserisci il nome del prodotto'
+                              : null,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Categoria', style: AppTypography.label),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _categoryController,
+                      decoration: const InputDecoration(
+                        hintText: 'food',
+                        prefixIcon: Icon(Icons.category),
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? 'Inserisci la categoria'
+                              : null,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Tipo prodotto', style: AppTypography.label),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: _productTypeController.text.trim().isNotEmpty
+                          ? _productTypeController.text.trim()
+                          : null,
+                      decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.inventory_2),
+                      ),
+                      items: _productTypeOptions
+                          .map(
+                            (type) => DropdownMenuItem<String>(
+                              value: type,
+                              child: Text(type),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          _productTypeController.text = value;
+                        }
+                      },
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? 'Inserisci il tipo prodotto'
+                              : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Barcode', style: AppTypography.label),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _barcodeController,
+                      readOnly: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Barcode rilevato automaticamente dalla foto',
+                        prefixIcon: Icon(Icons.qr_code),
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                              ? 'Inserisci il barcode'
+                              : null,
+                      onChanged: (_) => setState(() {}),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _openBarcodeScanner,
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Leggi barcode con scanner'),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Ingredienti', style: AppTypography.label),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _ingredientsController,
+                      maxLines: 5,
+                      decoration: const InputDecoration(
+                        hintText:
+                            'Gli ingredienti vengono precompilati da foto e possono essere corretti manualmente.',
+                        prefixIcon: Icon(Icons.list_alt),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _ImagePickerTile(
+                      label: _ingredientsImage == null
+                          ? 'Scatta/Carica foto ingredienti'
+                          : 'Foto ingredienti pronta',
+                      file: _ingredientsImage,
+                      onTap: () async {
+                        final source = await _chooseImageSource();
+                        if (source == null) return;
+                        await _pickImage(
+                          (file) => _ingredientsImage = file,
+                          source,
+                          purpose: ProductPhotoPurpose.ingredients,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Valori nutrizionali', style: AppTypography.headline3),
+                    const SizedBox(height: 8),
+                    _ImagePickerTile(
+                      label: _nutritionImage == null
+                          ? 'Scatta/Carica foto valori nutrizionali'
+                          : 'Foto valori nutrizionali pronta',
+                      file: _nutritionImage,
+                      onTap: () async {
+                        final source = await _chooseImageSource();
+                        if (source == null) return;
+                        await _pickImage(
+                          (file) => _nutritionImage = file,
+                          source,
+                          purpose: ProductPhotoPurpose.nutrition,
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Inserisci manualmente i valori numerici richiesti per 100 g di prodotto. Sodio e fibre sono opzionali.',
+                      style: AppTypography.bodySmall,
+                    ),
+                    const SizedBox(height: 16),
+                    GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 2.4,
+                      children: [
+                        _NumberField(
+                          controller: _energyController,
+                          label: 'Energia kcal',
                         ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      _productTypeController.text = value;
-                    }
-                  },
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Inserisci il tipo prodotto'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                Text('Barcode', style: AppTypography.label),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _barcodeController,
-                  readOnly: true,
-                  decoration: const InputDecoration(
-                    hintText: 'Barcode rilevato automaticamente dalla foto',
-                    prefixIcon: Icon(Icons.qr_code),
-                  ),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Inserisci il barcode'
-                      : null,
-                  onChanged: (_) => setState(() {}),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _openBarcodeScanner,
-                  icon: const Icon(Icons.qr_code_scanner),
-                  label: const Text('Leggi barcode con scanner'),
-                ),
-                const SizedBox(height: 24),
-                Text('Ingredienti', style: AppTypography.label),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _ingredientsController,
-                  maxLines: 5,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'Gli ingredienti vengono precompilati da foto e possono essere corretti manualmente.',
-                    prefixIcon: Icon(Icons.list_alt),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                _ImagePickerTile(
-                  label: _ingredientsImage == null
-                      ? 'Scatta/Carica foto ingredienti'
-                      : 'Foto ingredienti pronta',
-                  file: _ingredientsImage,
-                  onTap: () async {
-                    final source = await _chooseImageSource();
-                    if (source == null) return;
-                    await _pickImage((file) => _ingredientsImage = file, source,
-                        isProductPhoto: false);
-                  },
-                ),
-                const SizedBox(height: 24),
-                Text('Valori nutrizionali', style: AppTypography.headline3),
-                const SizedBox(height: 8),
-                _ImagePickerTile(
-                  label: _nutritionImage == null
-                      ? 'Scatta/Carica foto valori nutrizionali'
-                      : 'Foto valori nutrizionali pronta',
-                  file: _nutritionImage,
-                  onTap: () async {
-                    final source = await _chooseImageSource();
-                    if (source == null) return;
-                    await _pickImage((file) => _nutritionImage = file, source,
-                        isProductPhoto: true);
-                  },
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Inserisci manualmente i valori numerici richiesti per 100 g di prodotto. Sodio e fibre sono opzionali.',
-                  style: AppTypography.bodySmall,
-                ),
-                const SizedBox(height: 16),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 2.4,
-                  children: [
-                    _NumberField(
-                      controller: _energyController,
-                      label: 'Energia kcal',
+                        _NumberField(
+                          controller: _proteinController,
+                          label: 'Proteine g',
+                        ),
+                        _NumberField(
+                          controller: _carbsController,
+                          label: 'Carboidrati g',
+                        ),
+                        _NumberField(
+                            controller: _sugarController, label: 'Zuccheri g'),
+                        _NumberField(
+                          controller: _fatController,
+                          label: 'Grassi g',
+                        ),
+                        _NumberField(
+                            controller: _saturatedFatController,
+                            label: 'Grassi saturi g'),
+                        _NumberField(
+                            controller: _sodiumController, label: 'Sodio mg'),
+                        _NumberField(
+                            controller: _fiberController, label: 'Fibre g'),
+                      ],
                     ),
-                    _NumberField(
-                      controller: _proteinController,
-                      label: 'Proteine g',
+                    const SizedBox(height: 24),
+                    if (_isProcessingImage)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ),
+                    if (mobileUploadEnabled) ...[
+                      const DevMobileCaptureUploadPanel(),
+                      const SizedBox(height: 24),
+                    ],
+                    ElevatedButton.icon(
+                      onPressed:
+                          _isSubmitting || _isProcessingImage ? null : _submit,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save_alt),
+                      label: Text(_isSubmitting
+                          ? 'Salvataggio...'
+                          : 'Salva prodotto nel database'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
                     ),
-                    _NumberField(
-                      controller: _carbsController,
-                      label: 'Carboidrati g',
+                    if (_savedProductId != null) ...[
+                      const SizedBox(height: 16),
+                      Card(
+                        key: const ValueKey('product-save-result'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Prodotto salvato',
+                                  style: AppTypography.headline3),
+                              const SizedBox(height: 8),
+                              Text('Product ID: $_savedProductId'),
+                              const SizedBox(height: 4),
+                              const Text('Score: non ancora calcolato'),
+                              const SizedBox(height: 4),
+                              const Text('Origine: inserimento da foto'),
+                              if (_savedProductBarcode != null) ...[
+                                const SizedBox(height: 12),
+                                OutlinedButton.icon(
+                                  key: const ValueKey('open-saved-product'),
+                                  onPressed: () => context.go(
+                                    '/product/$_savedProductBarcode',
+                                  ),
+                                  icon: const Icon(Icons.open_in_new),
+                                  label: const Text('Apri dettaglio prodotto'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: () => context.go('/'),
+                      icon: const Icon(Icons.home),
+                      label: const Text('Torna alla home'),
                     ),
-                    _NumberField(
-                        controller: _sugarController, label: 'Zuccheri g'),
-                    _NumberField(
-                      controller: _fatController,
-                      label: 'Grassi g',
-                    ),
-                    _NumberField(
-                        controller: _saturatedFatController,
-                        label: 'Grassi saturi g'),
-                    _NumberField(
-                        controller: _sodiumController, label: 'Sodio mg'),
-                    _NumberField(
-                        controller: _fiberController, label: 'Fibre g'),
                   ],
                 ),
-                const SizedBox(height: 24),
-                if (_isProcessingImage)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          ),
+          if (_isProcessingImage)
+            Positioned.fill(
+              child: AbsorbPointer(
+                child: ColoredBox(
+                  color: Colors.black54,
+                  child: Center(
+                    child: Card(
+                      key: const ValueKey('photo-flow-overlay'),
+                      margin: const EdgeInsets.all(32),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const CircularProgressIndicator(),
+                            const SizedBox(height: 16),
+                            Text(
+                              _imageFlowStatus,
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodyLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Non tornare indietro: il prossimo passaggio si apre automaticamente.',
+                              textAlign: TextAlign.center,
+                              style: AppTypography.bodySmall,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                if (mobileUploadEnabled) ...[
-                  const DevMobileCaptureUploadPanel(),
-                  const SizedBox(height: 24),
-                ],
-                ElevatedButton.icon(
-                  onPressed: _isSubmitting ? null : _submit,
-                  icon: _isSubmitting
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.save_alt),
-                  label: Text(_isSubmitting
-                      ? 'Salvataggio...'
-                      : 'Salva prodotto nel database'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
                 ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => context.go('/'),
-                  icon: const Icon(Icons.home),
-                  label: const Text('Torna alla home'),
-                ),
-              ],
+              ),
             ),
-          ),
-        ),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
@@ -854,8 +1124,24 @@ class _ImagePickerTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(file == null ? Icons.add_a_photo_outlined : Icons.check_circle,
-                color: AppColors.primary),
+            if (file == null)
+              const Icon(Icons.add_a_photo_outlined, color: AppColors.primary)
+            else
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(file!.path),
+                  key: const ValueKey('captured-image-preview'),
+                  width: 64,
+                  height: 64,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox(
+                    width: 64,
+                    height: 64,
+                    child: Icon(Icons.check_circle, color: AppColors.primary),
+                  ),
+                ),
+              ),
             const SizedBox(width: 12),
             Expanded(child: Text(label, style: AppTypography.bodyMedium)),
           ],
@@ -868,12 +1154,10 @@ class _ImagePickerTile extends StatelessWidget {
 class _NumberField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
-  final String? Function(String?)? validator;
 
   const _NumberField({
     required this.controller,
     required this.label,
-    this.validator,
   });
 
   @override
@@ -885,7 +1169,6 @@ class _NumberField extends StatelessWidget {
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      validator: validator,
     );
   }
 }

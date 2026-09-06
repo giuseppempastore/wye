@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../models/product_model.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import '../widgets/product_image.dart';
+import '../widgets/score_widgets.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({Key? key}) : super(key: key);
@@ -59,7 +59,11 @@ class HistoryScreen extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   contentPadding: const EdgeInsets.all(16),
-                  leading: _buildHistoryImage(context, scan),
+                  leading: ProductImage(
+                    imageUrl: scan.imageUrl,
+                    width: 60,
+                    height: 60,
+                  ),
                   title: Text(
                     scan.productName,
                     style: AppTypography.bodyLarge,
@@ -73,6 +77,12 @@ class HistoryScreen extends StatelessWidget {
                       Text(
                         scan.category,
                         style: AppTypography.labelSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Score: ${scoreAvailabilityLabel(scan.scoreView)}',
+                        key: const ValueKey('history-score-state'),
+                        style: AppTypography.bodySmall,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -122,39 +132,6 @@ class HistoryScreen extends StatelessWidget {
               break;
           }
         },
-      ),
-    );
-  }
-
-  Widget _buildHistoryImage(BuildContext context, ScanHistory scan) {
-    if (scan.imageUrl != null && scan.imageUrl!.startsWith('data:image')) {
-      final bytes = const Base64Codec().decode(scan.imageUrl!.split(',').last);
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Image.memory(
-          bytes,
-          width: 60,
-          height: 60,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
-
-    final neutralColor = Theme.of(context).colorScheme.outline;
-
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: neutralColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: neutralColor),
-      ),
-      child: Center(
-        child: Icon(
-          Icons.info_outline,
-          color: neutralColor,
-        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import '../widgets/product_image.dart';
 import '../widgets/score_widgets.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -28,10 +29,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   Future<void> _loadProduct() async {
     final provider = context.read<BarcodeScannerProvider>();
-    if (provider.currentProduct == null ||
-        provider.currentProduct!.barcode != widget.barcode) {
-      await provider.scanBarcode(widget.barcode);
-    }
+    await provider.scanBarcode(widget.barcode);
   }
 
   @override
@@ -91,6 +89,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (product.imageUrl != null) ...[
+                        ProductImage(
+                          key: const ValueKey('product-detail-image'),
+                          imageUrl: product.imageUrl,
+                          height: 220,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       // Product Info
                       Card(
                         child: Padding(
@@ -107,6 +113,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 product.productName,
                                 style: AppTypography.headline3,
                               ),
+                              if (product.productId != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Product ID: ${product.productId}',
+                                  key: const ValueKey('product-detail-id'),
+                                  style: AppTypography.bodySmall,
+                                ),
+                              ],
                               const SizedBox(height: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(

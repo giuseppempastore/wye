@@ -4,6 +4,13 @@ import 'package:wye/models/score_evaluability_model.dart';
 import 'package:wye/widgets/score_widgets.dart';
 
 void main() {
+  test('unavailable score has an explicit non-numeric label', () {
+    final label = scoreAvailabilityLabel(ProductScoreView.unavailable());
+
+    expect(label, 'Non ancora calcolato');
+    expect(label, isNot(contains(RegExp(r'\d'))));
+  });
+
   testWidgets('computable zero is displayed as an explicit component value',
       (tester) async {
     final scoreView = ProductScoreView(
@@ -61,7 +68,7 @@ void main() {
     await _pumpScoreCard(tester, ProductScoreView.unavailable());
 
     expect(find.text('Valutazione complessiva'), findsOneWidget);
-    expect(find.text('Differita per questa fase MVP'), findsOneWidget);
+    expect(find.text('Non ancora calcolato'), findsOneWidget);
     expect(find.byKey(const ValueKey('overall-result-state')), findsOneWidget);
     expect(find.byType(LinearProgressIndicator), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -77,7 +84,7 @@ void main() {
     await _pumpScoreCard(tester, unavailable);
 
     expect(
-      find.text('Non disponibile per questa fase MVP'),
+      find.text('Score non disponibile'),
       findsOneWidget,
     );
   });

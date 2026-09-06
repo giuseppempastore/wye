@@ -89,7 +89,7 @@ class Product {
   }
 
   @override
-  String toString() => 'Product(productId: $productId, barcode: $barcode, '
+  String toString() => 'Product(productId: $productId, barcode: <redacted>, '
       'productName: $productName)';
 }
 
@@ -122,15 +122,15 @@ class NutritionFacts {
 
   factory NutritionFacts.fromJson(Map<String, dynamic> json) {
     return NutritionFacts(
-      servingSize: json['serving_size'] as double?,
-      energyKcal: json['energy_kcal'] as double?,
-      protein: json['protein'] as double?,
-      carbs: json['carbs'] as double?,
-      sugar: json['sugar'] as double?,
-      fat: json['fat'] as double?,
-      saturatedFat: json['saturated_fat'] as double?,
-      sodium: json['sodium'] as double?,
-      fiber: json['fiber'] as double?,
+      servingSize: _toDouble(json['serving_size']),
+      energyKcal: _toDouble(json['energy_kcal']),
+      protein: _toDouble(json['protein']),
+      carbs: _toDouble(json['carbs']),
+      sugar: _toDouble(json['sugar']),
+      fat: _toDouble(json['fat']),
+      saturatedFat: _toDouble(json['saturated_fat']),
+      sodium: _toDouble(json['sodium']),
+      fiber: _toDouble(json['fiber']),
     );
   }
 
@@ -147,6 +147,11 @@ class NutritionFacts {
       'fiber': fiber,
     };
   }
+}
+
+double? _toDouble(Object? value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '');
 }
 
 class ScanHistory {

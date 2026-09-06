@@ -2,6 +2,13 @@ import 'package:flutter/material.dart';
 import '../models/score_evaluability_model.dart';
 import '../theme/app_theme.dart';
 
+String scoreAvailabilityLabel(ProductScoreView scoreView) {
+  return switch (scoreView.overallScore.availability) {
+    OverallScoreAvailability.deferred => 'Non ancora calcolato',
+    OverallScoreAvailability.unavailable => 'Score non disponibile',
+  };
+}
+
 /// Component score container. Overall scoring remains unavailable/deferred.
 class ScoreCard extends StatelessWidget {
   final ProductScoreView scoreView;
@@ -195,9 +202,8 @@ class _OverallResult extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stateLabel = switch (overallScore.availability) {
-      OverallScoreAvailability.deferred => 'Differita per questa fase MVP',
-      OverallScoreAvailability.unavailable =>
-        'Non disponibile per questa fase MVP',
+      OverallScoreAvailability.deferred => 'Non ancora calcolato',
+      OverallScoreAvailability.unavailable => 'Score non disponibile',
     };
 
     return Row(

@@ -1,3 +1,5 @@
+from typing import Any
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -87,15 +89,29 @@ def _coerce_nutrition_values(nutrition: dict | None) -> dict:
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail=f'Nutrition field {key} must be numeric')
 
-    required_keys = ['energy_kcal', 'protein_g', 'carbs_g', 'fat_g']
-    missing = [key for key in required_keys if key not in cleaned]
-    if missing:
-        raise HTTPException(
-            status_code=400,
-            detail=f'Missing required nutrition values: {", ".join(missing)}',
-        )
-
     return cleaned
+
+
+def _unavailable_score_view() -> dict[str, Any]:
+    component = {
+        "evaluability_status": "not_computable",
+        "score_value": None,
+        "assessment_coverage_percent": None,
+        "confidence_state": None,
+        "missing_inputs": [],
+        "uncertainties": [],
+        "explanations": [],
+        "disclosures": [],
+    }
+    return {
+        "ingredient_goodness_percent": dict(component),
+        "nutrition_goodness_percent": dict(component),
+        "overall_score": {
+            "availability": "deferred",
+            "explanations": [{"code": "score_not_yet_computed", "context": {}}],
+            "disclosures": [],
+        },
+    }
 
 
 @app.get("/health")
@@ -321,30 +337,15 @@ def create_product(payload: ProductCreateRequest):
                 ),
             )
 
-        cur.execute(
-            """
-            SELECT * FROM product_scores WHERE product_id = %s ORDER BY generated_at DESC LIMIT 1
-            """,
-            (product['id'],),
-        )
-        score = cur.fetchone()
-        if not score:
-            cur.execute(
-                """
-                INSERT INTO product_scores (
-                    product_id, ingredient_score, nutrition_score, final_score, score_band,
-                    ingredient_risk_summary, nutrition_summary, final_summary, calculation_version
-                )
-                VALUES (%s, 50.00, 80.00, 65.00, 'moderate', 'Photo-based entry created', 'Nutrition captured from image', 'Newly added product from photo submission', 'photo_submission_v1')
-                """,
-                (product['id'],),
-            )
-
         cur.execute("SELECT * FROM products WHERE id = %s", (product['id'],))
         saved_product = cur.fetchone()
         conn.commit()
         cur.close()
-        return {"message": "product created", "product": saved_product}
+        return {
+            "message": "product created",
+            "product": saved_product,
+            "score_view": _unavailable_score_view(),
+        }
     except Exception:
         conn.rollback()
         raise
@@ -354,7 +355,7 @@ def create_product(payload: ProductCreateRequest):
 
 @app.get("/product/{barcode}")
 def get_product(barcode: str):
-    """Return product, latest score and mapped ingredients for a barcode."""
+    """Return product data plus canonical image reference and score state."""
     conn = get_connection()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -362,9 +363,6 @@ def get_product(barcode: str):
         product = cur.fetchone()
         if not product:
             return {"error": "not_found", "barcode": barcode}
-
-        cur.execute("SELECT * FROM product_scores WHERE product_id = %s ORDER BY generated_at DESC LIMIT 1", (product['id'],))
-        score = cur.fetchone()
 
         cur.execute(
             """
@@ -376,8 +374,42 @@ def get_product(barcode: str):
             """, (product['id'],)
         )
         ingredients = cur.fetchall()
+
+        cur.execute(
+            """
+            SELECT serving_size, energy_kcal, protein_g, carbs_g, sugar_g,
+                   fat_g, saturated_fat_g, sodium_mg, fiber_g
+            FROM nutrition_facts
+            WHERE product_id = %s
+            ORDER BY updated_at DESC, id DESC
+            LIMIT 1
+            """,
+            (product['id'],),
+        )
+        nutrition_facts = cur.fetchone()
+
+        cur.execute(
+            """
+            SELECT id, mime_type
+            FROM product_images
+            WHERE product_id = %s
+              AND image_type = 'product_front'
+              AND status = 'active'
+              AND is_current = TRUE
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """,
+            (product['id'],),
+        )
+        product_image = cur.fetchone()
         cur.close()
     finally:
         conn.close()
 
-    return {"product": product, "score": score, "ingredients": ingredients}
+    return {
+        "product": product,
+        "product_image": product_image,
+        "score_view": _unavailable_score_view(),
+        "ingredients": ingredients,
+        "nutrition_facts": nutrition_facts,
+    }

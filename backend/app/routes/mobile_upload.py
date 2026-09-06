@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Response
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, ValidationError
 
 from app.extraction.config import ExtractionSettings
 from app.extraction.prompts import PROMPT_ID
@@ -68,6 +68,11 @@ class MobileUploadFinalizeResponse(BaseModel):
     status: Literal["finalized"]
     storage_object_id: int = Field(gt=0)
     product_image_id: int = Field(gt=0)
+
+
+class MobileImageAccessResponse(BaseModel):
+    url: AnyHttpUrl
+    expires_at: datetime
 
 
 class MobileExtractionCreateRequest(BaseModel):
@@ -505,6 +510,60 @@ def finalize_mobile_upload(
         product_id,
         product_image_id=result.get("product_image_id"),
         storage_object_id=result.get("storage_object_id"),
+    )
+    return result
+
+
+@router.get(
+    "/products/{product_id}/images/{image_id}/access",
+    response_model=MobileImageAccessResponse,
+)
+def access_mobile_image(
+    response: Response,
+    product_id: int = Path(gt=0),
+    image_id: int = Path(gt=0),
+    session: MobileSessionRecord = Depends(require_upload_session),
+    service: ImageUploadService = Depends(get_image_upload_service),
+    x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
+):
+    started_at = time.perf_counter()
+    request_id = _request_id(x_request_id)
+    try:
+        result = service.access(product_id, image_id)
+    except UploadError as exc:
+        _log_transition(
+            "image_access",
+            request_id,
+            exc.code,
+            started_at,
+            session,
+            product_id,
+            product_image_id=image_id,
+        )
+        raise _safe_error(exc.status, exc.code, exc.message) from exc
+    except Exception:
+        _log_transition(
+            "image_access",
+            request_id,
+            "mobile_image_access_failed",
+            started_at,
+            session,
+            product_id,
+            product_image_id=image_id,
+        )
+        raise _safe_error(
+            503, "mobile_image_access_failed", "Product image is unavailable"
+        ) from None
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["X-Request-ID"] = request_id
+    _log_transition(
+        "image_access",
+        request_id,
+        "created",
+        started_at,
+        session,
+        product_id,
+        product_image_id=image_id,
     )
     return result
 

@@ -80,6 +80,16 @@ class ImageUploadService:
             try: self.adapter.delete_object(row["staging_object_key"])
             except Exception: pass
             raise
+    def access(self,product_id,image_id):
+        conn=self.connection_factory()
+        try:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute("""SELECT so.object_key FROM product_images pi JOIN storage_objects so ON so.id=pi.storage_object_id WHERE pi.id=%s AND pi.product_id=%s AND pi.status='active' AND pi.is_current=TRUE""",(image_id,product_id))
+                row=cur.fetchone()
+                if not row: raise UploadError("image_not_found","Product image not found",404)
+            expires_at=datetime.now(timezone.utc)+timedelta(seconds=self.settings.read_ttl)
+            return {"url":self.adapter.generate_read_url(row["object_key"],self.settings.read_ttl),"expires_at":expires_at}
+        finally: conn.close()
     def _commit(self,row,key,version,mime,size,checksum):
         conn=self.connection_factory()
         try:

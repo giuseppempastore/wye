@@ -107,7 +107,6 @@ try {
         'runtime=docker_compose_e2e'
         "api_base_url=http://${hostIp}:8000"
         "fixture_product_id=$fixtureProductId"
-        'fixture_barcode=9876543210987'
     )
     Set-Content -LiteralPath $feedbackFile -Encoding UTF8 -Value @(
         "test_run_id=$testRunId"
@@ -122,7 +121,6 @@ try {
     Write-Host '============================================================' -ForegroundColor Green
     Write-Host ' WYE STA PER APRIRSI SUL TELEFONO' -ForegroundColor Green
     Write-Host " Product ID di test: $fixtureProductId"
-    Write-Host ' Barcode di test:    9876543210987'
     Write-Host ' Token: gia copiato; incollalo in Settings se serve.'
     Write-Host ' Usa l app e valuta la User Experience.'
     Write-Host ' Quando hai finito torna qui e premi q.'
