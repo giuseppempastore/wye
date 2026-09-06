@@ -118,3 +118,19 @@ Non è richiesto né accettabile allegare log completi.
 Il repository produce eventi frontend strutturati sanitizzati per il percorso canonico e summary backend `mobile_facade` revisionabili. Non produce ancora un unico correlation ID end-to-end che attraversi initialize, PUT storage, finalize ed extraction; il PUT non condivide un request ID applicativo. Non esiste secret scanning automatico della sessione né un generatore di pacchetto unico.
 
 La Phase 9.1 deve implementare, dopo autorizzazione separata, un comando o wizard che raccolga soltanto campi allowlisted, esegua secret scanning fail-closed, unisca le evidenze per session/test ID e generi il pacchetto compatto. Questa Phase 9.0 documenta il gap e non implementa il generatore.
+
+## 12. Retest manuale Phase 9.2B — Aggiungi prodotto
+
+1. Avvia una nuova sessione con `powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Projects\wye\start_phase9_test.ps1` e annota soltanto l'ID sicuro della cartella evidenze.
+2. Sul device apri `Aggiungi prodotto da foto` e scansiona un EAN/UPC reale. Verifica che URL/QR testuali e check digit errati siano rifiutati senza lookup.
+3. Scatta la foto frontale, confermala e ritagliala. Verifica che rimanga visibile l'overlay di transizione, poi l'editor, senza ritorno operativo alla Home; nessun campo deve essere precompilato dalla foto frontale.
+4. Inserisci manualmente brand, nome, categoria food e tipo.
+5. Acquisisci separatamente la foto ingredienti. Correggi o rimuovi il testo dubbio e seleziona `Da verificare` soltanto dopo il controllo.
+6. Acquisisci separatamente la tabella nutrizionale. Controlla valori e unità e conferma `Da verificare`; dati impossibili devono essere rifiutati.
+7. Salva. Verifica `Product ID` e `Score: non ancora calcolato`, senza numero inventato.
+8. Apri lo storico e poi riapri lo stesso prodotto tramite barcode: la stessa foto frontale e lo stesso stato score non numerico devono essere visibili.
+9. Compila il pacchetto sanitizzato della sezione 9. Non allegare foto, barcode, raw OCR, URL firmate o log completi.
+
+## 13. Piano conservativo di riordino documentale
+
+Non esiste una cartella `docs` canonica e nessun file è stato spostato in Phase 9.2B. In una subfase separata si può creare un indice unico che colleghi i documenti Phase 7/8/9, distinguere runbook attivi da documenti storici e controllare tutti i riferimenti relativi prima di qualsiasi spostamento. Codice, migration, test, Compose e script PowerShell restano nelle posizioni attuali.

@@ -147,7 +147,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('dev-mobile-barcode-field')),
-      '8001234567890',
+      '4006381333931',
     );
     await tester.pump();
 
@@ -190,7 +190,7 @@ void main() {
     await tester.pump();
     await tester.enterText(
       find.byKey(const Key('dev-mobile-barcode-field')),
-      '8001234567890',
+      '4006381333931',
     );
     await tester.pump();
 
@@ -225,7 +225,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('dev-mobile-barcode-field')),
-      '8001234567890',
+      '4006381333931',
     );
     await tester.pump();
     await tester.ensureVisible(
@@ -315,7 +315,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('dev-mobile-barcode-field')),
-      '8001234567890',
+      '4006381333931',
     );
     await tester.pump();
 
@@ -377,7 +377,7 @@ void main() {
     );
     await tester.enterText(
       find.byKey(const Key('dev-mobile-barcode-field')),
-      '8001234567890',
+      '4006381333931',
     );
     await tester.pump();
 

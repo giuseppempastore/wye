@@ -25,9 +25,19 @@ class NutritionEntry(BaseModel):
     model_config = ConfigDict(extra="forbid")
     nutrient: Literal["energy", "fat", "saturated_fat", "carbohydrate", "sugars", "protein", "salt", "fiber"]
     raw_label: str = Field(min_length=1)
-    value: float
+    value: float = Field(ge=0)
     unit: str = Field(min_length=1)
     basis: NutritionBasis | None
+
+    @model_validator(mode="after")
+    def validate_unit_for_nutrient(self):
+        normalized_unit = self.unit.strip().lower()
+        if self.nutrient == "energy":
+            if normalized_unit not in {"kj", "kcal"}:
+                raise ValueError("energy unit must be kJ or kcal")
+        elif normalized_unit not in {"g", "mg"}:
+            raise ValueError("nutrient unit must be g or mg")
+        return self
 
 
 class LabelExtractionOutput(BaseModel):

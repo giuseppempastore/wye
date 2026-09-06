@@ -398,12 +398,14 @@ def initialize_mobile_upload(
     response: Response,
     product_id: int = Path(gt=0),
     session: MobileSessionRecord = Depends(require_upload_session),
+    store: MobileUploadSessionStore = Depends(get_mobile_session_store),
     service: ImageUploadService = Depends(get_image_upload_service),
     x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
 ):
     started_at = time.perf_counter()
     request_id = _request_id(x_request_id)
     try:
+        store.consume(session, "upload_initialize", 6)
         result = service.initialize(
             product_id,
             payload.image_type,
@@ -411,6 +413,12 @@ def initialize_mobile_upload(
             payload.byte_size,
             payload.sha256.lower(),
         )
+    except MobileSessionError as exc:
+        _log_transition(
+            "upload_initialize", request_id, exc.code, started_at, session,
+            product_id, payload.image_type,
+        )
+        raise _safe_error(exc.status, exc.code, exc.message) from exc
     except UploadError as exc:
         _log_transition(
             "upload_initialize",
@@ -579,6 +587,7 @@ def create_mobile_extraction(
     product_id: int = Path(gt=0),
     image_id: int = Path(gt=0),
     session: MobileSessionRecord = Depends(require_extraction_session),
+    store: MobileUploadSessionStore = Depends(get_mobile_session_store),
     service: LabelExtractionService = Depends(get_label_extraction_service),
     idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
@@ -586,6 +595,7 @@ def create_mobile_extraction(
     started_at = time.perf_counter()
     request_id = _request_id(x_request_id)
     try:
+        store.consume(session, "extraction_create", 3)
         result = service.create(
             product_id,
             image_id,
@@ -593,6 +603,12 @@ def create_mobile_extraction(
             payload.model,
             payload.prompt_version,
         )
+    except MobileSessionError as exc:
+        _log_transition(
+            "extraction_create", request_id, exc.code, started_at, session,
+            product_id, product_image_id=image_id,
+        )
+        raise _safe_error(exc.status, exc.code, exc.message) from exc
     except ExtractionError as exc:
         _log_transition(
             "extraction_create",

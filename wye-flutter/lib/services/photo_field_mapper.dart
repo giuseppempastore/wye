@@ -1,7 +1,9 @@
 enum ProductPhotoPurpose {
-  identity,
+  productFront,
   ingredients,
   nutrition,
+  other,
+  unknown,
 }
 
 class PhotoFieldMapping {
@@ -38,20 +40,11 @@ class PhotoFieldMapping {
 /// photo purpose. In particular, unlabelled marketing/title text is never
 /// reused as an ingredient list.
 class PhotoFieldMapper {
-  static const _allowedProductTypes = {
-    'snack',
-    'beverage',
-    'cosmetic',
-    'bakery',
-    'dairy',
-    'cereal',
-    'dessert',
-    'sauce',
-    'fruit',
-    'other',
-  };
-
   const PhotoFieldMapper();
+
+  bool shouldExtractText(ProductPhotoPurpose purpose) =>
+      purpose == ProductPhotoPurpose.ingredients ||
+      purpose == ProductPhotoPurpose.nutrition;
 
   PhotoFieldMapping map(String rawText, ProductPhotoPurpose purpose) {
     final lines = rawText
@@ -61,48 +54,13 @@ class PhotoFieldMapper {
         .toList(growable: false);
 
     return switch (purpose) {
-      ProductPhotoPurpose.identity => _mapIdentity(lines),
+      ProductPhotoPurpose.productFront ||
+      ProductPhotoPurpose.other ||
+      ProductPhotoPurpose.unknown =>
+        const PhotoFieldMapping(),
       ProductPhotoPurpose.ingredients => _mapIngredients(lines),
       ProductPhotoPurpose.nutrition => _mapNutrition(lines),
     };
-  }
-
-  PhotoFieldMapping _mapIdentity(List<String> lines) {
-    String? labelledValue(List<String> labels) {
-      for (final line in lines) {
-        for (final label in labels) {
-          final match = RegExp(
-            '^${RegExp.escape(label)}\\s*[:\\-]\\s*(.+)\$',
-            caseSensitive: false,
-          ).firstMatch(line);
-          final value = match?.group(1)?.trim();
-          if (value != null && value.length >= 2 && value.length <= 100) {
-            return value;
-          }
-        }
-      }
-      return null;
-    }
-
-    final category = labelledValue(const ['categoria', 'category']);
-    final rawType = labelledValue(const [
-      'tipo prodotto',
-      'product type',
-      'tipo',
-      'type',
-    ]);
-    final normalizedType = rawType?.toLowerCase().replaceAll(' ', '_');
-
-    return PhotoFieldMapping(
-      brandName: labelledValue(const ['marca', 'brand']),
-      productName:
-          labelledValue(const ['nome prodotto', 'product name', 'prodotto']),
-      category: category == null ? null : category.toLowerCase(),
-      productType: normalizedType != null &&
-              _allowedProductTypes.contains(normalizedType)
-          ? normalizedType
-          : null,
-    );
   }
 
   PhotoFieldMapping _mapIngredients(List<String> lines) {
@@ -131,7 +89,11 @@ class PhotoFieldMapper {
         break;
       }
       if (collecting) {
-        collected.add(line);
+        final isObviousNoise = RegExp(
+          r'\b(www\.|peso netto|net weight|conservare|store in|made in|prodotto da|via\s+|serving|porzione)\b',
+          caseSensitive: false,
+        ).hasMatch(line);
+        if (!isObviousNoise) collected.add(line);
       }
     }
 

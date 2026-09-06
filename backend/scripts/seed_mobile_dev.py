@@ -10,7 +10,7 @@ if str(BACKEND_ROOT) not in sys.path:
 from app.db import get_connection
 
 
-BARCODE = "9876543210987"
+BARCODE = "9876543210982"
 
 
 def run() -> None:

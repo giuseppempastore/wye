@@ -4,20 +4,37 @@ import 'package:wye/services/photo_field_mapper.dart';
 void main() {
   const mapper = PhotoFieldMapper();
 
-  test('identity photo maps only explicitly labelled identity fields', () {
+  test('product front is representative and maps no fields', () {
     final result = mapper.map(
       'Brand: Bio Natura\nProduct name: Granola Cacao\n'
       'Category: food\nProduct type: cereal\n'
       'Ingredients: wheat, sugar',
-      ProductPhotoPurpose.identity,
+      ProductPhotoPurpose.productFront,
     );
 
-    expect(result.brandName, 'Bio Natura');
-    expect(result.productName, 'Granola Cacao');
-    expect(result.category, 'food');
-    expect(result.productType, 'cereal');
+    expect(result.brandName, isNull);
+    expect(result.productName, isNull);
+    expect(result.category, isNull);
+    expect(result.productType, isNull);
     expect(result.ingredientListText, isNull);
     expect(result.nutrition, isEmpty);
+    expect(mapper.shouldExtractText(ProductPhotoPurpose.productFront), isFalse);
+  });
+
+  test('product front never populates ingredients', () {
+    final result = mapper.map(
+      'Ingredienti: acqua, sale',
+      ProductPhotoPurpose.productFront,
+    );
+    expect(result.hasIngredients, isFalse);
+  });
+
+  test('product front never populates nutrition', () {
+    final result = mapper.map(
+      'Valori nutrizionali\nEnergia 100 kcal',
+      ProductPhotoPurpose.productFront,
+    );
+    expect(result.hasNutrition, isFalse);
   });
 
   test('unlabelled product title never becomes ingredients', () {
@@ -40,6 +57,8 @@ void main() {
     expect(result.ingredientListText, 'avena, zucchero, cacao');
     expect(result.ingredientListText, isNot(contains('Granola Cacao')));
     expect(result.ingredientListText, isNot(contains('420')));
+    expect(result.hasIdentity, isFalse);
+    expect(result.nutrition, isEmpty);
   });
 
   test('nutrition photo maps labelled table values only', () {
@@ -57,6 +76,7 @@ void main() {
     expect(result.nutrition['fat_g'], 18);
     expect(result.nutrition['sodium_mg'], 80);
     expect(result.ingredientListText, isNull);
+    expect(result.hasIdentity, isFalse);
   });
 
   test('nutrition without table context is left empty', () {
@@ -66,5 +86,25 @@ void main() {
     );
 
     expect(result.nutrition, isEmpty);
+  });
+
+  test('unknown purpose prepopulates no canonical field', () {
+    final result = mapper.map(
+      'Brand: Example\nIngredienti: acqua\nEnergia 10 kcal',
+      ProductPhotoPurpose.unknown,
+    );
+    expect(result.hasIdentity, isFalse);
+    expect(result.hasIngredients, isFalse);
+    expect(result.hasNutrition, isFalse);
+    expect(mapper.shouldExtractText(ProductPhotoPurpose.unknown), isFalse);
+  });
+
+  test('obvious non-ingredient lines are filtered', () {
+    final result = mapper.map(
+      'Ingredienti:\nacqua, sale\nPeso netto 200 g\nVia Roma 1\n'
+      'Valori nutrizionali',
+      ProductPhotoPurpose.ingredients,
+    );
+    expect(result.ingredientListText, 'acqua, sale');
   });
 }

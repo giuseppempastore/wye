@@ -234,6 +234,15 @@ class MobileUploadFacadeTests(unittest.TestCase):
                     ttl_context.exception.code, "mobile_session_ttl_invalid"
                 )
 
+    def test_session_operation_budget_is_bounded(self):
+        issued = self.store.issue({"extraction"}, 300)
+        self.assertEqual(self.store.consume(issued.record, "extraction_create", 2), 1)
+        self.assertEqual(self.store.consume(issued.record, "extraction_create", 2), 2)
+        with self.assertRaises(MobileSessionError) as caught:
+            self.store.consume(issued.record, "extraction_create", 2)
+        self.assertEqual(caught.exception.code, "mobile_session_operation_limit")
+        self.assertEqual(caught.exception.status, 429)
+
     def test_missing_invalid_and_expired_mobile_tokens_are_rejected(self):
         self._enable()
         token = self._create_session().json()["access_token"]

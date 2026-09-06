@@ -19,7 +19,6 @@ $feedbackFile = Join-Path $evidenceDir 'ux-feedback.txt'
 $env:DOCKER_CONFIG = Join-Path $projectRoot '.local\docker-config'
 $docker = $null
 $stackStarted = $false
-$transcriptStarted = $false
 $testOutcome = 'IN_PROGRESS'
 $failureStage = 'NONE'
 
@@ -50,6 +49,30 @@ function Read-EnvironmentValue {
         Select-Object -First 1
     if (-not $line) { throw "Configurazione $Name assente." }
     return $line.Substring($Name.Length + 1)
+}
+
+function Save-AndroidExitEvidence {
+    $exitInfoFile = Join-Path $evidenceDir 'android-exit-info-sanitized.txt'
+    $deviceState = (& $adbPath get-state 2>$null | Select-Object -First 1)
+    if ($deviceState -ne 'device') {
+        Set-Content -LiteralPath $exitInfoFile -Encoding ASCII -Value 'device_state=unavailable'
+        return
+    }
+
+    $safeLines = @()
+    $safeLines += & $adbPath shell dumpsys activity exit-info com.example.wye 2>$null |
+        Where-Object { $_ -match '(ApplicationExitInfo|timestamp=|reason=|status=|importance=|pss=|rss=|description=|processStateSummary=)' }
+    $safeLines += & $adbPath logcat -d -v time AndroidRuntime:E ActivityManager:I lmkd:I '*:S' 2>$null |
+        Where-Object { $_ -match '(com\.example\.wye|FATAL EXCEPTION|OutOfMemoryError|low memory|Killing)' }
+    $safeLines = $safeLines |
+        Select-Object -Last 160 |
+        ForEach-Object {
+            $_ -replace '\b\d{8,14}\b','<redacted-number>' `
+               -replace 'https?://\S+','<redacted-url>' `
+               -replace 'UGX[A-Z0-9]+','<redacted-device>'
+        }
+    if ($safeLines.Count -eq 0) { $safeLines = @('android_exit_evidence=not_available') }
+    Set-Content -LiteralPath $exitInfoFile -Encoding UTF8 -Value $safeLines
 }
 
 New-Item -ItemType Directory -Force -Path $evidenceDir,$env:DOCKER_CONFIG | Out-Null
@@ -131,23 +154,22 @@ try {
     $failureStage = 'FLUTTER_PUB_GET'
     Push-Location $flutterRoot
     try {
-        Start-Transcript -Path $flutterLog -Append | Out-Null
-        $transcriptStarted = $true
-        & $flutterPath pub get
+        & $flutterPath pub get 2>&1 | Tee-Object -FilePath $flutterLog -Append
         if ($LASTEXITCODE -ne 0) { throw "flutter pub get fallito con codice $LASTEXITCODE." }
 
         $failureStage = 'FLUTTER_RUN'
-        & $flutterPath run --no-pub -d $deviceId '--dart-define=WYE_MOBILE_UPLOAD_ENABLED=true' "--dart-define=API_BASE_URL=http://${hostIp}:8000"
+        & $flutterPath run --no-pub -d $deviceId '--dart-define=WYE_MOBILE_UPLOAD_ENABLED=true' "--dart-define=API_BASE_URL=http://${hostIp}:8000" 2>&1 |
+            Tee-Object -FilePath $flutterLog -Append
         $flutterExitCode = $LASTEXITCODE
     }
     finally {
-        if ($transcriptStarted) {
-            Stop-Transcript | Out-Null
-            $transcriptStarted = $false
-        }
         Pop-Location
     }
 
+    if (Select-String -LiteralPath $flutterLog -SimpleMatch 'Lost connection to device.' -Quiet) {
+        $failureStage = 'FLUTTER_DEVICE_CONNECTION'
+        throw 'Flutter ha perso il processo sul telefono. Consulta android-exit-info-sanitized.txt.'
+    }
     if ($flutterExitCode -ne 0) { throw "Flutter si e chiuso con codice $flutterExitCode." }
     $testOutcome = 'COMPLETED_BY_OPERATOR'
     $failureStage = 'NONE'
@@ -159,12 +181,18 @@ try {
 catch {
     $testOutcome = 'FAILED_OR_BLOCKED'
     Write-Phase9Message "ERRORE nello step $failureStage [$($_.Exception.GetType().Name)]: $($_.Exception.Message)"
+    if ($failureStage -eq 'FLUTTER_DEVICE_CONNECTION') {
+        $failureFeedback = Read-Host 'Descrivi in una riga l ultimo gesto eseguito prima della chiusura'
+        if (-not [string]::IsNullOrWhiteSpace($failureFeedback)) {
+            Add-Content -LiteralPath $feedbackFile -Value "feedback_operatore=$failureFeedback" -Encoding UTF8
+        }
+    }
     Write-Host ''
     Write-Host "Scrivimi: esamina l'ultima sessione Phase 9." -ForegroundColor Yellow
 }
 finally {
-    if ($transcriptStarted) { Stop-Transcript | Out-Null }
-    Set-Clipboard -Value ''
+    Save-AndroidExitEvidence
+    Set-Clipboard -Value 'WYE_SESSION_CLEARED'
 
     if (-not $docker) { $docker = Find-DockerCommand }
     if ($docker -and (Test-Path -LiteralPath $envFile)) {

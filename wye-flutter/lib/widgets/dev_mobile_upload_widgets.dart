@@ -8,6 +8,7 @@ import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
 import '../providers/capture_upload_controller.dart';
 import '../services/capture_flow_logger.dart';
+import '../services/product_barcode_validator.dart';
 import '../theme/app_theme.dart';
 
 typedef DevImageBytesPicker = Future<Uint8List?> Function();
@@ -159,6 +160,8 @@ class _DevMobileCaptureUploadPanelState
   final _picker = ImagePicker();
   CaptureImagePurpose _purpose = CaptureImagePurpose.ingredients;
   bool _picking = false;
+  final ProductBarcodeValidator _barcodeValidator =
+      const ProductBarcodeValidator();
 
   @override
   void dispose() {
@@ -225,6 +228,14 @@ class _DevMobileCaptureUploadPanelState
                     DropdownMenuItem(
                       value: CaptureImagePurpose.productFront,
                       child: Text('Fronte prodotto'),
+                    ),
+                    DropdownMenuItem(
+                      value: CaptureImagePurpose.other,
+                      child: Text('Altro'),
+                    ),
+                    DropdownMenuItem(
+                      value: CaptureImagePurpose.unknown,
+                      child: Text('Da classificare'),
                     ),
                   ],
                   onChanged: busy
@@ -335,7 +346,8 @@ class _DevMobileCaptureUploadPanelState
   bool _canSelectImage(CaptureUploadController controller) =>
       controller.tokenState == DevMobileTokenState.present &&
       _productId != null &&
-      _barcodeController.text.trim().isNotEmpty;
+      _barcodeValidator.validate(_barcodeController.text).isValid &&
+      _purpose != CaptureImagePurpose.unknown;
 
   bool _canUpload(CaptureUploadController controller) =>
       _canSelectImage(controller) &&
@@ -432,8 +444,11 @@ class _DevMobileCaptureUploadPanelState
     if (_productId == null) {
       return 'Product ID richiesto';
     }
-    if (_barcodeController.text.trim().isEmpty) {
-      return 'Barcode richiesto';
+    if (!_barcodeValidator.validate(_barcodeController.text).isValid) {
+      return 'Barcode valido richiesto';
+    }
+    if (_purpose == CaptureImagePurpose.unknown) {
+      return 'Classifica la foto prima di continuare';
     }
     if (controller.state.step == UploadFlowStep.metadataReady &&
         !_matchesPreparedIdentity(controller)) {

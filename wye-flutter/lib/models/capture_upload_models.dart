@@ -76,7 +76,8 @@ enum CaptureImagePurpose {
   productFront,
   ingredients,
   nutrition,
-  other;
+  other,
+  unknown;
 
   String get wireValue {
     switch (this) {
@@ -88,6 +89,8 @@ enum CaptureImagePurpose {
         return 'nutrition';
       case CaptureImagePurpose.other:
         return 'other';
+      case CaptureImagePurpose.unknown:
+        return 'unknown';
     }
   }
 }

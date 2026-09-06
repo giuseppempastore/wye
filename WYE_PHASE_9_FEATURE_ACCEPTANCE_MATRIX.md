@@ -21,8 +21,8 @@ Legenda test: `S` statico/automated, `W` widget/unit, `B` backend contract, `D` 
 | NAV-ROUTES-001 | tutte | Aprire CTA e deep link previsti | `app_router.dart` | Lookup per dettaglio | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | route table e recupero | Parametro barcode non validato nel router | Product owner |
 | NAV-404-001 | route ignota | Recuperare da URL non valido | `GoRouter.errorBuilder` | Nessuna | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D | 404 + ritorno Home | Nessun dettaglio/accessibility test | Product owner |
 | BAR-CAMERA-001 | `/scanner` | Scansionare un barcode con camera | `BarcodeScannerScreen`, `mobile_scanner` | `/product/{barcode}` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,E,N | singola detection e lookup | permessi/error text raw, device unverified | Product owner |
-| BAR-DEBOUNCE-001 | `/scanner` | Evitare lookup duplicate | `_shouldProcessBarcode` | `/product/{barcode}` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | request count sintetico | filtro solo lunghezza >=8, no checksum | Product owner |
-| BAR-MANUAL-001 | `/scanner` | Inserire/cercare barcode manualmente | TextField + submit | `/product/{barcode}` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,E,N | valid/empty/malformed | validazione minima | Product owner |
+| BAR-DEBOUNCE-001 | `/scanner` | Evitare lookup duplicate | `ProductBarcodeValidator`, `BarcodeScanDebouncer` | `/product/{barcode}` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | request count sintetico | unit test PASS; device ancora da verificare | Product owner |
+| BAR-MANUAL-001 | `/scanner` | Inserire/cercare barcode manualmente | TextField + validatore canonico | `/product/{barcode}` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,E,N | valid/empty/malformed | EAN-8/UPC-A/EAN-13/GTIN-14 coperti in unit; UX device non verificata | Product owner |
 | BAR-ADD-SCAN-001 | `/add-product` | Precompilare barcode dal dialog camera | `_openBarcodeScanner` | Nessuna immediata | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N,A11Y | dialog cancel/detect | lifecycle/permission non gestiti | Product owner |
 | LOOKUP-001 | `/scanner`, `/product/:barcode` | Recuperare prodotto catalogo | provider + `ApiClient.getProductByBarcode` | `GET /product/{barcode}`, DB | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,E,N | status safe + dettaglio | response body/barcode loggati raw | Product + security owner |
 | LOOKUP-NOTFOUND-001 | scanner/detail | Capire prodotto assente e recuperare | exception/provider/UI | stesso endpoint | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,N | not-found distinto, CTA sicura | copy rimanda a “Premium” non autorizzato | Product owner |
@@ -40,13 +40,13 @@ Legenda test: `S` statico/automated, `W` widget/unit, `B` backend contract, `D` 
 | MANUAL-ANALYSIS-001 | `/manual-analysis` | Inserire ingredienti manualmente | screen/provider/ApiClient | `POST /analyze`, scoring | LEGACY_BLOCKED | DEFERRED | S,W,N,G | prova di isolamento/disabilitazione | chiama scoring legacy e include cosmetici | Product + governance owner |
 | MANUAL-SCROLL-001 | `/manual-analysis` | Raggiungere risultati automaticamente | `_scrollToResults` | Nessuna | DEMO_ONLY | DEFERRED | W,D | scroll osservabile | metodo vuoto | Product owner |
 | ADD-FORM-001 | `/add-product` | Inserire/correggere dati food | `add_product_screen.dart` | `POST /products` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,E,N,A11Y | validation e submit states | campi lunghi, regole incoerenti | Product owner |
-| ADD-FOOD-SCOPE-001 | `/add-product` | Impedire categorie fuori packaged food | form e `_submit` | create product | LEGACY_BLOCKED | MVP_REQUIRED | W,D,N,G | non-food rifiutato | opzione `cosmetic` nel product type; AI decide category | Product + governance owner |
-| CREATE-PRODUCT-001 | `/add-product` | Creare un prodotto | provider/ApiClient + `main.py` | DB products/ingredients/nutrition | LEGACY_BLOCKED | MVP_REQUIRED | B,D,E,N,G | 201/id sicuro e read-back | base64, `verified=True`, placeholder scores 50/80/65 | Product + governance owner |
+| ADD-FOOD-SCOPE-001 | `/add-product` | Impedire categorie fuori packaged food | form, `_submit`, backend | create product | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N,G | non-food rifiutato | cosmetici rimossi/rifiutati; device ancora da verificare | Product + governance owner |
+| CREATE-PRODUCT-001 | `/add-product` | Creare un prodotto | provider/ApiClient + `main.py` | DB products/ingredients/nutrition | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | B,D,E,N,G | id sicuro e read-back | integrazione DB PASS; percorso completo device ancora da verificare | Product + governance owner |
 | PHOTO-CAMERA-001 | add-product | Acquisire foto con camera | `ImagePicker` | poi legacy/canonical secondo controllo | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | select/cancel/permission | controllo ordinario prosegue a legacy | Product + security owner |
 | PHOTO-GALLERY-001 | add-product | Scegliere immagine locale | `ImagePicker` | poi legacy/canonical | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | select/cancel/limited access | privacy e lifecycle non provati | Product + security owner |
 | PHOTO-CROP-001 | add-product/dev panel | Ritagliare o annullare | `ImageCropper` | Nessuna | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N,A11Y | crop/cancel/fallback | error/stack log raw nel flow ordinario | Product owner |
-| OCR-LOCAL-001 | add-product | Estrarre testo localmente | ML Kit `TextRecognizer` | Nessuna per OCR | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | campi precompilati, no raw evidence | raw OCR inviato poi a provider legacy | Product + privacy owner |
-| LEGACY-PHOTO-001 | add-product foto ordinarie | Analizzare foto | `_extractTextFromPhoto`/ApiClient | `POST /analyze-image`, OpenAI | LEGACY_BLOCKED | OUT_OF_SCOPE | S,D,N | prova che non è invocato | primo device run HTTP 500; base64/raw logs | Product + security owner |
+| OCR-LOCAL-001 | add-product | Estrarre testo localmente | ML Kit `TextRecognizer` + `PhotoFieldMapper` | Nessuna per OCR | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | candidati separati per tipo foto | unit test PASS; raw OCR locale non è persistito separatamente | Product + privacy owner |
+| LEGACY-PHOTO-001 | add-product foto ordinarie | Analizzare foto | endpoint/client legacy isolati dal flow attivo | `POST /analyze-image`, OpenAI | LEGACY_BLOCKED | OUT_OF_SCOPE | S,D,N | prova che non è invocato | route legacy resta nel repository ma non è chiamata dal percorso add-product | Product + security owner |
 | LEGACY-NORMALIZE-001 | client non visibile diretto | Normalizzare OCR | `normalizePhotoText` | `POST /normalize-photo` | DEFERRED | DEFERRED | S,B,N | decision record | raw OCR payload; non usato dal flow corrente | Product + privacy owner |
 | MOB-PANEL-001 | `/add-product` flag on | Usare percorso canonico dev | `DevMobileCaptureUploadPanel` | mobile facade | IMPLEMENTED_UNVERIFIED | DEMO_ONLY | W,D,E,A11Y | pannello e stato default-off | confondibile con foto ordinarie | Product owner |
 | MOB-TOKEN-001 | `/settings` flag on | Impostare/rimuovere token temporaneo | token panel/provider | session creata fuori app | IMPLEMENTED_UNVERIFIED | DEMO_ONLY | W,D,N | masked/memory-only/expiry/clear | clipboard/operator transfer | Security owner |
@@ -56,7 +56,7 @@ Legenda test: `S` statico/automated, `W` widget/unit, `B` backend contract, `D` 
 | EXT-START-001 | dev panel | Avviare estrazione label | controller/gateway/UI | facade extraction POST | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,E,N | run ID/status safe | provider deve restare fake locale | Product + security owner |
 | EXT-LIST-001 | integration-facing | Elencare extraction run | gateway | facade extraction GET list | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,E,N | run count/IDs safe | nessun controllo UI esplicito usa list | Product owner |
 | EXT-GET-001 | dev panel | Aggiornare/leggere extraction run | refresh/gateway | facade extraction GET | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,E,N | state/items allowlisted | normalized text in UI richiede privacy review | Product + privacy owner |
-| FLOW-RETRY-001 | dev panel | Riprovare failure temporanee | controller/UI | facade/storage/extraction | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,E,N | retry_count e idempotenza | nessun budget UI esplicito | Product + security owner |
+| FLOW-RETRY-001 | dev panel | Riprovare failure temporanee | controller/UI | facade/storage/extraction | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,E,N | retry_count e idempotenza | budget automatico PASS; recovery visuale device non verificata | Product + security owner |
 | FLOW-ERROR-001 | dev panel | Distinguere retryable/terminal/unavailable | state models/UI | safe errors facade | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N,A11Y | safe code e stato | errore generico, recovery incompleta | Product owner |
 | LOG-FRONT-001 | dev panel | Vedere/copiare/svuotare eventi sicuri | logger + log panel | Nessuna | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | export allowlisted e clear | solo flow canonico, in memoria | Security + privacy owner |
 | LOG-BACK-001 | backend mobile facade | Ottenere summary sicuri | `_log_transition` | logging backend | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | B,E,N | campi allowlisted | estrazione manuale dal terminale | Security owner |
@@ -130,3 +130,17 @@ Tutti i casi obbligatori partono non eseguiti o bloccati dall'evidenza statica. 
 ## 4. Aggiornamento del registro
 
 Ogni esecuzione aggiunge un record atomico con `test_session_id` nel defect/evidence register e aggiorna la riga senza cancellare la storia. `Last tested commit` è il commit realmente installato sul device, non quello ispezionato staticamente. `PASS` non comporta `ACCEPTED`; l'owner compila `Approval date` solo al gate previsto dal piano.
+
+## 5. Verifica automatica Phase 9.2B
+
+Verifica locale sul working tree non committato derivato da `04034470939b314762336eba7adc662d92253b4d`. Nessun esito in questa tabella costituisce accettazione device o `ACCEPTED`.
+
+| Area | Esito | Evidenza verificata | Limite |
+| --- | --- | --- | --- |
+| Barcode canonico e debounce | PASS | 16 test Flutter + 6 test backend | camera fisica NOT_RUN |
+| Separazione PRODUCT_FRONT/INGREDIENTS/NUTRITION/UNKNOWN | PASS | 9 test mapper Flutter | crop e leggibilità su device NOT_RUN |
+| Upload/finalize e una sola immagine corrente per tipo | PASS | 4 test backend su PostgreSQL temporaneo migrato | storico/dettaglio su device NOT_RUN |
+| Pending review, contributo non autorevole e read-back immagine/score | PASS | 4 test backend integrati | schermata di review operatore non inclusa |
+| Deduplicazione extraction e filtri deterministici | PASS | 8 test backend service | provider reale OUT_OF_SCOPE |
+| Retry, classificazione e stato score non numerico | PASS | test controller/modelli/widget | UX completa su device NOT_RUN |
+| Percorso camera → crop → salvataggio → riapertura | NOT_RUN | richiede il device fisico | nessuna accettazione manuale registrata |

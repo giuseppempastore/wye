@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -8,13 +9,17 @@ from pathlib import Path
 
 from app.services.scoring import score_product
 from app.services.ai_normalizer import analyze_image_with_ai, normalize_photo_text
-from app.data.ingredients import normalize_barcode, normalize_ingredient, parse_ingredient_list
+from app.barcodes import validate_product_barcode
+from app.data.ingredients import normalize_ingredient, parse_ingredient_list
 from app.db import get_connection
 from app.routes.product_images import router as product_images_router
 from app.routes.label_extractions import router as label_extractions_router
 from app.routes.ingredient_mapping_reviews import router as ingredient_mapping_reviews_router
 from app.routes.mobile_upload import router as mobile_upload_router
 import psycopg2.extras
+from psycopg2.extras import Json
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Wye MVP prototype")
 app.include_router(product_images_router)
@@ -85,9 +90,18 @@ def _coerce_nutrition_values(nutrition: dict | None) -> dict:
         if value is None or str(value).strip() == '':
             continue
         try:
-            cleaned[key] = float(str(value).replace(',', '.'))
+            parsed = float(str(value).replace(',', '.'))
         except (TypeError, ValueError):
             raise HTTPException(status_code=400, detail=f'Nutrition field {key} must be numeric')
+        if parsed < 0:
+            raise HTTPException(status_code=400, detail=f'Nutrition field {key} must not be negative')
+        if key == 'energy_kcal' and parsed > 900:
+            raise HTTPException(status_code=400, detail='Nutrition energy exceeds the physical per-100g limit')
+        if key.endswith('_g') and parsed > 100:
+            raise HTTPException(status_code=400, detail=f'Nutrition field {key} exceeds the per-100g limit')
+        if key == 'sodium_mg' and parsed > 100000:
+            raise HTTPException(status_code=400, detail='Nutrition sodium exceeds the per-100g limit')
+        cleaned[key] = parsed
 
     return cleaned
 
@@ -146,18 +160,33 @@ def analyze_image(payload: ImageAnalysisRequest):
 
 @app.post("/products")
 def create_product(payload: ProductCreateRequest):
-    barcode = (payload.barcode or '').strip()
+    barcode_validation = validate_product_barcode(payload.barcode)
+    logger.info("barcode_validation %s", barcode_validation.safe_log_fields)
+    if not barcode_validation.valid:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_product_barcode", "reason": barcode_validation.reason},
+        )
+    barcode = barcode_validation.value
     product_name = (payload.product_name or '').strip()
     brand_name = (payload.brand_name or '').strip()
-    if not barcode:
-        derived_barcode = normalize_barcode(payload.product_name or payload.ingredients or '')
-        if derived_barcode:
-            barcode = derived_barcode
     if not barcode or not product_name or not brand_name:
         raise HTTPException(status_code=400, detail='barcode, product_name and brand_name are required')
+    category = (payload.category or '').strip().lower()
+    if category not in {'food', 'foods'}:
+        raise HTTPException(status_code=422, detail={"code": "unsupported_product_category"})
+    if (payload.product_type or '').strip().lower() == 'cosmetic':
+        raise HTTPException(status_code=422, detail={"code": "unsupported_product_type"})
+    if any((payload.image_url, payload.ingredient_image_url, payload.nutrition_image_url)):
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "embedded_image_payload_forbidden"},
+        )
 
     normalized_ingredients = parse_ingredient_list(payload.ingredients)
-    normalized_ingredient_names = [normalize_ingredient(item) for item in normalized_ingredients]
+    ingredient_pairs = [
+        (item, normalize_ingredient(item)) for item in normalized_ingredients
+    ]
     nutrition = _coerce_nutrition_values(payload.nutrition)
     image_url = (payload.image_url or '').strip() or None
     ingredient_image_url = (payload.ingredient_image_url or '').strip() or None
@@ -195,11 +224,11 @@ def create_product(payload: ProductCreateRequest):
                 barcode,
                 payload.brand_name or 'Unknown Brand',
                 product_name,
-                payload.category or 'food',
+                category,
                 payload.product_type or 'snack',
                 payload.source or 'photo_submission',
-                True,
-                'active',
+                False,
+                'needs_review',
             ]
 
             if 'image_url' in available_product_columns:
@@ -254,46 +283,82 @@ def create_product(payload: ProductCreateRequest):
 
         cur.execute("DELETE FROM product_ingredients WHERE product_id = %s", (product['id'],))
 
-        for pos, ingredient in enumerate(normalized_ingredient_names, start=1):
+        if normalized_ingredients:
+            cur.execute(
+                """
+                INSERT INTO product_label_documents(
+                    product_id, raw_text, source_type, document_type
+                )
+                VALUES (%s, %s, 'manual_input', 'other')
+                """,
+                (product['id'], payload.ingredients),
+            )
+
+        for pos, (raw_ingredient, ingredient) in enumerate(ingredient_pairs, start=1):
             if not ingredient or ingredient == 'unknown ingredient':
                 continue
             cur.execute(
                 """
-                SELECT id FROM ingredients WHERE canonical_name = %s LIMIT 1
+                SELECT i.id
+                FROM ingredients i
+                WHERE lower(i.canonical_name) = lower(%s) AND i.status = 'active'
+                UNION ALL
+                SELECT i.id
+                FROM ingredient_aliases a
+                JOIN ingredients i ON i.id = a.ingredient_id
+                WHERE a.normalized_alias = %s
+                  AND a.mapping_status = 'accepted'
+                  AND i.status = 'active'
+                LIMIT 1
                 """,
-                (ingredient,),
+                (ingredient, ingredient),
             )
             ingredient_row = cur.fetchone()
-            if not ingredient_row:
-                cur.execute(
-                    """
-                    INSERT INTO ingredients (canonical_name, ingredient_group, risk_level, allergen_flag, evidence_level, common_name, status)
-                    VALUES (%s, 'unknown', 'moderate', FALSE, 1, %s, 'active')
-                    RETURNING id
-                    """,
-                    (ingredient, ingredient),
-                )
-                ingredient_row = cur.fetchone()
-            if not ingredient_row:
-                continue
 
             cur.execute(
                 """
                 INSERT INTO product_ingredients (
                     product_id, ingredient_id, raw_name, canonical_name, position_in_list,
-                    confidence, allergen_flag, risky_flag, is_unknown, manual_override
+                    confidence, allergen_flag, risky_flag, is_unknown, manual_override,
+                    normalized_text, mapping_method, mapping_status, mapping_provenance
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, FALSE, FALSE, FALSE, TRUE)
+                VALUES (%s, %s, %s, %s, %s, NULL, FALSE, FALSE, %s, FALSE,
+                        %s, %s, %s, %s)
+                RETURNING id
                 """,
                 (
                     product['id'],
-                    ingredient_row['id'],
-                    ingredient,
-                    ingredient,
+                    ingredient_row['id'] if ingredient_row else None,
+                    raw_ingredient,
+                    ingredient if ingredient_row else None,
                     pos,
-                    0.8,
+                    ingredient_row is None,
+                    ingredient,
+                    'deterministic_alias' if ingredient_row else 'unmapped',
+                    'accepted' if ingredient_row else 'needs_review',
+                    Json({
+                        'source_type': 'manual_input',
+                        'user_confirmed': True,
+                        'authoritative': False,
+                    }),
                 ),
             )
+            product_ingredient = cur.fetchone()
+            if not ingredient_row:
+                cur.execute(
+                    """
+                    INSERT INTO ingredient_mapping_reviews(
+                        product_ingredient_id, raw_text, normalized_text,
+                        review_status, requested_by_method, review_provenance
+                    ) VALUES (%s, %s, %s, 'pending', 'manual', %s)
+                    """,
+                    (
+                        product_ingredient['id'],
+                        raw_ingredient,
+                        ingredient,
+                        Json({'source': 'product_submission', 'authoritative': False}),
+                    ),
+                )
 
         nutrition_fields = {
             'energy_kcal': nutrition.get('energy_kcal'),
@@ -320,7 +385,7 @@ def create_product(payload: ProductCreateRequest):
                     product_id, serving_size, energy_kcal, protein_g, carbs_g, sugar_g,
                     fat_g, saturated_fat_g, sodium_mg, fiber_g, source, declared_by_manufacturer, verified, raw_text
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'photo_submission', TRUE, TRUE, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'photo_submission', TRUE, FALSE, %s)
                 """,
                 (
                     product['id'],
@@ -336,6 +401,14 @@ def create_product(payload: ProductCreateRequest):
                     str(nutrition),
                 ),
             )
+
+        cur.execute(
+            """
+            INSERT INTO product_reviews(product_id, review_status, source_type, reason)
+            VALUES (%s, 'pending', 'manual_input', 'user_product_submission')
+            """,
+            (product['id'],),
+        )
 
         cur.execute("SELECT * FROM products WHERE id = %s", (product['id'],))
         saved_product = cur.fetchone()
@@ -356,6 +429,14 @@ def create_product(payload: ProductCreateRequest):
 @app.get("/product/{barcode}")
 def get_product(barcode: str):
     """Return product data plus canonical image reference and score state."""
+    barcode_validation = validate_product_barcode(barcode)
+    logger.info("barcode_validation %s", barcode_validation.safe_log_fields)
+    if not barcode_validation.valid:
+        raise HTTPException(
+            status_code=422,
+            detail={"code": "invalid_product_barcode", "reason": barcode_validation.reason},
+        )
+    barcode = barcode_validation.value
     conn = get_connection()
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
@@ -366,9 +447,11 @@ def get_product(barcode: str):
 
         cur.execute(
             """
-            SELECT pi.raw_name, pi.canonical_name, i.risk_level, i.allergen_flag, i.canonical_name as ingredient_name
+            SELECT pi.raw_name, pi.canonical_name, pi.mapping_status,
+                   COALESCE(i.allergen_flag, FALSE) AS allergen_flag,
+                   i.canonical_name as ingredient_name
             FROM product_ingredients pi
-            JOIN ingredients i ON pi.ingredient_id = i.id
+            LEFT JOIN ingredients i ON pi.ingredient_id = i.id
             WHERE pi.product_id = %s
             ORDER BY pi.position_in_list
             """, (product['id'],)

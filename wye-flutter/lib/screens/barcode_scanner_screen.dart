@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import '../services/product_barcode_validator.dart';
 import '../widgets/score_widgets.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
@@ -17,8 +18,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   final TextEditingController _barcodeController = TextEditingController();
   bool _isScanning = false;
   MobileScannerController? _scannerController;
-  String? _lastScannedBarcode;
-  DateTime? _lastScanAt;
+  final ProductBarcodeValidator _barcodeValidator =
+      const ProductBarcodeValidator();
+  final BarcodeScanDebouncer _scanDebouncer = BarcodeScanDebouncer();
 
   @override
   void initState() {
@@ -39,10 +41,25 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   Future<void> _handleBarcodeScan(String barcode) async {
-    if (barcode.isEmpty) return;
+    final validation = _barcodeValidator.validate(barcode);
+    debugPrint(validation.safeLog);
+    if (!validation.isValid) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Codice non valido. Usa un EAN-8, UPC-A, EAN-13 o GTIN-14 con checksum corretto.',
+            ),
+            backgroundColor: AppColors.riskHigh,
+          ),
+        );
+      }
+      return;
+    }
+    final canonicalBarcode = validation.value!;
 
     final provider = context.read<BarcodeScannerProvider>();
-    await provider.scanBarcode(barcode);
+    await provider.scanBarcode(canonicalBarcode);
 
     if (mounted) {
       context.read<UserPreferencesProvider>().resetPremiumFactCheckConsent();
@@ -66,20 +83,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   }
 
   bool _shouldProcessBarcode(String barcode) {
-    // filtra codici troppo corti / rumorosi
-    if (barcode.length < 8) return false;
-
-    final now = DateTime.now();
-    if (_lastScannedBarcode == barcode && _lastScanAt != null) {
-      final delta = now.difference(_lastScanAt!);
-      if (delta.inMilliseconds < 1800) {
-        return false;
-      }
-    }
-
-    _lastScannedBarcode = barcode;
-    _lastScanAt = now;
-    return true;
+    final validation = _barcodeValidator.validate(barcode);
+    debugPrint(validation.safeLog);
+    return validation.isValid &&
+        !_isScanning &&
+        _scanDebouncer.shouldAccept(validation.value!, DateTime.now());
   }
 
   @override
@@ -117,10 +125,19 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                         onDetect: (capture) {
                           final List<Barcode> barcodes = capture.barcodes;
                           if (barcodes.isNotEmpty) {
-                            final String barcode = barcodes.first.rawValue ?? '';
-                            if (barcode.isNotEmpty && _shouldProcessBarcode(barcode)) {
-                              _barcodeController.text = barcode;
-                              _handleBarcodeScan(barcode);
+                            final String barcode =
+                                barcodes.first.rawValue ?? '';
+                            if (barcode.isNotEmpty &&
+                                _shouldProcessBarcode(barcode)) {
+                              final canonical =
+                                  _barcodeValidator.validate(barcode).value!;
+                              _barcodeController.text = canonical;
+                              setState(() => _isScanning = true);
+                              _handleBarcodeScan(canonical).whenComplete(() {
+                                if (mounted) {
+                                  setState(() => _isScanning = false);
+                                }
+                              });
                             }
                           }
                         },
@@ -213,7 +230,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     onSubmitted: (barcode) async {
                       setState(() => _isScanning = true);
                       await _handleBarcodeScan(barcode);
-                      setState(() => _isScanning = false);
+                      if (mounted) setState(() => _isScanning = false);
                     },
                   );
                 },
@@ -231,7 +248,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                             await _handleBarcodeScan(
                               _barcodeController.text.trim(),
                             );
-                            setState(() => _isScanning = false);
+                            if (mounted) setState(() => _isScanning = false);
                           },
                     icon: const Icon(Icons.search),
                     label: const Text('Cerca Prodotto'),

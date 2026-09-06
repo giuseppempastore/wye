@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../services/api_client.dart';
+import '../services/product_barcode_validator.dart';
 
 // State per il barcode scanning
 class BarcodeScannerProvider extends ChangeNotifier {
   final ApiClient _apiClient;
+  final ProductBarcodeValidator _barcodeValidator =
+      const ProductBarcodeValidator();
 
   Product? _currentProduct;
   bool _isLoading = false;
@@ -21,12 +24,20 @@ class BarcodeScannerProvider extends ChangeNotifier {
 
   /// Scansiona un barcode
   Future<void> scanBarcode(String barcode) async {
+    final validation = _barcodeValidator.validate(barcode);
+    debugPrint(validation.safeLog);
+    if (!validation.isValid) {
+      _error = 'Barcode non valido';
+      _currentProduct = null;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
-      _currentProduct = await _apiClient.getProductByBarcode(barcode);
+      _currentProduct = await _apiClient.getProductByBarcode(validation.value!);
       _addToHistory(_currentProduct!);
       _error = null;
     } on ProductNotFoundException catch (e) {
@@ -35,8 +46,8 @@ class BarcodeScannerProvider extends ChangeNotifier {
     } on NetworkException catch (e) {
       _error = e.message;
       _currentProduct = null;
-    } catch (e) {
-      _error = 'Errore sconosciuto: $e';
+    } catch (_) {
+      _error = 'Errore imprevisto durante la ricerca';
       _currentProduct = null;
     } finally {
       _isLoading = false;
@@ -86,13 +97,21 @@ class BarcodeScannerProvider extends ChangeNotifier {
     String? ingredientImageUrl,
     String? nutritionImageUrl,
   }) async {
+    final validation = _barcodeValidator.validate(barcode);
+    debugPrint(validation.safeLog);
+    if (!validation.isValid) {
+      _error = 'Barcode non valido';
+      _currentProduct = null;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     _error = null;
     notifyListeners();
 
     try {
       _currentProduct = await _apiClient.createProduct(
-        barcode: barcode,
+        barcode: validation.value!,
         brandName: brandName,
         productName: productName,
         category: category,
@@ -112,8 +131,8 @@ class BarcodeScannerProvider extends ChangeNotifier {
     } on NetworkException catch (e) {
       _error = e.message;
       _currentProduct = null;
-    } catch (e) {
-      _error = 'Errore durante l\'inserimento del prodotto: $e';
+    } catch (_) {
+      _error = 'Errore durante l\'inserimento del prodotto';
       _currentProduct = null;
     } finally {
       _isLoading = false;

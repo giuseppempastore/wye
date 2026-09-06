@@ -47,5 +47,17 @@ class LabelExtractionModelTests(unittest.TestCase):
         self.assertEqual(PROMPT_ID, "label_extraction_v1")
         self.assertEqual(len(PROMPT_HASH), 64)
 
+    def test_negative_nutrition_and_invalid_units_are_rejected(self):
+        base = {"document_type":"nutrition","raw_text":"label","detected_languages":[],
+                "ingredient_list_text":None,"ingredients":[],"allergens":[]}
+        for row in (
+            {"nutrient":"protein","raw_label":"protein","value":-1,"unit":"g","basis":None},
+            {"nutrient":"protein","raw_label":"protein","value":1,"unit":"kcal","basis":None},
+            {"nutrient":"energy","raw_label":"energy","value":1,"unit":"g","basis":None},
+        ):
+            with self.subTest(row=row):
+                with self.assertRaises(ValidationError):
+                    LabelExtractionOutput.model_validate({**base,"nutrition":[row]})
+
 
 if __name__ == "__main__": unittest.main()

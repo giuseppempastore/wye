@@ -1,5 +1,7 @@
 import hashlib
 import json
+import logging
+import re
 import tempfile
 from typing import Any, Callable
 
@@ -19,6 +21,20 @@ from app.extraction.providers import (
     ProviderError,
     ProviderTimeout,
 )
+
+logger = logging.getLogger(__name__)
+
+_INGREDIENT_NOISE = re.compile(
+    r"\b(?:www\.|kcal|kj|per\s*100|net\s*weight|peso\s*netto|"
+    r"conservare|store\s+in|made\s+in|prodotto\s+da|via\s+|"
+    r"nutrition|nutrizional|serving|porzione)\b",
+    re.IGNORECASE,
+)
+
+
+def _plausible_ingredient(value: str) -> bool:
+    candidate = value.strip()
+    return bool(candidate) and len(candidate) <= 255 and not _INGREDIENT_NOISE.search(candidate)
 
 
 class ExtractionError(RuntimeError):
@@ -50,8 +66,10 @@ class LabelExtractionService:
     def create(self, product_id: int, image_id: int, idempotency_key: str, model: str | None = None, prompt_version: str = PROMPT_ID) -> dict:
         key = (idempotency_key or "").strip()
         if not key or len(key) > 255:
+            logger.info("extraction_cost outcome=reject reason=invalid_idempotency_key")
             raise ExtractionError("invalid_request", "Idempotency-Key is required and must be at most 255 characters", 422)
         if prompt_version != PROMPT_ID:
+            logger.info("extraction_cost outcome=reject reason=unsupported_prompt")
             raise ExtractionError("invalid_request", "Unsupported prompt version", 422)
         model = (model or self.settings.model).strip()
         if not model:
@@ -60,15 +78,24 @@ class LabelExtractionService:
         image = self._get_image(product_id, image_id)
         document_type = image["image_type"]
         if document_type not in {"ingredients", "nutrition"}:
+            logger.info("extraction_cost outcome=reject reason=unsupported_image_type")
             raise ExtractionError("unsupported_image_type", "Only ingredients and nutrition images are supported", 422)
         fingerprint = hashlib.sha256("\0".join((image["checksum"], document_type, self.provider.name, model, PROMPT_ID, SCHEMA_VERSION)).encode()).hexdigest()
         document_id, existing = self._create_pending_run(image_id, document_type, key, fingerprint, model)
         if existing:
             if existing["request_fingerprint"] != fingerprint:
                 raise ExtractionError("idempotency_conflict", "Idempotency-Key was already used for a different request", 409, existing["id"])
+            logger.info("extraction_cost outcome=idempotency_replay provider=%s", self.provider.name)
             return self.get(product_id, image_id, existing["id"])
         run_id = document_id[1]
         document_id = document_id[0]
+
+        reusable_run_id = self._find_reusable_run(fingerprint, run_id)
+        if reusable_run_id is not None:
+            self._reuse_completed_run(run_id, reusable_run_id)
+            logger.info("extraction_cost outcome=cache_hit provider=%s", self.provider.name)
+            return self.get(product_id, image_id, run_id)
+        logger.info("extraction_cost outcome=cache_miss provider=%s", self.provider.name)
 
         try:
             self._mark_running(run_id)
@@ -84,10 +111,19 @@ class LabelExtractionService:
                 model=model, prompt_version=PROMPT_ID, schema_version=SCHEMA_VERSION,
                 instructions=instructions_for(document_type), output_schema=OUTPUT_SCHEMA,
             )
+            self._mark_provider_invoked(run_id)
+            logger.info("extraction_cost outcome=provider_request provider=%s", self.provider.name)
             result = self.provider.extract(request)
             output = LabelExtractionOutput.model_validate(result.output)
             if output.document_type != document_type:
                 raise ValueError("Provider document type does not match source image type")
+            if document_type == "ingredients":
+                output = output.model_copy(update={
+                    "ingredients": [
+                        item for item in output.ingredients
+                        if _plausible_ingredient(item.raw_text)
+                    ]
+                })
             self._succeed(run_id, output, result)
             return self.get(product_id, image_id, run_id)
         except ProviderTimeout as exc:
@@ -156,6 +192,67 @@ class LabelExtractionService:
 
     def _mark_running(self, run_id):
         self._update("UPDATE label_extraction_runs SET run_status='running',started_at=NOW() WHERE id=%s AND run_status='pending'", (run_id,))
+
+    def _mark_provider_invoked(self, run_id):
+        if self.connection_factory is None:
+            return
+        self._update(
+            "UPDATE label_extraction_runs SET provider_invoked=TRUE WHERE id=%s AND run_status='running'",
+            (run_id,),
+        )
+
+    def _find_reusable_run(self, fingerprint, run_id):
+        if self.connection_factory is None:
+            return None
+        conn = self.connection_factory()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """SELECT id FROM label_extraction_runs
+                       WHERE request_fingerprint=%s AND run_status='succeeded' AND id<>%s
+                       ORDER BY completed_at DESC NULLS LAST,id DESC LIMIT 1""",
+                    (fingerprint, run_id),
+                )
+                row = cur.fetchone()
+                return row[0] if row else None
+        finally:
+            conn.close()
+
+    def _reuse_completed_run(self, run_id, source_run_id):
+        conn = self.connection_factory()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """UPDATE label_extraction_runs target
+                       SET run_status='succeeded', started_at=NOW(), completed_at=NOW(),
+                           extracted_raw_text=source.extracted_raw_text,
+                           model_version=source.model_version,
+                           cache_source_run_id=source.id,
+                           provider_invoked=FALSE
+                       FROM label_extraction_runs source
+                       WHERE target.id=%s AND source.id=%s
+                         AND target.run_status='pending' AND source.run_status='succeeded'""",
+                    (run_id, source_run_id),
+                )
+                if cur.rowcount != 1:
+                    raise ExtractionError("cache_reuse_failed", "Cached extraction could not be reused", 409, run_id)
+                cur.execute(
+                    """INSERT INTO label_extraction_items(
+                           extraction_run_id,item_type,raw_text,normalized_text,
+                           detected_language,structured_value,unit,position_in_document,
+                           extraction_confidence,extraction_status)
+                       SELECT %s,item_type,raw_text,normalized_text,detected_language,
+                              structured_value,unit,position_in_document,
+                              extraction_confidence,extraction_status
+                       FROM label_extraction_items WHERE extraction_run_id=%s""",
+                    (run_id, source_run_id),
+                )
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def _fail(self, run_id, code, detail):
         self._update("""UPDATE label_extraction_runs SET run_status='failed',error_code=%s,error_detail=%s,

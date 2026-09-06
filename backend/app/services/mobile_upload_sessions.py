@@ -54,6 +54,7 @@ class MobileUploadSessionStore:
             lambda: f"wye_dev_{secrets.token_urlsafe(32)}"
         )
         self._records: dict[str, MobileSessionRecord] = {}
+        self._usage: dict[tuple[str, str], int] = {}
         self._lock = threading.Lock()
 
     @staticmethod
@@ -107,6 +108,7 @@ class MobileUploadSessionStore:
                 )
             if record.expires_at <= now:
                 del self._records[digest]
+                self._clear_usage(record.session_id)
                 raise MobileSessionError(
                     "mobile_session_expired", "Mobile session has expired", 401
                 )
@@ -122,7 +124,29 @@ class MobileUploadSessionStore:
         if not token or len(token) > 512:
             return
         with self._lock:
-            self._records.pop(self._digest(token), None)
+            record = self._records.pop(self._digest(token), None)
+            if record:
+                self._clear_usage(record.session_id)
+
+    def consume(self, record: MobileSessionRecord, operation: str, limit: int) -> int:
+        if limit <= 0:
+            raise ValueError("limit must be positive")
+        key = (record.session_id, operation)
+        with self._lock:
+            count = self._usage.get(key, 0)
+            if count >= limit:
+                raise MobileSessionError(
+                    "mobile_session_operation_limit",
+                    "Mobile session operation limit reached",
+                    429,
+                )
+            count += 1
+            self._usage[key] = count
+            return count
+
+    def _clear_usage(self, session_id: str) -> None:
+        for key in [key for key in self._usage if key[0] == session_id]:
+            del self._usage[key]
 
     def _remove_expired(self, now: datetime) -> None:
         expired = [
@@ -131,4 +155,5 @@ class MobileUploadSessionStore:
             if record.expires_at <= now
         ]
         for digest in expired:
-            del self._records[digest]
+            record = self._records.pop(digest)
+            self._clear_usage(record.session_id)

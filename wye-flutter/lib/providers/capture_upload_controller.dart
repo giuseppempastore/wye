@@ -11,6 +11,8 @@ import '../services/image_metadata_service.dart';
 enum DevMobileTokenState { missing, present, expired }
 
 class CaptureUploadController extends ChangeNotifier {
+  static const int maxUploadRetries = 2;
+  static const int maxExtractionRetries = 2;
   final MobileUploadConfig _config;
   final InMemoryMobileUploadTokenProvider _tokenProvider;
   final CaptureUploadGateway _gateway;
@@ -125,6 +127,18 @@ class CaptureUploadController extends ChangeNotifier {
     required Uint8List bytes,
   }) {
     if (!_canStartLocalFlow()) {
+      return;
+    }
+    if (purpose == CaptureImagePurpose.unknown) {
+      _fail(
+        const CaptureUploadException(
+          kind: CaptureUploadFailureKind.invalidInput,
+          code: 'image_purpose_classification_required',
+          safeMessage: 'Image purpose must be classified before upload',
+          retryable: false,
+          lastStableStep: UploadFlowStep.idle,
+        ),
+      );
       return;
     }
     _draft = ImageCaptureDraft(
@@ -300,6 +314,19 @@ class CaptureUploadController extends ChangeNotifier {
     if (_state.step != UploadFlowStep.failedRetryable) {
       return;
     }
+    if (_uploadRetryCount >= maxUploadRetries) {
+      _setState(_state.copyWith(
+        step: UploadFlowStep.failedTerminal,
+        errorCode: 'upload_retry_limit_reached',
+      ));
+      _record(
+        'upload_retry_rejected',
+        statusClass: 'failure',
+        retryCount: _uploadRetryCount,
+        errorCode: 'upload_retry_limit_reached',
+      );
+      return;
+    }
     _uploadRetryCount += 1;
     _record(
       'upload_retry',
@@ -403,6 +430,20 @@ class CaptureUploadController extends ChangeNotifier {
 
   Future<void> retryExtraction() async {
     if (_extractionState.step != ExtractionFlowStep.failedRetryable) {
+      return;
+    }
+    if (_extractionRetryCount >= maxExtractionRetries) {
+      _setExtractionState(ExtractionFlowState(
+        step: ExtractionFlowStep.failedTerminal,
+        result: _extractionState.result,
+        errorCode: 'extraction_retry_limit_reached',
+      ));
+      _record(
+        'extraction_retry_rejected',
+        statusClass: 'failure',
+        retryCount: _extractionRetryCount,
+        errorCode: 'extraction_retry_limit_reached',
+      );
       return;
     }
     _extractionRetryCount += 1;

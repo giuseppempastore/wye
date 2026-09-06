@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -191,6 +192,70 @@ void main() {
     final callCount = gateway.calls.length;
     await controller.retry();
     expect(gateway.calls, hasLength(callCount));
+  });
+
+  test('unknown image purpose requires classification before upload', () {
+    final gateway = FakeCaptureUploadGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 9, barcode: 'barcode-9'),
+      purpose: CaptureImagePurpose.unknown,
+      bytes: Uint8List.fromList([1]),
+    );
+    expect(controller.state.step, UploadFlowStep.failedTerminal);
+    expect(
+      controller.state.errorCode,
+      'image_purpose_classification_required',
+    );
+    expect(gateway.calls, isEmpty);
+  });
+
+  test('upload retry budget is bounded', () async {
+    final gateway = FakeCaptureUploadGateway()
+      ..failure = const CaptureUploadException(
+        kind: CaptureUploadFailureKind.transport,
+        code: 'temporary_failure',
+        safeMessage: 'Temporary failure',
+        retryable: true,
+        lastStableStep: UploadFlowStep.metadataReady,
+      );
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 9, barcode: 'barcode-9'),
+      purpose: CaptureImagePurpose.productFront,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+    await controller.upload();
+    await controller.retry();
+    await controller.retry();
+    final callsAtLimit = gateway.calls.length;
+    await controller.retry();
+    expect(controller.state.step, UploadFlowStep.failedTerminal);
+    expect(controller.state.errorCode, 'upload_retry_limit_reached');
+    expect(gateway.calls, hasLength(callsAtLimit));
   });
 
   test('expired or rejected capability returns to missing-token state',
@@ -521,6 +586,55 @@ void main() {
       hasLength(2),
     );
   });
+
+  test('double extraction tap creates only one gateway request', () async {
+    final gateway = _DelayedExtractionGateway();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        'temporary-token',
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final controller = CaptureUploadController(
+      config: enabledConfig(),
+      tokenProvider: tokenProvider,
+      gateway: gateway,
+      metadataService: _FakeImageMetadataService(),
+    );
+    addTearDown(controller.dispose);
+    controller.selectImage(
+      productIdentity: ProductIdentity(productId: 11, barcode: 'barcode-11'),
+      purpose: CaptureImagePurpose.ingredients,
+      bytes: Uint8List.fromList([1]),
+    );
+    await controller.prepareMetadata();
+    await controller.upload();
+
+    final first = controller.startExtraction();
+    final second = controller.startExtraction();
+    gateway.completeExtraction();
+    await Future.wait([first, second]);
+
+    expect(
+      gateway.calls.where((call) => call == 'extraction-start'),
+      hasLength(1),
+    );
+  });
+}
+
+class _DelayedExtractionGateway extends FakeCaptureUploadGateway {
+  final Completer<ExtractionResultSummary> _result = Completer();
+
+  @override
+  Future<ExtractionResultSummary> startExtraction({
+    required ProductIdentity productIdentity,
+    required ProductImageRef productImage,
+    required String idempotencyKey,
+  }) {
+    calls.add('extraction-start');
+    return _result.future;
+  }
+
+  void completeExtraction() => _result.complete(extractionResult);
 }
 
 class _FakeImageMetadataService implements ImageMetadataService {

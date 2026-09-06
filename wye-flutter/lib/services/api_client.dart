@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../models/capture_upload_models.dart';
 import '../models/product_model.dart';
 import '../models/score_evaluability_model.dart';
+import 'product_barcode_validator.dart';
 
 class ApiConfig {
   // Override opzionale:
@@ -40,6 +41,8 @@ class ApiClient {
   final Logger _logger = Logger();
   final MobileUploadTokenProvider? _mobileTokenProvider;
   late http.Client _client;
+  final ProductBarcodeValidator _barcodeValidator =
+      const ProductBarcodeValidator();
 
   ApiClient({MobileUploadTokenProvider? mobileTokenProvider})
       : _mobileTokenProvider = mobileTokenProvider {
@@ -48,12 +51,16 @@ class ApiClient {
 
   /// Fetch prodotto da barcode
   Future<Product> getProductByBarcode(String barcode) async {
+    final validation = _barcodeValidator.validate(barcode);
+    if (!validation.isValid) {
+      throw ApiException('Barcode non valido');
+    }
     try {
       _logger.i('Fetching product by barcode');
 
       final response = await _client
           .get(
-        Uri.parse('${ApiConfig.baseUrl}/product/$barcode'),
+        Uri.parse('${ApiConfig.baseUrl}/product/${validation.value}'),
       )
           .timeout(ApiConfig.connectionTimeout, onTimeout: () {
         throw TimeoutException(
@@ -78,7 +85,7 @@ class ApiClient {
             final imageUrl = await _resolveCanonicalImageUrl(jsonData);
             final product = _mapDbProductResponse(
               jsonData,
-              barcode,
+              validation.value!,
               imageUrlOverride: imageUrl,
             );
             _logger.i('Product found');
@@ -139,9 +146,13 @@ class ApiClient {
     String? ingredientImageUrl,
     String? nutritionImageUrl,
   }) async {
+    final validation = _barcodeValidator.validate(barcode);
+    if (!validation.isValid) {
+      throw ApiException('Barcode non valido');
+    }
     try {
       final payload = {
-        'barcode': barcode.trim(),
+        'barcode': validation.value!,
         'brand_name': brandName.trim(),
         'product_name': productName.trim(),
         'category': category.trim(),
@@ -149,12 +160,6 @@ class ApiClient {
         'ingredients': ingredients,
         'nutrition': nutritionFacts ?? {},
         'source': source,
-        if (imageUrl != null && imageUrl.trim().isNotEmpty)
-          'image_url': imageUrl.trim(),
-        if (ingredientImageUrl != null && ingredientImageUrl.trim().isNotEmpty)
-          'ingredient_image_url': ingredientImageUrl.trim(),
-        if (nutritionImageUrl != null && nutritionImageUrl.trim().isNotEmpty)
-          'nutrition_image_url': nutritionImageUrl.trim(),
       };
 
       final response = await _client
@@ -176,7 +181,7 @@ class ApiClient {
               'Risposta del server vuota durante la creazione prodotto');
         }
 
-        final product = await getProductByBarcode(barcode.trim());
+        final product = await getProductByBarcode(validation.value!);
         _logger.i('Product created');
         return product;
       }
@@ -212,7 +217,6 @@ class ApiClient {
         'language': language,
         if (category != null) 'category': category,
       };
-
 
       final response = await _client
           .post(

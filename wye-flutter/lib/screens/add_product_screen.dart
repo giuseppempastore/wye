@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +12,8 @@ import '../models/capture_upload_models.dart';
 import '../providers/app_providers.dart';
 import '../providers/capture_upload_controller.dart';
 import '../services/photo_field_mapper.dart';
+import '../services/photo_capture_recovery_service.dart';
+import '../services/product_barcode_validator.dart';
 import '../theme/app_theme.dart';
 import '../widgets/dev_mobile_upload_widgets.dart';
 
@@ -33,7 +34,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
   final List<String> _productTypeOptions = const [
     'snack',
     'beverage',
-    'cosmetic',
     'bakery',
     'dairy',
     'cereal',
@@ -59,11 +59,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _isProcessingImage = false;
   String _imageFlowStatus = '';
   String? _photoReviewMessage;
+  bool _ingredientsNeedConfirmation = false;
+  bool _ingredientsConfirmed = false;
+  bool _nutritionNeedsConfirmation = false;
+  bool _nutritionConfirmed = false;
   int? _savedProductId;
   String? _savedProductBarcode;
 
   final ImagePicker _picker = ImagePicker();
   final PhotoFieldMapper _photoFieldMapper = const PhotoFieldMapper();
+  final ProductBarcodeValidator _barcodeValidator =
+      const ProductBarcodeValidator();
+  final PhotoCaptureRecoveryService _photoRecovery =
+      PhotoCaptureRecoveryService.shared;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recoverPhoto());
+  }
 
   @override
   void dispose() {
@@ -90,6 +104,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     required ProductPhotoPurpose purpose,
   }) async {
     try {
+      await _photoRecovery.begin(purpose);
       setState(() {
         _isProcessingImage = true;
         _imageFlowStatus = source == ImageSource.camera
@@ -101,24 +116,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
       // When camera returns, the user sees this state instead of the form.
       await WidgetsBinding.instance.endOfFrame;
 
-      final pickedFile =
-          await _picker.pickImage(source: source, imageQuality: 85);
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        imageQuality: 82,
+        maxWidth: 2048,
+        maxHeight: 2048,
+        requestFullMetadata: false,
+      );
       if (pickedFile == null) return;
-
-      if (mounted) {
-        setState(() => _imageFlowStatus = 'Apertura editor immagine...');
-      }
-      final croppedFile = await _cropImage(pickedFile);
-      final finalFile = croppedFile == null ? pickedFile : croppedFile;
-
-      setter(finalFile);
-      if (mounted) {
-        setState(() => _imageFlowStatus = 'Lettura del testo visibile...');
-      }
-      await _mapTextFromPhoto(finalFile, purpose: purpose);
+      await _photoRecovery.markCaptured(pickedFile);
+      await _processPhoto(pickedFile, setter: setter, purpose: purpose);
     } catch (error) {
       debugPrint('Photo flow failed: ${error.runtimeType}');
     } finally {
+      await _photoRecovery.clearPending();
       if (mounted) {
         setState(() {
           _isProcessingImage = false;
@@ -126,6 +137,79 @@ class _AddProductScreenState extends State<AddProductScreen> {
         });
       }
     }
+  }
+
+  Future<void> _recoverPhoto() async {
+    final recovered = _photoRecovery.takeRecovered();
+    if (recovered == null || !mounted) return;
+    setState(() {
+      _isProcessingImage = true;
+      _imageFlowStatus = 'Foto recuperata. Apertura editor immagine...';
+      _photoReviewMessage = null;
+    });
+    try {
+      await _processPhoto(
+        recovered.file,
+        setter: (file) => _setPhotoForPurpose(recovered.purpose, file),
+        purpose: recovered.purpose,
+      );
+      if (mounted) {
+        setState(() {
+          _photoReviewMessage =
+              'Foto recuperata dopo il riavvio Android. Controlla il risultato prima di salvare.';
+        });
+      }
+    } on Object catch (error) {
+      debugPrint('Recovered photo flow failed: ${error.runtimeType}');
+    } finally {
+      await _photoRecovery.clearPending();
+      if (mounted) {
+        setState(() {
+          _isProcessingImage = false;
+          _imageFlowStatus = '';
+        });
+      }
+    }
+  }
+
+  void _setPhotoForPurpose(ProductPhotoPurpose purpose, XFile? file) {
+    switch (purpose) {
+      case ProductPhotoPurpose.productFront:
+        _productImage = file;
+      case ProductPhotoPurpose.ingredients:
+        _ingredientsImage = file;
+      case ProductPhotoPurpose.nutrition:
+        _nutritionImage = file;
+      case ProductPhotoPurpose.other:
+      case ProductPhotoPurpose.unknown:
+        return;
+    }
+  }
+
+  Future<void> _processPhoto(
+    XFile pickedFile, {
+    required void Function(XFile?) setter,
+    required ProductPhotoPurpose purpose,
+  }) async {
+    if (mounted) {
+      setState(() => _imageFlowStatus = 'Apertura editor immagine...');
+    }
+    final croppedFile = await _cropImage(pickedFile);
+    final finalFile = croppedFile == null ? pickedFile : croppedFile;
+    setter(finalFile);
+    if (!_photoFieldMapper.shouldExtractText(purpose)) {
+      if (mounted) {
+        setState(() {
+          _photoReviewMessage =
+              'Foto frontale pronta. È solo rappresentativa: non compila i campi e non avvia AI.';
+        });
+      }
+      return;
+    }
+    if (mounted) {
+      setState(() => _imageFlowStatus = 'Lettura del testo visibile...');
+    }
+    await _mapTextFromPhoto(finalFile, purpose: purpose);
   }
 
   Future<XFile?> _cropImage(XFile file) async {
@@ -197,10 +281,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 MobileScanner(
                   controller: scannerController,
                   onDetect: (capture) {
-                    final detected = capture.barcodes.first.rawValue?.trim();
-                    if (detected != null && detected.isNotEmpty) {
+                    final detected = capture.barcodes.first.rawValue;
+                    final validation =
+                        _barcodeValidator.validate(detected ?? '');
+                    debugPrint(validation.safeLog);
+                    if (validation.isValid) {
                       scannerController.dispose();
-                      Navigator.of(context).pop(detected);
+                      Navigator.of(context).pop(validation.value);
                     }
                   },
                 ),
@@ -228,145 +315,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  // ignore: unused_element
-  Future<void> _extractTextFromPhoto(
-    XFile file, {
-    required bool isProductPhoto,
-  }) async {
-    setState(() => _isProcessingImage = true);
-
-    try {
-      final image = InputImage.fromFilePath(file.path);
-      final recognizer = TextRecognizer();
-      final recognizedText = await recognizer.processImage(image);
-      final rawText = recognizedText.text.trim();
-      await recognizer.close();
-
-      final barcodeValue = _extractBarcodeValue(rawText);
-      if (isProductPhoto &&
-          barcodeValue != null &&
-          _isValidBarcode(barcodeValue)) {
-        _barcodeController.text = barcodeValue;
-      }
-
-      // Kept only for compatibility with older widget states. The active
-      // capture path uses the purpose-specific conservative mapper below.
-      const normalized = <String, dynamic>{};
-
-      final productName = (normalized['product_name'] as String?)?.trim();
-      final brandName = (normalized['brand_name'] as String?)?.trim();
-      final category =
-          (normalized['category'] as String?)?.trim().toLowerCase();
-      final productType =
-          (normalized['product_type'] as String?)?.trim().toLowerCase();
-      final nutrition =
-          normalized['nutrition'] as Map<String, dynamic>? ?? const {};
-      final ingredients =
-          (normalized['ingredients'] as List?)?.whereType<String>().toList() ??
-              const <String>[];
-
-      if (isProductPhoto &&
-          category != null &&
-          category.isNotEmpty &&
-          category != 'food' &&
-          category != 'foods') {
-        throw Exception(
-            'Il prodotto non risulta essere un food. Il processo è stato interrotto.');
-      }
-
-      if (isProductPhoto) {
-        if (productName != null && productName.isNotEmpty) {
-          _productNameController.text = productName;
-        }
-        if (brandName != null && brandName.isNotEmpty) {
-          _brandController.text = brandName;
-        }
-        if (category != null && category.isNotEmpty) {
-          _categoryController.text = category;
-        }
-        if (productType != null && productType.isNotEmpty) {
-          _productTypeController.text = productType;
-        }
-      }
-
-      if (!isProductPhoto && ingredients.isNotEmpty) {
-        _ingredientsController.text = ingredients.join(', ');
-      }
-
-      if (isProductPhoto &&
-          ingredients.isNotEmpty &&
-          _ingredientsController.text.trim().isEmpty) {
-        _ingredientsController.text = ingredients.join(', ');
-      }
-
-      if (isProductPhoto) {
-        void setterIfPresent(String key, TextEditingController controller) {
-          final value = nutrition[key];
-          if (value == null) return;
-          controller.text = value.toString();
-        }
-
-        setterIfPresent('energy_kcal', _energyController);
-        setterIfPresent('protein_g', _proteinController);
-        setterIfPresent('carbs_g', _carbsController);
-        setterIfPresent('sugar_g', _sugarController);
-        setterIfPresent('fat_g', _fatController);
-        setterIfPresent('saturated_fat_g', _saturatedFatController);
-        setterIfPresent('sodium_mg', _sodiumController);
-        setterIfPresent('fiber_g', _fiberController);
-      }
-
-      if (mounted) {
-        final hasData = barcodeValue != null ||
-            ingredients.isNotEmpty ||
-            productName != null ||
-            brandName != null ||
-            nutrition.isNotEmpty;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              hasData
-                  ? (isProductPhoto
-                      ? 'Foto prodotto analizzata: brand, nome, categoria e tipo precompilati.'
-                      : 'Foto ingredienti analizzata: ingredienti aggiornati.')
-                  : 'Nessun dato rilevato dalla foto. Riprova con una foto più chiara.',
-            ),
-            backgroundColor: AppColors.primary,
-          ),
-        );
-      }
-    } catch (error) {
-      debugPrint('Photo analysis failed: ${error.runtimeType}');
-
-      if (mounted) {
-        final errText = error.toString();
-        final isFoodValidationError =
-            errText.contains('non risulta essere un food');
-        final isNetworkError = errText.toLowerCase().contains('network') ||
-            errText.toLowerCase().contains('socket') ||
-            errText.toLowerCase().contains('timeout') ||
-            errText.toLowerCase().contains('connection');
-
-        final userMessage = isFoodValidationError
-            ? 'Il prodotto non è classificato come food. Il salvataggio è stato interrotto.'
-            : isNetworkError
-                ? 'Impossibile raggiungere il backend: verifica che il server sia avviato e che il reverse port adb sia attivo.'
-                : 'Non è stato possibile leggere la foto. Riprova con una foto più chiara. Errore: ${errText.split("\n").first}';
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(userMessage),
-            backgroundColor: AppColors.riskHigh,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isProcessingImage = false);
-      }
-    }
-  }
-
   Future<void> _mapTextFromPhoto(
     XFile file, {
     required ProductPhotoPurpose purpose,
@@ -376,30 +324,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       final recognizedText = await recognizer.processImage(image);
       final rawText = recognizedText.text.trim();
-      final barcodeValue = _extractBarcodeValue(rawText);
-      if (purpose == ProductPhotoPurpose.identity && barcodeValue != null) {
-        _barcodeController.text = barcodeValue;
-      }
 
       final mapping = _photoFieldMapper.map(rawText, purpose);
-      if (purpose == ProductPhotoPurpose.identity) {
-        if (mapping.productName case final value?) {
-          _productNameController.text = value;
-        }
-        if (mapping.brandName case final value?) {
-          _brandController.text = value;
-        }
-        if (mapping.category case final value?) {
-          _categoryController.text = value;
-        }
-        if (mapping.productType case final value?) {
-          _productTypeController.text = value;
-        }
-      } else if (purpose == ProductPhotoPurpose.ingredients) {
+      if (purpose == ProductPhotoPurpose.ingredients) {
         if (mapping.ingredientListText case final value?) {
           _ingredientsController.text = value;
+          _ingredientsNeedConfirmation = true;
+          _ingredientsConfirmed = false;
         }
-      } else {
+      } else if (purpose == ProductPhotoPurpose.nutrition) {
         final controllers = <String, TextEditingController>{
           'energy_kcal': _energyController,
           'protein_g': _proteinController,
@@ -414,27 +347,35 @@ class _AddProductScreenState extends State<AddProductScreen> {
           final value = mapping.nutrition[entry.key];
           if (value != null) {
             entry.value.text = value.toString();
+            _nutritionNeedsConfirmation = true;
+            _nutritionConfirmed = false;
           }
         }
       }
 
       final hasData = switch (purpose) {
-        ProductPhotoPurpose.identity =>
-          barcodeValue != null || mapping.hasIdentity,
+        ProductPhotoPurpose.productFront ||
+        ProductPhotoPurpose.other ||
+        ProductPhotoPurpose.unknown =>
+          false,
         ProductPhotoPurpose.ingredients => mapping.hasIngredients,
         ProductPhotoPurpose.nutrition => mapping.hasNutrition,
       };
       final successMessage = switch (purpose) {
-        ProductPhotoPurpose.identity =>
-          'Identita rilevata solo da etichette esplicite. Controlla i valori.',
+        ProductPhotoPurpose.productFront ||
+        ProductPhotoPurpose.other ||
+        ProductPhotoPurpose.unknown =>
+          'Nessun campo compilato.',
         ProductPhotoPurpose.ingredients =>
           'Lista ingredienti rilevata. Controlla il testo prima di salvare.',
         ProductPhotoPurpose.nutrition =>
           'Valori nutrizionali rilevati. Controllali prima di salvare.',
       };
       final emptyMessage = switch (purpose) {
-        ProductPhotoPurpose.identity =>
-          'Identita da verificare: compila Brand, Nome e Tipo.',
+        ProductPhotoPurpose.productFront ||
+        ProductPhotoPurpose.other ||
+        ProductPhotoPurpose.unknown =>
+          'Classifica manualmente la foto; nessun campo e stato modificato.',
         ProductPhotoPurpose.ingredients =>
           'Ingredienti da verificare: il campo resta vuoto.',
         ProductPhotoPurpose.nutrition =>
@@ -463,46 +404,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
     } finally {
       await recognizer.close();
     }
-  }
-
-  bool _isValidBarcode(String value) {
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length != 13) {
-      return false;
-    }
-
-    int total = 0;
-    for (int i = 0; i < 12; i++) {
-      final digit = int.parse(digits[i]);
-      total += digit * (i % 2 == 0 ? 1 : 3);
-    }
-
-    final expectedCheckDigit = (10 - (total % 10)) % 10;
-    return expectedCheckDigit == int.parse(digits[12]);
-  }
-
-  String? _extractBarcodeValue(String rawText) {
-    final matches = RegExp(r'\b\d{8,14}\b').allMatches(rawText);
-    final candidates = <String>[];
-
-    for (final match in matches) {
-      final value = match.group(0);
-      if (value == null) continue;
-
-      final numeric = value.trim();
-      if (!RegExp(r'^\d+$').hasMatch(numeric)) continue;
-      if (numeric.length != 13) continue;
-
-      if (_isValidBarcode(numeric)) {
-        candidates.add(numeric);
-      }
-    }
-
-    if (candidates.isEmpty) {
-      return null;
-    }
-
-    return candidates.first;
   }
 
   String? _validateNumericField(String? value, {bool required = false}) {
@@ -549,6 +450,32 @@ class _AddProductScreenState extends State<AddProductScreen> {
   }
 
   Future<void> _submit() async {
+    final barcodeValidation =
+        _barcodeValidator.validate(_barcodeController.text);
+    debugPrint(barcodeValidation.safeLog);
+    if (!barcodeValidation.isValid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Barcode non valido: usa EAN-8, UPC-A, EAN-13 o GTIN-14 con checksum corretto.',
+          ),
+          backgroundColor: AppColors.riskHigh,
+        ),
+      );
+      return;
+    }
+    _barcodeController.text = barcodeValidation.value!;
+    if ((_ingredientsNeedConfirmation && !_ingredientsConfirmed) ||
+        (_nutritionNeedsConfirmation && !_nutritionConfirmed)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Conferma o correggi i dati OCR segnati Da verificare.'),
+          backgroundColor: AppColors.riskHigh,
+        ),
+      );
+      return;
+    }
     final categoryValue = _categoryController.text.trim().toLowerCase();
     if (categoryValue.isNotEmpty &&
         categoryValue != 'food' &&
@@ -601,28 +528,23 @@ class _AddProductScreenState extends State<AddProductScreen> {
     try {
       final provider = context.read<BarcodeScannerProvider>();
       final captureController = context.read<CaptureUploadController>();
-      final managedProductPhoto = _productImage != null &&
-          context.read<MobileUploadConfig>().enabled &&
+      final hasImages = _productImage != null ||
+          _ingredientsImage != null ||
+          _nutritionImage != null;
+      final canUploadImages = context.read<MobileUploadConfig>().enabled &&
           captureController.tokenState == DevMobileTokenState.present;
-      String? imageUrl;
-      if (_productImage != null && !managedProductPhoto) {
-        final bytes = await _productImage!.readAsBytes();
-        final base64 = base64Encode(bytes);
-        imageUrl = 'data:image/jpeg;base64,$base64';
-      }
-
-      String? ingredientImageUrl;
-      if (_ingredientsImage != null) {
-        final bytes = await _ingredientsImage!.readAsBytes();
-        final base64 = base64Encode(bytes);
-        ingredientImageUrl = 'data:image/jpeg;base64,$base64';
-      }
-
-      String? nutritionImageUrl;
-      if (_nutritionImage != null) {
-        final bytes = await _nutritionImage!.readAsBytes();
-        final base64 = base64Encode(bytes);
-        nutritionImageUrl = 'data:image/jpeg;base64,$base64';
+      if (hasImages && !canUploadImages) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Per salvare le foto imposta prima il token mobile temporaneo nelle Impostazioni.',
+              ),
+              backgroundColor: AppColors.riskHigh,
+            ),
+          );
+        }
+        return;
       }
 
       await provider.addProductFromSubmission(
@@ -633,34 +555,47 @@ class _AddProductScreenState extends State<AddProductScreen> {
         productType: _productTypeController.text.trim(),
         ingredients: _ingredientsController.text.trim(),
         nutritionFacts: _buildNutrition(),
-        imageUrl: imageUrl,
-        ingredientImageUrl: ingredientImageUrl,
-        nutritionImageUrl: nutritionImageUrl,
       );
 
       String? photoUploadError;
-      if (provider.error == null && managedProductPhoto) {
+      if (provider.error == null && hasImages) {
         final product = provider.currentProduct;
         if (product?.productId == null) {
           photoUploadError = 'product_id_missing';
         } else {
-          captureController.reset();
-          captureController.selectImage(
-            productIdentity: ProductIdentity(
-              productId: product!.productId!,
-              barcode: product.barcode,
-            ),
-            purpose: CaptureImagePurpose.productFront,
-            bytes: await _productImage!.readAsBytes(),
-          );
-          await captureController.prepareMetadata();
-          await captureController.upload();
-          if (captureController.state.step ==
-              UploadFlowStep.uploadedAssociated) {
-            await provider.scanBarcode(product.barcode);
-          } else {
-            photoUploadError =
-                captureController.state.errorCode ?? 'photo_upload_incomplete';
+          final savedProduct = product!;
+          final photos = <(XFile, CaptureImagePurpose)>[
+            if (_productImage != null)
+              (_productImage!, CaptureImagePurpose.productFront),
+            if (_ingredientsImage != null)
+              (_ingredientsImage!, CaptureImagePurpose.ingredients),
+            if (_nutritionImage != null)
+              (_nutritionImage!, CaptureImagePurpose.nutrition),
+          ];
+          for (final photo in photos) {
+            captureController.reset();
+            captureController.selectImage(
+              productIdentity: ProductIdentity(
+                productId: savedProduct.productId!,
+                barcode: savedProduct.barcode,
+              ),
+              purpose: photo.$2,
+              bytes: await photo.$1.readAsBytes(),
+            );
+            await captureController.prepareMetadata();
+            await captureController.upload();
+            final completed = captureController.state.step ==
+                    UploadFlowStep.uploadedAssociated ||
+                captureController.state.step ==
+                    UploadFlowStep.extractionDeferred;
+            if (!completed) {
+              photoUploadError = captureController.state.errorCode ??
+                  'photo_upload_incomplete';
+              break;
+            }
+          }
+          if (photoUploadError == null) {
+            await provider.scanBarcode(savedProduct.barcode);
           }
         }
       }
@@ -752,7 +687,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                         await _pickImage(
                           (file) => _productImage = file,
                           source,
-                          purpose: ProductPhotoPurpose.identity,
+                          purpose: ProductPhotoPurpose.productFront,
                         );
                       },
                     ),
@@ -857,13 +792,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       controller: _barcodeController,
                       readOnly: true,
                       decoration: const InputDecoration(
-                        hintText: 'Barcode rilevato automaticamente dalla foto',
+                        hintText: 'Leggi il barcode con lo scanner',
                         prefixIcon: Icon(Icons.qr_code),
                       ),
                       validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Inserisci il barcode'
-                              : null,
+                          _barcodeValidator.validate(value ?? '').isValid
+                              ? null
+                              : 'Barcode non valido',
                       onChanged: (_) => setState(() {}),
                     ),
                     const SizedBox(height: 8),
@@ -883,7 +818,33 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             'Gli ingredienti vengono precompilati da foto e possono essere corretti manualmente.',
                         prefixIcon: Icon(Icons.list_alt),
                       ),
+                      onChanged: (_) {
+                        if (_ingredientsNeedConfirmation) {
+                          setState(() => _ingredientsConfirmed = false);
+                        }
+                      },
                     ),
+                    if (_ingredientsNeedConfirmation)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Chip(label: Text('Da verificare')),
+                          CheckboxListTile(
+                            key: const ValueKey(
+                                'ingredients-review-confirmation'),
+                            contentPadding: EdgeInsets.zero,
+                            value: _ingredientsConfirmed,
+                            title: const Text(
+                                'Ho corretto o rimosso i dati OCR errati'),
+                            subtitle: const Text(
+                              'La conferma utente non equivale a verifica scientifica.',
+                            ),
+                            onChanged: (value) => setState(
+                              () => _ingredientsConfirmed = value ?? false,
+                            ),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 8),
                     _ImagePickerTile(
                       label: _ingredientsImage == null
@@ -923,6 +884,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       'Inserisci manualmente i valori numerici richiesti per 100 g di prodotto. Sodio e fibre sono opzionali.',
                       style: AppTypography.bodySmall,
                     ),
+                    if (_nutritionNeedsConfirmation)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Chip(label: Text('Da verificare')),
+                          CheckboxListTile(
+                            key:
+                                const ValueKey('nutrition-review-confirmation'),
+                            contentPadding: EdgeInsets.zero,
+                            value: _nutritionConfirmed,
+                            title: const Text(
+                                'Ho controllato valori e unità dei dati OCR'),
+                            subtitle: const Text(
+                              'I dati restano non verificati scientificamente.',
+                            ),
+                            onChanged: (value) => setState(
+                              () => _nutritionConfirmed = value ?? false,
+                            ),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 16),
                     GridView.count(
                       shrinkWrap: true,

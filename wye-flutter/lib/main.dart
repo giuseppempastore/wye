@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'config/mobile_upload_config.dart';
@@ -12,21 +13,34 @@ import 'services/http_capture_upload_gateway.dart';
 import 'services/image_metadata_service.dart';
 import 'services/logging_capture_upload_gateway.dart';
 import 'services/database_service.dart';
+import 'services/photo_capture_recovery_service.dart';
 import 'providers/app_providers.dart';
 import 'providers/capture_upload_controller.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await PhotoCaptureRecoveryService.shared.initialize();
+  final initialLocation = PhotoCaptureRecoveryService.shared.hasRecoveredPhoto
+      ? '/add-product'
+      : '/';
   // Inizializza database
   final db = DatabaseService();
   await db.init();
 
-  runApp(WyeApp(databaseService: db));
+  runApp(
+    WyeApp(databaseService: db, initialLocation: initialLocation),
+  );
 }
 
 class WyeApp extends StatefulWidget {
   final DatabaseService databaseService;
+  final String initialLocation;
 
-  const WyeApp({Key? key, required this.databaseService}) : super(key: key);
+  const WyeApp({
+    Key? key,
+    required this.databaseService,
+    this.initialLocation = '/',
+  }) : super(key: key);
 
   @override
   State<WyeApp> createState() => _WyeAppState();
@@ -37,6 +51,7 @@ class _WyeAppState extends State<WyeApp> {
   late final SanitizedInMemoryCaptureFlowLogger _captureFlowLogger;
   final InMemoryMobileUploadTokenProvider _mobileTokenProvider =
       InMemoryMobileUploadTokenProvider();
+  late final GoRouter _router;
 
   @override
   void initState() {
@@ -48,12 +63,14 @@ class _WyeAppState extends State<WyeApp> {
       enabled: _mobileUploadConfig.enabled,
       capacity: 200,
     );
+    _router = AppRouter.createRouter(initialLocation: widget.initialLocation);
   }
 
   @override
   void dispose() {
     _mobileTokenProvider.clear();
     _captureFlowLogger.dispose();
+    _router.dispose();
     widget.databaseService.close();
     super.dispose();
   }
@@ -120,7 +137,7 @@ class _WyeAppState extends State<WyeApp> {
       child: MaterialApp.router(
         title: 'WYE',
         theme: AppTheme.lightTheme,
-        routerConfig: AppRouter.router,
+        routerConfig: _router,
         debugShowCheckedModeBanner: false,
       ),
     );

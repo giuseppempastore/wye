@@ -138,7 +138,7 @@ if (-not $healthy) {
     throw 'FastAPI non e diventato healthy entro 2 minuti.'
 }
 
-$fixture = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/product/9876543210987' -TimeoutSec 5
+$fixture = Invoke-RestMethod -Uri 'http://127.0.0.1:8000/product/9876543210982' -TimeoutSec 5
 $productId = $fixture.product.id
 if (-not $productId) { throw 'Fixture mobile non disponibile.' }
 

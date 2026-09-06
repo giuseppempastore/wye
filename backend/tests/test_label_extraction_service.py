@@ -3,7 +3,11 @@ from types import SimpleNamespace
 
 from app.extraction.models import ProviderResult
 from app.extraction.providers import FakeExtractionProvider, ProviderError, ProviderTimeout
-from app.services.label_extractions import ExtractionError, LabelExtractionService
+from app.services.label_extractions import (
+    ExtractionError,
+    LabelExtractionService,
+    _plausible_ingredient,
+)
 
 
 INGREDIENTS = {"document_type":"ingredients","raw_text":"Ingredienti: acqua, sale","detected_languages":["it"],
@@ -21,11 +25,13 @@ class _Service(LabelExtractionService):
     def __init__(self, provider, image_type="ingredients", adapter=None):
         settings=SimpleNamespace(max_image_bytes=1024); extraction=SimpleNamespace(model="model")
         super().__init__(adapter or _Adapter(),settings,extraction,provider=provider,connection_factory=None)
-        self.image_type=image_type; self.failed=[]; self.succeeded=[]; self.running=[]; self.existing=None
+        self.image_type=image_type; self.failed=[]; self.succeeded=[]; self.running=[]; self.existing=None; self.reusable=None; self.reused=[]
     def _get_image(self, product_id, image_id):
         return {"id":image_id,"image_type":self.image_type,"mime_type":"image/jpeg","checksum":"a"*64,"object_key":"private"}
     def _create_pending_run(self,*args): return ((4,7),self.existing)
     def _mark_running(self,run_id): self.running.append(run_id)
+    def _find_reusable_run(self,fingerprint,run_id): return self.reusable
+    def _reuse_completed_run(self,run_id,source_run_id): self.reused.append((run_id,source_run_id))
     def _fail(self,run_id,code,detail): self.failed.append((run_id,code))
     def _succeed(self,run_id,output,result): self.succeeded.append((run_id,output,result))
     def get(self,product_id,image_id,run_id): return {"extraction":{"id":run_id,"run_status":"succeeded"},"items":[]}
@@ -65,6 +71,19 @@ class LabelExtractionServiceTests(unittest.TestCase):
         service.existing={"id":7,"request_fingerprint":"different"}
         with self.assertRaises(ExtractionError) as caught: service.create(1,2,"same-key")
         self.assertEqual(caught.exception.code,"idempotency_conflict")
+
+    def test_same_content_and_schema_reuses_completed_run_without_provider(self):
+        provider=FakeExtractionProvider(INGREDIENTS); service=_Service(provider)
+        service.reusable=5
+        result=service.create(1,2,"new-key")
+        self.assertEqual(result["extraction"]["id"],7)
+        self.assertEqual(service.reused,[(7,5)])
+        self.assertEqual(provider.requests,[])
+
+    def test_obvious_marketing_address_and_nutrition_noise_is_not_ingredient(self):
+        for value in ("Peso netto 200 g","Via Roma 1","Energia 100 kcal","Conservare al fresco"):
+            with self.subTest(value=value): self.assertFalse(_plausible_ingredient(value))
+        self.assertTrue(_plausible_ingredient("sciroppo d'agave"))
 
 
 if __name__ == "__main__": unittest.main()
