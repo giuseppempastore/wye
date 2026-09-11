@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
+import '../models/text_normalization_models.dart';
 import 'capture_flow_logger.dart';
 import 'capture_upload_gateway.dart';
 
@@ -214,6 +215,28 @@ class LoggingCaptureUploadGateway implements CaptureUploadGateway {
       rethrow;
     } on Object {
       _unexpected('extraction_get_failed');
+      rethrow;
+    }
+  }
+
+  @override
+  Future<TextNormalizationResult> normalizeText(
+    TextNormalizationRequestPayload request,
+  ) async {
+    _started('text_normalization_started');
+    try {
+      final result = await _delegate.normalizeText(request);
+      _succeeded(
+        'text_normalization_succeeded',
+        itemCount: result.ingredientCandidates.length +
+            result.nutritionCandidates.length,
+      );
+      return result;
+    } on CaptureUploadException catch (error) {
+      _failed('text_normalization_failed', error);
+      rethrow;
+    } on Object {
+      _unexpected('text_normalization_failed');
       rethrow;
     }
   }

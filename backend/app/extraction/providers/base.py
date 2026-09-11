@@ -1,5 +1,9 @@
 from abc import ABC, abstractmethod
-from app.extraction.models import ExtractionRequest, ProviderResult
+from app.extraction.models import (
+    ExtractionRequest,
+    ProviderResult,
+    TextNormalizationProviderRequest,
+)
 
 
 class ProviderError(RuntimeError):
@@ -15,3 +19,13 @@ class ExtractionProvider(ABC):
 
     @abstractmethod
     def extract(self, request: ExtractionRequest) -> ProviderResult: ...
+
+
+class TextNormalizationProvider(ABC):
+    name: str
+    billable_external: bool = False
+
+    @abstractmethod
+    def normalize_text(
+        self, request: TextNormalizationProviderRequest
+    ) -> ProviderResult: ...

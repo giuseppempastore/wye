@@ -6,6 +6,9 @@ class Product {
   final String productName;
   final String brand;
   final String category;
+  final String? productType;
+  final String validationStatus;
+  final bool dataVerified;
   final ProductScoreView scoreView;
   final double? riskIndex; // 0-100 numeric danger index
   final List<String> ingredients;
@@ -21,6 +24,9 @@ class Product {
     required this.productName,
     required this.brand,
     required this.category,
+    this.productType,
+    this.validationStatus = 'needs_review',
+    this.dataVerified = false,
     required this.scoreView,
     this.riskIndex,
     required this.ingredients,
@@ -49,6 +55,9 @@ class Product {
       productName: productNameValue,
       brand: brandValue,
       category: categoryValue,
+      productType: json['product_type']?.toString(),
+      validationStatus: json['status']?.toString() ?? 'needs_review',
+      dataVerified: json['verified'] == true,
       scoreView: _scoreViewFromJson(json),
       ingredients: json['ingredients'] is List
           ? List<String>.from(
@@ -77,6 +86,9 @@ class Product {
       'product_name': productName,
       'brand': brand,
       'category': category,
+      'product_type': productType,
+      'status': validationStatus,
+      'verified': dataVerified,
       'score_view': scoreView.toJson(),
       'risk_index': riskIndex,
       'ingredients': ingredients,
@@ -100,23 +112,27 @@ int? _positiveProductId(Object? value) {
 class NutritionFacts {
   final double? servingSize;
   final double? energyKcal;
+  final double? energyKj;
   final double? protein;
   final double? carbs;
   final double? sugar;
   final double? fat;
   final double? saturatedFat;
-  final double? sodium;
+  final double? sodiumMg;
+  final double? saltG;
   final double? fiber;
 
   NutritionFacts({
     this.servingSize,
     this.energyKcal,
+    this.energyKj,
     this.protein,
     this.carbs,
     this.sugar,
     this.fat,
     this.saturatedFat,
-    this.sodium,
+    this.sodiumMg,
+    this.saltG,
     this.fiber,
   });
 
@@ -124,12 +140,14 @@ class NutritionFacts {
     return NutritionFacts(
       servingSize: _toDouble(json['serving_size']),
       energyKcal: _toDouble(json['energy_kcal']),
+      energyKj: _toDouble(json['energy_kj']),
       protein: _toDouble(json['protein']),
       carbs: _toDouble(json['carbs']),
       sugar: _toDouble(json['sugar']),
       fat: _toDouble(json['fat']),
       saturatedFat: _toDouble(json['saturated_fat']),
-      sodium: _toDouble(json['sodium']),
+      sodiumMg: _toDouble(json['sodium_mg'] ?? json['sodium']),
+      saltG: _toDouble(json['salt_g'] ?? json['salt']),
       fiber: _toDouble(json['fiber']),
     );
   }
@@ -138,12 +156,14 @@ class NutritionFacts {
     return {
       'serving_size': servingSize,
       'energy_kcal': energyKcal,
+      'energy_kj': energyKj,
       'protein': protein,
       'carbs': carbs,
       'sugar': sugar,
       'fat': fat,
       'saturated_fat': saturatedFat,
-      'sodium': sodium,
+      'sodium_mg': sodiumMg,
+      'salt_g': saltG,
       'fiber': fiber,
     };
   }
@@ -161,6 +181,8 @@ class ScanHistory {
   final DateTime scannedAt;
   final String category;
   final String? imageUrl;
+  final String validationStatus;
+  final bool dataVerified;
 
   ScanHistory({
     required this.barcode,
@@ -169,6 +191,8 @@ class ScanHistory {
     required this.scannedAt,
     required this.category,
     this.imageUrl,
+    this.validationStatus = 'needs_review',
+    this.dataVerified = false,
   });
 
   factory ScanHistory.fromProduct(Product product) {
@@ -179,6 +203,8 @@ class ScanHistory {
       scannedAt: DateTime.now(),
       category: product.category,
       imageUrl: product.imageUrl,
+      validationStatus: product.validationStatus,
+      dataVerified: product.dataVerified,
     );
   }
 
@@ -190,6 +216,8 @@ class ScanHistory {
       scannedAt: DateTime.parse(json['scanned_at'] as String),
       category: json['category'] as String,
       imageUrl: json['image_url'] as String?,
+      validationStatus: json['validation_status']?.toString() ?? 'needs_review',
+      dataVerified: json['data_verified'] == true,
     );
   }
 
@@ -201,6 +229,8 @@ class ScanHistory {
       'scanned_at': scannedAt.toIso8601String(),
       'category': category,
       'image_url': imageUrl,
+      'validation_status': validationStatus,
+      'data_verified': dataVerified,
     };
   }
 }

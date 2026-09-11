@@ -1,21 +1,31 @@
 import logging
+import hashlib
+import re
 from typing import Any
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 
 from app.services.scoring import score_product
 from app.services.ai_normalizer import analyze_image_with_ai, normalize_photo_text
 from app.barcodes import validate_product_barcode
+from app.product_taxonomy import PRODUCT_CATEGORY_IDS, PRODUCT_TYPE_IDS
 from app.data.ingredients import normalize_ingredient, parse_ingredient_list
+from app.extraction.models import (
+    CanonicalEnglishIngredient,
+    CanonicalNutritionItem,
+)
 from app.db import get_connection
 from app.routes.product_images import router as product_images_router
 from app.routes.label_extractions import router as label_extractions_router
 from app.routes.ingredient_mapping_reviews import router as ingredient_mapping_reviews_router
 from app.routes.mobile_upload import router as mobile_upload_router
+from app.routes.product_acquisitions import router as product_acquisitions_router
+from app.routes.prototype_experience import router as prototype_experience_router
 import psycopg2.extras
 from psycopg2.extras import Json
 
@@ -26,6 +36,8 @@ app.include_router(product_images_router)
 app.include_router(label_extractions_router)
 app.include_router(ingredient_mapping_reviews_router)
 app.include_router(mobile_upload_router)
+app.include_router(product_acquisitions_router)
+app.include_router(prototype_experience_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,14 +66,88 @@ class ImageAnalysisRequest(BaseModel):
     raw_text: str = ""
 
 
+class LocalLabelExtraction(BaseModel):
+    document_type: Literal["ingredients", "nutrition"]
+    raw_text: str = Field(min_length=1, max_length=20000)
+    source_language: str | None = Field(
+        default=None,
+        max_length=10,
+        pattern=r"^(?:und|[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)$",
+    )
+    # Kept temporarily for clients using the Phase 9.3A v2 payload.
+    detected_language: str | None = Field(
+        default=None,
+        max_length=10,
+        pattern=r"^(?:und|[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*)$",
+    )
+    language_confidence: float | None = Field(default=None, ge=0, le=1)
+    language_method: str | None = Field(default=None, pattern=r"^[a-z0-9_.-]{1,80}$")
+    language_version: str | None = Field(default=None, pattern=r"^[a-z0-9_.-]{1,80}$")
+    ocr_script: Literal[
+        "latin", "chinese", "devanagari", "japanese", "korean", "undetermined"
+    ] = "undetermined"
+    parser_version: str = Field(pattern=r"^[a-z0-9_.-]{1,80}$")
+    source_segment: str | None = Field(default=None, max_length=12000)
+    # Kept temporarily for clients using the Phase 9.3A v2 payload.
+    segment_text: str | None = Field(default=None, max_length=12000)
+    canonical_english: str | None = Field(default=None, max_length=12000)
+    normalized_candidates: list[CanonicalEnglishIngredient] = Field(
+        default_factory=list, max_length=200
+    )
+    nutrient_observations: list[CanonicalNutritionItem] = Field(
+        default_factory=list, max_length=50
+    )
+    nutrition: dict[str, float] = Field(default_factory=dict)
+    nutrition_basis: Literal["per_100_g", "per_100_ml", "per_serving"] | None = None
+    text_fallback_used: bool = False
+    normalization_provenance: dict[str, str | None] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list, max_length=20)
+
+    @property
+    def resolved_language(self) -> str:
+        return self.source_language or self.detected_language or "und"
+
+    @property
+    def resolved_segment(self) -> str | None:
+        return self.source_segment or self.segment_text
+
+    @field_validator("warnings")
+    @classmethod
+    def validate_warning_codes(cls, values: list[str]) -> list[str]:
+        if any(not re.fullmatch(r"[a-z0-9_]{1,80}", value) for value in values):
+            raise ValueError("warnings must contain safe codes")
+        return values
+
+    @field_validator("normalization_provenance")
+    @classmethod
+    def validate_normalization_provenance(
+        cls, values: dict[str, str | None]
+    ) -> dict[str, str | None]:
+        allowed = {
+            "provider",
+            "model_name",
+            "model_version",
+            "prompt_version",
+            "schema_version",
+            "parser_version",
+        }
+        if set(values) - allowed or any(
+            value is not None and len(value) > 80 for value in values.values()
+        ):
+            raise ValueError("normalization provenance is invalid")
+        return values
+
+
 class ProductCreateRequest(BaseModel):
     barcode: str
     brand_name: str = ""
     product_name: str
-    category: str = "food"
-    product_type: str = "snack"
+    category: str = "other"
+    product_type: str = "food"
     ingredients: str
     nutrition: dict | None = None
+    nutrition_basis: Literal["per_100_g", "per_100_ml", "per_serving"] | None = None
+    label_extractions: list[LocalLabelExtraction] = Field(default_factory=list, max_length=2)
     source: str = "photo_submission"
     image_url: str | None = None
     ingredient_image_url: str | None = None
@@ -74,6 +160,7 @@ def _coerce_nutrition_values(nutrition: dict | None) -> dict:
 
     cleaned: dict[str, float | int | None] = {}
     allowed_keys = {
+        'energy_kj',
         'energy_kcal',
         'protein_g',
         'carbs_g',
@@ -82,6 +169,7 @@ def _coerce_nutrition_values(nutrition: dict | None) -> dict:
         'saturated_fat_g',
         'sodium_mg',
         'fiber_g',
+        'salt_g',
     }
 
     for key, value in nutrition.items():
@@ -95,12 +183,16 @@ def _coerce_nutrition_values(nutrition: dict | None) -> dict:
             raise HTTPException(status_code=400, detail=f'Nutrition field {key} must be numeric')
         if parsed < 0:
             raise HTTPException(status_code=400, detail=f'Nutrition field {key} must not be negative')
+        if key == 'energy_kj' and parsed > 4000:
+            raise HTTPException(status_code=400, detail='Nutrition energy kJ exceeds the physical per-100g limit')
         if key == 'energy_kcal' and parsed > 900:
             raise HTTPException(status_code=400, detail='Nutrition energy exceeds the physical per-100g limit')
         if key.endswith('_g') and parsed > 100:
             raise HTTPException(status_code=400, detail=f'Nutrition field {key} exceeds the per-100g limit')
         if key == 'sodium_mg' and parsed > 100000:
             raise HTTPException(status_code=400, detail='Nutrition sodium exceeds the per-100g limit')
+        if key == 'salt_g' and parsed > 100:
+            raise HTTPException(status_code=400, detail='Nutrition salt exceeds the declared basis limit')
         cleaned[key] = parsed
 
     return cleaned
@@ -173,9 +265,10 @@ def create_product(payload: ProductCreateRequest):
     if not barcode or not product_name or not brand_name:
         raise HTTPException(status_code=400, detail='barcode, product_name and brand_name are required')
     category = (payload.category or '').strip().lower()
-    if category not in {'food', 'foods'}:
+    if category not in PRODUCT_CATEGORY_IDS:
         raise HTTPException(status_code=422, detail={"code": "unsupported_product_category"})
-    if (payload.product_type or '').strip().lower() == 'cosmetic':
+    product_type = (payload.product_type or '').strip().lower()
+    if product_type not in PRODUCT_TYPE_IDS:
         raise HTTPException(status_code=422, detail={"code": "unsupported_product_type"})
     if any((payload.image_url, payload.ingredient_image_url, payload.nutrition_image_url)):
         raise HTTPException(
@@ -184,9 +277,41 @@ def create_product(payload: ProductCreateRequest):
         )
 
     normalized_ingredients = parse_ingredient_list(payload.ingredients)
-    ingredient_pairs = [
-        (item, normalize_ingredient(item)) for item in normalized_ingredients
-    ]
+    ingredient_extraction = next(
+        (
+            item
+            for item in payload.label_extractions
+            if item.document_type == "ingredients"
+        ),
+        None,
+    )
+    submitted_matches_canonical = bool(
+        ingredient_extraction
+        and ingredient_extraction.canonical_english
+        and re.sub(r"\s+", " ", payload.ingredients.strip()).casefold()
+        == re.sub(
+            r"\s+", " ", ingredient_extraction.canonical_english.strip()
+        ).casefold()
+        and ingredient_extraction.normalized_candidates
+    )
+    if submitted_matches_canonical and ingredient_extraction:
+        ingredient_pairs = [
+            (
+                candidate.source_text,
+                normalize_ingredient(
+                    candidate.normalized_candidate
+                    or candidate.english_candidate
+                    or candidate.source_text
+                ),
+                candidate,
+            )
+            for candidate in ingredient_extraction.normalized_candidates
+        ]
+    else:
+        ingredient_pairs = [
+            (item, normalize_ingredient(item), None)
+            for item in normalized_ingredients
+        ]
     nutrition = _coerce_nutrition_values(payload.nutrition)
     image_url = (payload.image_url or '').strip() or None
     ingredient_image_url = (payload.ingredient_image_url or '').strip() or None
@@ -214,7 +339,12 @@ def create_product(payload: ProductCreateRequest):
         product = cur.fetchone()
 
         if product:
-            raise HTTPException(status_code=409, detail='A product with this barcode already exists')
+            return {
+                "message": "existing product returned",
+                "created": False,
+                "product": product,
+                "score_view": _unavailable_score_view(),
+            }
 
         if not product:
             insert_columns = [
@@ -225,7 +355,7 @@ def create_product(payload: ProductCreateRequest):
                 payload.brand_name or 'Unknown Brand',
                 product_name,
                 category,
-                payload.product_type or 'snack',
+                product_type,
                 payload.source or 'photo_submission',
                 False,
                 'needs_review',
@@ -247,11 +377,21 @@ def create_product(payload: ProductCreateRequest):
                 f"""
                 INSERT INTO products ({column_sql})
                 VALUES ({placeholders})
+                ON CONFLICT (barcode) DO NOTHING
                 RETURNING *
                 """,
                 tuple(insert_values),
             )
             product = cur.fetchone()
+            if not product:
+                cur.execute("SELECT * FROM products WHERE barcode = %s LIMIT 1", (barcode,))
+                product = cur.fetchone()
+                return {
+                    "message": "existing product returned",
+                    "created": False,
+                    "product": product,
+                    "score_view": _unavailable_score_view(),
+                }
 
         if product:
             update_values: list[Any] = []
@@ -281,9 +421,186 @@ def create_product(payload: ProductCreateRequest):
         if not product:
             raise HTTPException(status_code=500, detail='Product could not be created')
 
+        for extraction in payload.label_extractions:
+            extraction_nutrition = _coerce_nutrition_values(extraction.nutrition)
+            detected_language = extraction.resolved_language
+            source_segment = extraction.resolved_segment
+            source_checksum = hashlib.sha256(
+                extraction.raw_text.encode("utf-8")
+            ).hexdigest()
+            cur.execute(
+                """
+                INSERT INTO product_label_documents(
+                    product_id,raw_text,detected_language,source_type,
+                    source_checksum,document_type
+                ) VALUES(%s,%s,%s,'on_device_ocr',%s,%s)
+                RETURNING id
+                """,
+                (
+                    product['id'], extraction.raw_text,
+                    detected_language, source_checksum,
+                    extraction.document_type,
+                ),
+            )
+            label_document_id = cur.fetchone()['id']
+            cur.execute(
+                """
+                INSERT INTO label_extraction_runs(
+                    label_document_id,extraction_method,provider,model_name,
+                    model_version,prompt_version,schema_version,raw_response,run_status,
+                    extracted_raw_text,completed_at,provider_invoked
+                ) VALUES(
+                    %s,'deterministic',%s,%s,%s,%s,'2',%s,'succeeded',%s,NOW(),%s
+                ) RETURNING id
+                """,
+                (
+                    label_document_id,
+                    (
+                        extraction.normalization_provenance.get('provider')
+                        if extraction.text_fallback_used
+                        else 'on_device_mlkit'
+                    ) or 'backend_text_fallback',
+                    (
+                        extraction.normalization_provenance.get('model_name')
+                        if extraction.text_fallback_used
+                        else 'latin_text_recognizer'
+                    ) or 'text_normalization',
+                    (
+                        extraction.normalization_provenance.get('model_version')
+                        if extraction.text_fallback_used
+                        else None
+                    ),
+                    (
+                        extraction.normalization_provenance.get('prompt_version')
+                        if extraction.text_fallback_used
+                        else extraction.parser_version
+                    ) or extraction.parser_version,
+                    Json({
+                        'warnings': extraction.warnings,
+                        'nutrition_basis': extraction.nutrition_basis,
+                        'source_language': detected_language,
+                        'language_confidence': extraction.language_confidence,
+                        'language_method': extraction.language_method,
+                        'language_version': extraction.language_version,
+                        'ocr_script': extraction.ocr_script,
+                        'canonical_english': extraction.canonical_english,
+                        'text_fallback_used': extraction.text_fallback_used,
+                        'normalization_provenance': extraction.normalization_provenance,
+                        'ai_invoked': extraction.text_fallback_used,
+                    }),
+                    extraction.raw_text,
+                    extraction.text_fallback_used,
+                ),
+            )
+            extraction_run_id = cur.fetchone()['id']
+            if extraction.document_type == 'ingredients' and source_segment:
+                cur.execute(
+                    """
+                    INSERT INTO label_extraction_items(
+                        extraction_run_id,item_type,raw_text,detected_language,
+                        structured_value,extraction_status
+                    ) VALUES(%s,'ingredient_list',%s,%s,%s,'detected')
+                    """,
+                    (
+                        extraction_run_id, source_segment,
+                        detected_language,
+                        Json({
+                            'parser_version': extraction.parser_version,
+                            'canonical_english': extraction.canonical_english,
+                            'needs_review': True,
+                        }),
+                    ),
+                )
+                for position, candidate in enumerate(
+                    extraction.normalized_candidates, 1
+                ):
+                    cur.execute(
+                        """
+                        INSERT INTO label_extraction_items(
+                            extraction_run_id,item_type,raw_text,normalized_text,
+                            detected_language,structured_value,
+                            position_in_document,extraction_confidence,
+                            extraction_status
+                        ) VALUES(%s,'ingredient',%s,%s,%s,%s,%s,%s,'detected')
+                        """,
+                        (
+                            extraction_run_id,
+                            candidate.source_text,
+                            candidate.normalized_candidate,
+                            detected_language,
+                            Json({
+                                'english_candidate': candidate.english_candidate,
+                                'normalized_candidate': candidate.normalized_candidate,
+                                'needs_review': candidate.needs_review,
+                                'correction_reason': candidate.correction_reason,
+                                'allergen_emphasis': candidate.allergen_emphasis,
+                                'canonical_ingredient_id': None,
+                                'authoritative': False,
+                            }),
+                            position,
+                            candidate.confidence,
+                        ),
+                    )
+            nutrition_observations = extraction.nutrient_observations
+            if not nutrition_observations:
+                nutrition_observations = [
+                    CanonicalNutritionItem(
+                        canonical_key={
+                            'carbs_g': 'carbohydrate_g',
+                            'sugar_g': 'sugars_g',
+                            'fiber_g': 'fibre_g',
+                        }.get(key, key),
+                        source_label=key,
+                        source_value=str(value),
+                        source_unit=(
+                            'kcal' if key == 'energy_kcal'
+                            else 'mg' if key == 'sodium_mg'
+                            else 'g'
+                        ),
+                        normalized_value=value,
+                        normalized_unit=(
+                            'kcal' if key == 'energy_kcal'
+                            else 'mg' if key == 'sodium_mg'
+                            else 'g'
+                        ),
+                    )
+                    for key, value in extraction_nutrition.items()
+                ]
+            for position, observation in enumerate(nutrition_observations, 1):
+                cur.execute(
+                    """
+                    INSERT INTO label_extraction_items(
+                        extraction_run_id,item_type,raw_text,normalized_text,
+                        detected_language,structured_value,unit,
+                        position_in_document,extraction_status
+                    ) VALUES(%s,'nutrition',%s,%s,%s,%s,%s,%s,'detected')
+                    """,
+                    (
+                        extraction_run_id,
+                        observation.source_label,
+                        str(observation.normalized_value),
+                        detected_language,
+                        Json({
+                            'canonical_key': observation.canonical_key,
+                            'source_value': observation.source_value,
+                            'source_unit': observation.source_unit,
+                            'normalized_value': observation.normalized_value,
+                            'normalized_unit': observation.normalized_unit,
+                            'basis': extraction.nutrition_basis,
+                            'needs_review': observation.needs_review,
+                            'authoritative': False,
+                        }),
+                        observation.normalized_unit,
+                        position,
+                    ),
+                )
+
         cur.execute("DELETE FROM product_ingredients WHERE product_id = %s", (product['id'],))
 
-        if normalized_ingredients:
+        has_ingredient_ocr = any(
+            item.document_type == 'ingredients' for item in payload.label_extractions
+        )
+        if normalized_ingredients and not has_ingredient_ocr:
             cur.execute(
                 """
                 INSERT INTO product_label_documents(
@@ -294,7 +611,9 @@ def create_product(payload: ProductCreateRequest):
                 (product['id'], payload.ingredients),
             )
 
-        for pos, (raw_ingredient, ingredient) in enumerate(ingredient_pairs, start=1):
+        for pos, (raw_ingredient, ingredient, candidate) in enumerate(
+            ingredient_pairs, start=1
+        ):
             if not ingredient or ingredient == 'unknown ingredient':
                 continue
             cur.execute(
@@ -337,9 +656,33 @@ def create_product(payload: ProductCreateRequest):
                     'deterministic_alias' if ingredient_row else 'unmapped',
                     'accepted' if ingredient_row else 'needs_review',
                     Json({
-                        'source_type': 'manual_input',
+                        'source_type': 'on_device_ocr' if has_ingredient_ocr else 'manual_input',
                         'user_confirmed': True,
                         'authoritative': False,
+                        'source_language': (
+                            ingredient_extraction.resolved_language
+                            if ingredient_extraction else None
+                        ),
+                        'translated_english_candidate': (
+                            candidate.english_candidate if candidate else None
+                        ),
+                        'normalization_confidence': (
+                            candidate.confidence if candidate else None
+                        ),
+                        'needs_review': (
+                            candidate.needs_review if candidate else True
+                        ),
+                        'correction_reason': (
+                            candidate.correction_reason if candidate else None
+                        ),
+                        'parser_version': (
+                            ingredient_extraction.parser_version
+                            if ingredient_extraction else None
+                        ),
+                        'text_fallback_used': (
+                            ingredient_extraction.text_fallback_used
+                            if ingredient_extraction else False
+                        ),
                     }),
                 ),
             )
@@ -350,17 +693,22 @@ def create_product(payload: ProductCreateRequest):
                     INSERT INTO ingredient_mapping_reviews(
                         product_ingredient_id, raw_text, normalized_text,
                         review_status, requested_by_method, review_provenance
-                    ) VALUES (%s, %s, %s, 'pending', 'manual', %s)
+                    ) VALUES (%s, %s, %s, 'pending', %s, %s)
                     """,
                     (
                         product_ingredient['id'],
                         raw_ingredient,
                         ingredient,
-                        Json({'source': 'product_submission', 'authoritative': False}),
+                        'deterministic' if has_ingredient_ocr else 'manual',
+                        Json({
+                            'source': 'on_device_ocr' if has_ingredient_ocr else 'product_submission',
+                            'authoritative': False,
+                        }),
                     ),
                 )
 
         nutrition_fields = {
+            'energy_kj': nutrition.get('energy_kj'),
             'energy_kcal': nutrition.get('energy_kcal'),
             'protein_g': nutrition.get('protein_g'),
             'carbs_g': nutrition.get('carbs_g'),
@@ -369,6 +717,7 @@ def create_product(payload: ProductCreateRequest):
             'saturated_fat_g': nutrition.get('saturated_fat_g'),
             'sodium_mg': nutrition.get('sodium_mg'),
             'fiber_g': nutrition.get('fiber_g'),
+            'salt_g': nutrition.get('salt_g'),
         }
 
         has_nutrition = any(v is not None and str(v).strip() != '' for v in nutrition_fields.values())
@@ -382,14 +731,21 @@ def create_product(payload: ProductCreateRequest):
             cur.execute(
                 """
                 INSERT INTO nutrition_facts (
-                    product_id, serving_size, energy_kcal, protein_g, carbs_g, sugar_g,
-                    fat_g, saturated_fat_g, sodium_mg, fiber_g, source, declared_by_manufacturer, verified, raw_text
+                    product_id, serving_size, energy_kj, energy_kcal, protein_g, carbs_g, sugar_g,
+                    fat_g, saturated_fat_g, sodium_mg, fiber_g, salt_g,
+                    source, declared_by_manufacturer, verified, raw_text
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'photo_submission', TRUE, FALSE, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        'photo_submission', TRUE, FALSE, %s)
                 """,
                 (
                     product['id'],
-                    '100g',
+                    {
+                        'per_100_g': '100g',
+                        'per_100_ml': '100ml',
+                        'per_serving': 'serving',
+                    }.get(payload.nutrition_basis),
+                    nutrition_fields['energy_kj'],
                     nutrition_fields['energy_kcal'],
                     nutrition_fields['protein_g'],
                     nutrition_fields['carbs_g'],
@@ -398,16 +754,21 @@ def create_product(payload: ProductCreateRequest):
                     nutrition_fields['saturated_fat_g'],
                     nutrition_fields['sodium_mg'],
                     nutrition_fields['fiber_g'],
-                    str(nutrition),
+                    nutrition_fields['salt_g'],
+                    next(
+                        (item.raw_text for item in payload.label_extractions
+                         if item.document_type == 'nutrition'),
+                        str(nutrition),
+                    ),
                 ),
             )
 
         cur.execute(
             """
             INSERT INTO product_reviews(product_id, review_status, source_type, reason)
-            VALUES (%s, 'pending', 'manual_input', 'user_product_submission')
+            VALUES (%s, 'pending', %s, 'user_product_submission')
             """,
-            (product['id'],),
+            (product['id'], 'OCR' if payload.label_extractions else 'manual_input'),
         )
 
         cur.execute("SELECT * FROM products WHERE id = %s", (product['id'],))
@@ -416,6 +777,7 @@ def create_product(payload: ProductCreateRequest):
         cur.close()
         return {
             "message": "product created",
+            "created": True,
             "product": saved_product,
             "score_view": _unavailable_score_view(),
         }
@@ -460,8 +822,8 @@ def get_product(barcode: str):
 
         cur.execute(
             """
-            SELECT serving_size, energy_kcal, protein_g, carbs_g, sugar_g,
-                   fat_g, saturated_fat_g, sodium_mg, fiber_g
+            SELECT serving_size, energy_kj, energy_kcal, protein_g, carbs_g, sugar_g,
+                   fat_g, saturated_fat_g, sodium_mg, fiber_g, salt_g
             FROM nutrition_facts
             WHERE product_id = %s
             ORDER BY updated_at DESC, id DESC

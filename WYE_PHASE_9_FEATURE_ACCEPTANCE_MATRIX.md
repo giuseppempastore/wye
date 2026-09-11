@@ -1,5 +1,16 @@
 # WYE — Phase 9 Feature Acceptance Matrix
 
+## Phase 9.3A.2 delta
+
+| Area | Status | Automated evidence | Remaining |
+|---|---|---|---|
+| Acquisition-first Home; no manual analysis/recent duplicate | IMPLEMENTED_AUTOMATED | widget tests | physical device NOT_RUN |
+| Public registration draft, scanner-only barcode, three photos | PARTIAL_AUTOMATED | model, barcode and UI tests | wizard remains a single scroll surface; lifecycle on device NOT_RUN |
+| Persistent queue and explicit Docker worker | IMPLEMENTED_AUTOMATED | PostgreSQL service tests and migration lifecycle | production scheduling/monitoring not configured |
+| Acquisition states in History | IMPLEMENTED_AUTOMATED | persisted local draft state | backend polling/refresh PARTIAL |
+| Premium instant analysis | BLOCKED | fail-closed entitlement; no fake score | production auth/entitlement and published protocol absent |
+| Canonical salt/sodium semantics | IMPLEMENTED_AUTOMATED | parser and round-trip tests | ambiguous external legacy data needs case-by-case review |
+
 ## 1. Regole della matrice
 
 Baseline di inventario: `b226a4ac6730378af828b7a86e1d2d7967ce86b6`. Gli stati di classificazione ammessi sono `MVP_REQUIRED`, `IMPLEMENTED_UNVERIFIED`, `LEGACY_BLOCKED`, `DEMO_ONLY`, `DEFERRED`, `OUT_OF_SCOPE`, `ACCEPTED`. Gli esiti ammessi sono `NOT_RUN`, `PASS`, `FAIL`, `BLOCKED`, `DEFERRED`, `OUT_OF_SCOPE`, `ACCEPTED`.
@@ -42,10 +53,11 @@ Legenda test: `S` statico/automated, `W` widget/unit, `B` backend contract, `D` 
 | ADD-FORM-001 | `/add-product` | Inserire/correggere dati food | `add_product_screen.dart` | `POST /products` | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,E,N,A11Y | validation e submit states | campi lunghi, regole incoerenti | Product owner |
 | ADD-FOOD-SCOPE-001 | `/add-product` | Impedire categorie fuori packaged food | form, `_submit`, backend | create product | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N,G | non-food rifiutato | cosmetici rimossi/rifiutati; device ancora da verificare | Product + governance owner |
 | CREATE-PRODUCT-001 | `/add-product` | Creare un prodotto | provider/ApiClient + `main.py` | DB products/ingredients/nutrition | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | B,D,E,N,G | id sicuro e read-back | integrazione DB PASS; percorso completo device ancora da verificare | Product + governance owner |
-| PHOTO-CAMERA-001 | add-product | Acquisire foto con camera | `ImagePicker` | poi legacy/canonical secondo controllo | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | select/cancel/permission | controllo ordinario prosegue a legacy | Product + security owner |
-| PHOTO-GALLERY-001 | add-product | Scegliere immagine locale | `ImagePicker` | poi legacy/canonical | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | select/cancel/limited access | privacy e lifecycle non provati | Product + security owner |
-| PHOTO-CROP-001 | add-product/dev panel | Ritagliare o annullare | `ImageCropper` | Nessuna | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N,A11Y | crop/cancel/fallback | error/stack log raw nel flow ordinario | Product owner |
-| OCR-LOCAL-001 | add-product | Estrarre testo localmente | ML Kit `TextRecognizer` + `PhotoFieldMapper` | Nessuna per OCR | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | candidati separati per tipo foto | unit test PASS; raw OCR locale non è persistito separatamente | Product + privacy owner |
+| PHOTO-CAMERA-001 | add-product | Acquisire foto con camera | `ImagePicker` | crop → OCR locale → upload canonico | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | select/cancel/permission | lifecycle su device da verificare | Product + security owner |
+| PHOTO-GALLERY-001 | add-product | Scegliere immagine locale | `ImagePicker` | crop → OCR locale → upload canonico | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N | select/cancel/limited access | privacy e lifecycle non provati | Product + security owner |
+| PHOTO-CROP-001 | add-product/dev panel | Ritagliare o annullare | `ImageCropper` | Nessuna | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | D,N,A11Y | crop/cancel/fallback | processo Android può essere terminato su device a memoria ridotta | Product owner |
+| OCR-LOCAL-001 | add-product | Estrarre testo localmente | ML Kit Latin `TextRecognizer` + parser strutturale/lexicon versionato | Nessuna per OCR | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,D,N | raw/segmento/lingua/canonico separati; unsupported script esplicito | golden automated PASS; device multilingua NOT_RUN | Product + privacy owner |
+| TEXT-NORM-001 | add-product, solo parse incompleto | Normalizzare il segmento OCR in inglese | `LanguageDetector` + mobile facade text-only | Fake locale; OpenAI solo se configurato esplicitamente | IMPLEMENTED_UNVERIFIED | MVP_REQUIRED | W,B,D,E,N | flag default-off, cache, quota, solo testo minimo, sempre review | provider reale e qualità device non verificati; nessuna immagine | Product + privacy + security owner |
 | LEGACY-PHOTO-001 | add-product foto ordinarie | Analizzare foto | endpoint/client legacy isolati dal flow attivo | `POST /analyze-image`, OpenAI | LEGACY_BLOCKED | OUT_OF_SCOPE | S,D,N | prova che non è invocato | route legacy resta nel repository ma non è chiamata dal percorso add-product | Product + security owner |
 | LEGACY-NORMALIZE-001 | client non visibile diretto | Normalizzare OCR | `normalizePhotoText` | `POST /normalize-photo` | DEFERRED | DEFERRED | S,B,N | decision record | raw OCR payload; non usato dal flow corrente | Product + privacy owner |
 | MOB-PANEL-001 | `/add-product` flag on | Usare percorso canonico dev | `DevMobileCaptureUploadPanel` | mobile facade | IMPLEMENTED_UNVERIFIED | DEMO_ONLY | W,D,E,A11Y | pannello e stato default-off | confondibile con foto ordinarie | Product owner |
@@ -101,7 +113,8 @@ Tutti i casi obbligatori partono non eseguiti o bloccati dall'evidenza statica. 
 | ADD-FORM-001 | `TC-9.07-FORM-01..10` | NOT_RUN | — | — | — | — | Product owner | — | Device/form testing required |
 | ADD-FOOD-SCOPE-001 | `TC-9.07-SCOPE-01..04` | BLOCKED | static inspection | `D9-GOV-002` | — | — | Product + governance owner | — | Conflicting cosmetic option |
 | CREATE-PRODUCT-001 | `TC-9.07-CREATE-01..08` | BLOCKED | static backend inspection | `D9-LEG-002` | — | — | Product + governance owner | — | Placeholder score/verified/base64 behavior |
-| PHOTO-CAMERA-001…OCR-LOCAL-001 | `TC-9.07-MEDIA-01..12` | BLOCKED | 500 postmortem + static inspection | `D9-LEG-003` | — | — | Product + privacy owner | — | Ordinary controls enter legacy path |
+| PHOTO-CAMERA-001…OCR-LOCAL-001 | `TC-9.07-MEDIA-01..12` | NOT_RUN | automated mapper/navigation contracts PASS | — | — | — | Product + privacy owner | — | physical camera/crop/lifecycle and multilingual OCR required |
+| TEXT-NORM-001 | `TC-9.07-LANG-01..30` | NOT_RUN | automated parser/provider/cache/sanitization tests PASS | — | — | — | Product + privacy + security owner | — | physical device required; never implies verified or score |
 | LEGACY-PHOTO-001 | `TC-9.11-LEGACY-01` | BLOCKED | `WYE_PHASE_8_MOBILE_E2E_500_POSTMORTEM.md` | `D9-LEG-003` | — | physical phone/OS unrecorded | Security owner | — | Historical HTTP 500; must not rerun |
 | LEGACY-NORMALIZE-001 | `TC-9.10-LEGACY-02` | DEFERRED | static inspection | — | — | — | Product + privacy owner | — | Not current visible flow |
 | MOB-PANEL-001…MOB-TOKEN-001 | `TC-9.08-PANEL-01..06` | NOT_RUN | Phase 8 local tests (historical) | — | — | — | Product + security owner | — | Dev-only/default-off |
@@ -144,3 +157,19 @@ Verifica locale sul working tree non committato derivato da `04034470939b3147623
 | Deduplicazione extraction e filtri deterministici | PASS | 8 test backend service | provider reale OUT_OF_SCOPE |
 | Retry, classificazione e stato score non numerico | PASS | test controller/modelli/widget | UX completa su device NOT_RUN |
 | Percorso camera → crop → salvataggio → riapertura | NOT_RUN | richiede il device fisico | nessuna accettazione manuale registrata |
+| OCR Latin language-agnostic e normalization inglese Phase 9.3A.1 | IMPLEMENTED_AUTOMATED | golden parser IT/EN/FI/ES/FR/DE/PT/SV, unknown/script guard, backend Fake/cache/sanitization | device fisico NOT_RUN; non ACCEPTED; script non-Latin differiti |
+| Home a due azioni + storico solo bottom nav | IMPLEMENTED_AUTOMATED | widget test Phase 9.3A.3 | device NOT_RUN |
+| Analisi etichetta Base + quota giornaliera | IMPLEMENTED_AUTOMATED | test limiti 3/50/100, cache/non-billable e persistenza DB | provider esterno reale NOT_RUN |
+| Registrazione disponibile a quota esaurita | IMPLEMENTED_AUTOMATED | widget test scelta percorsi | device NOT_RUN |
+| Feedback beta sanitizzato e persistito | IMPLEMENTED_AUTOMATED | test form, sanitizzazione e DB | invio da device NOT_RUN |
+| Credenziale tecnica invisibile e automatica | IMPLEMENTED_AUTOMATED | bootstrap dev memory-only; launcher senza clipboard | produzione auth OUT_OF_SCOPE |
+| Back gerarchico e bozza automatica | IMPLEMENTED_AUTOMATED | widget test wizard e route secondarie | retest device NOT_RUN |
+| Crop esclusivo foto prodotto e limiti conservativi | IMPLEMENTED_AUTOMATED | policy test 2048/88 e 3072/94 | editor nativo device NOT_RUN |
+| Ingredienti CRUD + provenienza correzioni | IMPLEMENTED_AUTOMATED | widget/model test | usabilità device NOT_RUN |
+| Nutrizione editabile kJ/kcal, sale/sodio e base | IMPLEMENTED_AUTOMATED | widget/model/backend test | OCR reale device NOT_RUN |
+| Guardia AVD senza camera | IMPLEMENTED_AUTOMATED | widget test zero-camera + canale Android | AVD reale NOT_RUN |
+| Back gerarchico e bozza automatica | IMPLEMENTED_AUTOMATED | widget test wizard e route secondarie | retest device NOT_RUN |
+| Crop esclusivo foto prodotto e limiti conservativi | IMPLEMENTED_AUTOMATED | policy test 2048/88 e 3072/94 | editor nativo device NOT_RUN |
+| Ingredienti CRUD + provenienza correzioni | IMPLEMENTED_AUTOMATED | widget/model test | usabilità device NOT_RUN |
+| Nutrizione editabile kJ/kcal, sale/sodio e base | IMPLEMENTED_AUTOMATED | widget/model/backend test | OCR reale device NOT_RUN |
+| Guardia AVD senza camera | IMPLEMENTED_AUTOMATED | widget test zero-camera + canale Android | AVD reale NOT_RUN |

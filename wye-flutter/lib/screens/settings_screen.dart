@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import '../config/mobile_upload_config.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
-import '../widgets/dev_mobile_upload_widgets.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -16,7 +14,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
-    final mobileUploadEnabled = context.watch<MobileUploadConfig>().enabled;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Impostazioni'),
@@ -28,98 +25,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Profile Section
               Text(
-                'Profilo',
-                style: AppTypography.headline3,
-              ),
-              const SizedBox(height: 12),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Consumer<UserPreferencesProvider>(
-                        builder: (context, userPref, _) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    'Account Premium',
-                                    style: AppTypography.bodyLarge,
-                                  ),
-                                  Switch(
-                                    value: userPref.isPremium,
-                                    onChanged: (value) {
-                                      userPref.setPremium(value);
-                                    },
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              if (!userPref.isPremium)
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    userPref.setPremium(true);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          'Modalità Premium attivata!',
-                                        ),
-                                        backgroundColor: AppColors.success,
-                                        duration: Duration(seconds: 2),
-                                      ),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.star),
-                                  label: const Text('Attiva Premium'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.accent,
-                                  ),
-                                )
-                              else
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.accent.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: AppColors.accent,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.verified,
-                                        color: AppColors.accent,
-                                        size: 20,
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Sei un utente Premium',
-                                        style: AppTypography.label,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Premium country + fact-check section
-              Text(
-                'Premium e sicurezza',
+                'Preferenze locali',
                 style: AppTypography.headline3,
               ),
               const SizedBox(height: 12),
@@ -151,7 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
-                            value: countryValue,
+                            initialValue: countryValue,
                             decoration: const InputDecoration(
                               prefixIcon: Icon(Icons.location_on_outlined),
                             ),
@@ -163,19 +70,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   ),
                                 )
                                 .toList(),
-                            onChanged: userPref.isPremium
-                                ? (value) {
-                                    if (value != null) {
-                                      userPref.setCountry(value);
-                                    }
-                                  }
-                                : null,
+                            onChanged: (value) {
+                              if (value != null) userPref.setCountry(value);
+                            },
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            userPref.isPremium
-                                ? 'Il paese selezionato sarà usato come riferimento nel flusso di scansione.'
-                                : 'Questa sezione è disponibile solo per utenti premium.',
+                            'Il paese selezionato sarà usato come riferimento nel flusso di scansione.',
                             style: AppTypography.bodySmall,
                           ),
                         ],
@@ -240,7 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                   },
                                   deleteIcon: const Icon(Icons.close, size: 18),
                                   backgroundColor:
-                                      AppColors.riskHigh.withOpacity(0.1),
+                                      AppColors.riskHigh.withValues(alpha: 0.1),
                                   labelStyle: TextStyle(
                                     color: AppColors.riskHigh,
                                   ),
@@ -276,7 +177,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Consumer<UserPreferencesProvider>(
                     builder: (context, userPref, _) {
                       return DropdownButtonFormField<String>(
-                        value: userPref.language,
+                        initialValue: userPref.language,
                         decoration: InputDecoration(
                           prefixIcon: const Icon(Icons.language),
                         ),
@@ -306,20 +207,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 24),
 
-              if (mobileUploadEnabled) ...[
-                Text(
-                  'Upload mobile - sviluppo',
-                  style: AppTypography.headline3,
-                ),
-                const SizedBox(height: 12),
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: DevMobileUploadTokenPanel(),
+              Text('Beta test', style: AppTypography.headline3),
+              const SizedBox(height: 12),
+              Card(
+                child: ListTile(
+                  key: const ValueKey('open-beta-feedback'),
+                  leading: const Icon(Icons.feedback_outlined),
+                  title: const Text('Lascia feedback'),
+                  subtitle: const Text(
+                    'Segnala un problema o proponi un miglioramento.',
                   ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/feedback'),
                 ),
-                const SizedBox(height: 24),
-              ],
+              ),
+              const SizedBox(height: 24),
 
               // App Info Section
               Text(

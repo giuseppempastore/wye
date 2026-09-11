@@ -15,10 +15,10 @@ class ScoreCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   const ScoreCard({
-    Key? key,
+    super.key,
     required this.scoreView,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -236,11 +236,11 @@ class RiskTag extends StatelessWidget {
   final VoidCallback? onTap;
 
   const RiskTag({
-    Key? key,
+    super.key,
     required this.label,
     required this.riskLevel,
     this.onTap,
-  }) : super(key: key);
+  });
 
   Color _getColorForRisk(String risk) {
     switch (risk.toLowerCase()) {
@@ -266,7 +266,7 @@ class RiskTag extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           border: Border.all(color: color, width: 1),
           borderRadius: BorderRadius.circular(8),
         ),
@@ -289,10 +289,10 @@ class AllergenBadge extends StatelessWidget {
   final bool isUserSensitive;
 
   const AllergenBadge({
-    Key? key,
+    super.key,
     required this.allergen,
     this.isUserSensitive = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -300,8 +300,8 @@ class AllergenBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: isUserSensitive
-            ? AppColors.riskCritical.withOpacity(0.2)
-            : AppColors.riskHigh.withOpacity(0.2),
+            ? AppColors.riskCritical.withValues(alpha: 0.2)
+            : AppColors.riskHigh.withValues(alpha: 0.2),
         border: Border.all(
           color: isUserSensitive ? AppColors.riskCritical : AppColors.riskHigh,
           width: 1.5,
@@ -338,13 +338,12 @@ class LoadingShimmer extends StatelessWidget {
   final BorderRadius borderRadius;
 
   const LoadingShimmer({
-    Key? key,
+    super.key,
     this.height = 20,
     this.width = double.infinity,
     BorderRadius? borderRadius,
-  })  : borderRadius =
-            borderRadius ?? const BorderRadius.all(Radius.circular(8)),
-        super(key: key);
+  }) : borderRadius =
+            borderRadius ?? const BorderRadius.all(Radius.circular(8));
 
   @override
   Widget build(BuildContext context) {
@@ -367,11 +366,11 @@ class LoadingShimmer extends StatelessWidget {
 // Placeholder per shimmer - aggiungi a pubspec.yaml: shimmer: ^3.0.0
 class Shimmer extends StatelessWidget {
   const Shimmer.fromColors({
-    Key? key,
+    super.key,
     required this.baseColor,
     required this.highlightColor,
     required this.child,
-  }) : super(key: key);
+  });
 
   final Color baseColor;
   final Color highlightColor;
@@ -391,12 +390,12 @@ class InfoSection extends StatelessWidget {
   final Color? iconColor;
 
   const InfoSection({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.icon,
     this.iconColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

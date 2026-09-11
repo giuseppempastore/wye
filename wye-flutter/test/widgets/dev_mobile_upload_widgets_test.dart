@@ -54,7 +54,7 @@ void main() {
     expect(find.byKey(const Key('dev-mobile-log-panel')), findsNothing);
   });
 
-  testWidgets('dev token and capture surfaces are visible when enabled',
+  testWidgets('technical credential UI is absent from runtime screens',
       (tester) async {
     final harness = _Harness();
     addTearDown(harness.dispose);
@@ -76,7 +76,7 @@ void main() {
         child: const MaterialApp(home: SettingsScreen()),
       ),
     );
-    expect(find.byKey(const Key('dev-mobile-token-panel')), findsOneWidget);
+    expect(find.byKey(const Key('dev-mobile-token-panel')), findsNothing);
 
     await tester.pumpWidget(
       MultiProvider(
@@ -92,8 +92,11 @@ void main() {
         child: const MaterialApp(home: AddProductScreen()),
       ),
     );
-    expect(find.byKey(const Key('dev-mobile-capture-panel')), findsOneWidget);
-    expect(find.byKey(const Key('dev-mobile-log-panel')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('wizard-step-3')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('wizard-test-token')), findsNothing);
+    expect(find.byKey(const Key('dev-mobile-capture-panel')), findsNothing);
+    expect(find.byKey(const Key('dev-mobile-log-panel')), findsNothing);
   });
 
   testWidgets('token can be entered, is redacted, and can be cleared',

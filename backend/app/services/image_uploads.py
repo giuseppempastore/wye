@@ -25,8 +25,10 @@ class ImageUploadService:
         conn=self.connection_factory()
         try:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute("SELECT 1 FROM products WHERE id=%s",(product_id,))
-                if not cur.fetchone(): raise UploadError("product_not_found","Product not found",404)
+                cur.execute("SELECT verified FROM products WHERE id=%s",(product_id,))
+                product=cur.fetchone()
+                if not product: raise UploadError("product_not_found","Product not found",404)
+                if product["verified"]: raise UploadError("verified_product_requires_review","Verified product images require an admin review proposal",409)
                 target=self.adapter.create_upload(key,mime_type,self.settings.upload_ttl)
                 cur.execute("""INSERT INTO product_image_uploads(id,product_id,image_type,storage_provider,bucket,staging_object_key,declared_mime_type,declared_byte_size,declared_checksum_value,expires_at) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW()+(%s||' seconds')::interval)""",(str(upload_id),product_id,image_type,self.settings.provider,self.settings.bucket,key,mime_type,byte_size,sha256,self.settings.cleanup_after))
             conn.commit()

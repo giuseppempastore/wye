@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/app_providers.dart';
+import '../models/product_taxonomy.dart';
 import '../widgets/product_image.dart';
 import '../widgets/score_widgets.dart';
 
@@ -10,9 +11,9 @@ class ProductDetailScreen extends StatefulWidget {
   final String barcode;
 
   const ProductDetailScreen({
-    Key? key,
+    super.key,
     required this.barcode,
-  }) : super(key: key);
+  });
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -122,6 +123,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 ),
                               ],
                               const SizedBox(height: 8),
+                              Chip(
+                                key: const ValueKey(
+                                  'product-detail-validation-state',
+                                ),
+                                avatar: const Icon(
+                                  Icons.fact_check_outlined,
+                                  size: 18,
+                                ),
+                                label: Text(
+                                  product.dataVerified
+                                      ? 'Dati etichetta verificati'
+                                      : 'Dati etichetta non verificati',
+                                ),
+                              ),
+                              const SizedBox(height: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 8,
@@ -132,7 +148,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
-                                  product.category,
+                                  productCategoryLabel(product.category),
                                   style: AppTypography.labelSmall,
                                 ),
                               ),
@@ -287,7 +303,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 _NutritionRow(
                                   label: 'Energia',
                                   value:
-                                      '${product.nutritionFacts!.energyKcal?.toStringAsFixed(0) ?? 'N/A'} kcal',
+                                      '${product.nutritionFacts!.energyKj?.toStringAsFixed(0) ?? 'N/A'} kJ / ${product.nutritionFacts!.energyKcal?.toStringAsFixed(0) ?? 'N/A'} kcal',
                                 ),
                                 _NutritionRow(
                                   label: 'Proteine',
@@ -317,7 +333,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 _NutritionRow(
                                   label: 'Sodio',
                                   value:
-                                      '${product.nutritionFacts!.sodium?.toStringAsFixed(0) ?? 'N/A'} mg',
+                                      '${product.nutritionFacts!.sodiumMg?.toStringAsFixed(0) ?? 'N/A'} mg',
+                                ),
+                                _NutritionRow(
+                                  label: 'Sale',
+                                  value:
+                                      '${product.nutritionFacts!.saltG?.toStringAsFixed(1) ?? 'N/A'} g',
                                 ),
                                 _NutritionRow(
                                   label: 'Fibre',
@@ -365,11 +386,10 @@ class _NutritionRow extends StatelessWidget {
   final bool isLast;
 
   const _NutritionRow({
-    Key? key,
     required this.label,
     required this.value,
     this.isLast = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

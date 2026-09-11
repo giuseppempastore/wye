@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
+import '../models/text_normalization_models.dart';
 
 abstract class CaptureUploadGateway {
   Future<UploadInitializeResponse> initializeUpload(
@@ -31,6 +32,10 @@ abstract class CaptureUploadGateway {
     required ProductImageRef productImage,
     required int extractionRunId,
   });
+
+  Future<TextNormalizationResult> normalizeText(
+    TextNormalizationRequestPayload request,
+  );
 
   void close();
 }

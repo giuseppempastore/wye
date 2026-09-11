@@ -4,7 +4,7 @@ import '../theme/app_theme.dart';
 import '../widgets/score_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
+                        color: Colors.black.withValues(alpha: 0.15),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 begin: Alignment.bottomCenter,
                                 end: Alignment.topCenter,
                                 colors: [
-                                  Colors.black.withOpacity(0.6),
+                                  Colors.black.withValues(alpha: 0.6),
                                   Colors.transparent,
                                 ],
                               ),
@@ -100,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 OutlinedButton.icon(
                   onPressed: () => context.go('/manual-analysis'),
                   icon: const Icon(Icons.edit_note),
-                  label: const Text('Analizza Manualmente'),
+                  label: const Text('Funzione legacy non disponibile'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -162,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 // Recent Scans (placeholder)
                 Text(
-                  'Ultimi scansionamenti',
+                  'Attività',
                   style: AppTypography.headline3,
                 ),
                 const SizedBox(height: 16),

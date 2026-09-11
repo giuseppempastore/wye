@@ -40,6 +40,10 @@ class UploadLifecycleTests(unittest.TestCase):
         with self.assertRaises(UploadError): self.service.initialize(self.product,"product_front","image/jpeg",self.settings.max_image_bytes+1,"a"*64)
         with self.assertRaises(UploadError) as caught: self.service.initialize(999999999,"product_front","image/jpeg",10,"a"*64)
         self.assertEqual(caught.exception.status,404)
+        conn=get_connection(); cur=conn.cursor(); cur.execute("UPDATE products SET verified=TRUE WHERE id=%s",(self.product,)); conn.commit(); cur.close(); conn.close()
+        with self.assertRaises(UploadError) as verified:
+            self.service.initialize(self.product,"product_front","image/jpeg",10,"a"*64)
+        self.assertEqual(verified.exception.code,"verified_product_requires_review")
     def test_finalize_is_idempotent_and_reuses_blob(self):
         upload=self.init(); first=self.service.finalize(self.product,upload["upload_id"]); second=self.service.finalize(self.product,upload["upload_id"])
         self.assertEqual(first,second)

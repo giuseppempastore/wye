@@ -1,5 +1,21 @@
 # WYE Mobile E2E — standalone self-test guide
 
+## Phase 9.3A.2 worker and draft
+
+The one-command launcher now starts `acquisition-worker` with FastAPI,
+PostgreSQL and MinIO. It is a real PostgreSQL-backed polling process; no job is
+scheduled inside the HTTP process. Check it with:
+
+```powershell
+docker compose --env-file .local\mobile-stack.env -f compose.mobile.yaml ps
+```
+
+Paste the temporary token only in `Strumenti di test` or the collapsed wizard
+section `Token sessione di test`. It remains memory-only. After capturing two
+photos, background/restart the app and confirm that the draft restores photo
+references, OCR and current step. Evidence must exclude token, full barcode,
+raw OCR, image bytes and signed URLs.
+
 > **Phase 9 authority:** this remains a partial technical reference for the canonical dev-only mobile path. Execute acceptance only under `WYE_PHASE_9_APP_ACCEPTANCE_PLAN.md`, record state in `WYE_PHASE_9_FEATURE_ACCEPTANCE_MATRIX.md`, and share evidence through `WYE_PHASE_9_TEST_FEEDBACK_GUIDE.md`; see also `WYE_PHASE_8_TO_9_TRANSITION.md`.
 
 **Audience:** repository owner performing a local/dev real-phone test without Codex
@@ -325,3 +341,14 @@ git status --short
 ```
 
 The repository should remain unchanged except for documentation work explicitly authorized in a separate phase.
+
+The Settings token is a temporary Phase 9 developer capability, not production
+UX and not an OpenAI token budget. It is upload/extraction scoped, memory-only in
+Flutter, and the one-command launcher overwrites the clipboard during cleanup.
+
+For Phase 9.3A.1 the same extraction scope can call the bounded text-only
+normalization endpoint. The local Compose profile uses the Fake provider; it
+must not be used as evidence of real translation quality. Do not include raw OCR
+in the evidence folder or feedback. The installed device OCR script is Latin;
+an explicit unsupported-script message is the expected safe result for other
+scripts.

@@ -2,7 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:wye/providers/app_providers.dart';
 
 void main() {
-  test('premium fact-check checkbox is one-shot and resets after a deliberate trigger', () {
+  test(
+      'premium fact-check checkbox is one-shot and resets after a deliberate trigger',
+      () {
     final prefs = UserPreferencesProvider();
 
     prefs.setPremium(true);

@@ -131,7 +131,6 @@ class AppTheme {
         secondary: AppColors.secondary,
         error: AppColors.error,
         surface: AppColors.bgSecondary,
-        background: AppColors.bgPrimary,
       ),
       scaffoldBackgroundColor: AppColors.bgPrimary,
       appBarTheme: AppBarTheme(

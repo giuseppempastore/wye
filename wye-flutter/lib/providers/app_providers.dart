@@ -12,7 +12,7 @@ class BarcodeScannerProvider extends ChangeNotifier {
   Product? _currentProduct;
   bool _isLoading = false;
   String? _error;
-  List<ScanHistory> _scanHistory = [];
+  final List<ScanHistory> _scanHistory = [];
 
   BarcodeScannerProvider(this._apiClient);
 
@@ -92,6 +92,8 @@ class BarcodeScannerProvider extends ChangeNotifier {
     required String productType,
     required String ingredients,
     Map<String, dynamic>? nutritionFacts,
+    String? nutritionBasis,
+    List<Map<String, dynamic>> labelExtractions = const [],
     String source = 'photo_submission',
     String? imageUrl,
     String? ingredientImageUrl,
@@ -118,6 +120,8 @@ class BarcodeScannerProvider extends ChangeNotifier {
         productType: productType,
         ingredients: ingredients,
         nutritionFacts: nutritionFacts ?? const {},
+        nutritionBasis: nutritionBasis,
+        labelExtractions: labelExtractions,
         source: source,
         imageUrl: imageUrl,
         ingredientImageUrl: ingredientImageUrl,
@@ -162,11 +166,6 @@ class BarcodeScannerProvider extends ChangeNotifier {
     _isLoading = false;
     _error = null;
     notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
   }
 }
 

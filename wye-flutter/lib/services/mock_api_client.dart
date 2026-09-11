@@ -1,5 +1,6 @@
 /// Mock API Client per testing offline
 /// Utile quando il backend non è disponibile
+library;
 
 import '../models/product_model.dart';
 import '../models/score_evaluability_model.dart';
@@ -33,7 +34,7 @@ class MockApiClient extends ApiClient {
         sugar: 56.3,
         fat: 30.9,
         saturatedFat: 10.7,
-        sodium: 43,
+        sodiumMg: 43,
         fiber: 0.7,
       ),
       allergens: ['Nocciole', 'Latte', 'Soia'],
@@ -61,7 +62,7 @@ class MockApiClient extends ApiClient {
         sugar: 25.0,
         fat: 18.0,
         saturatedFat: 5.0,
-        sodium: 150,
+        sodiumMg: 150,
         fiber: 1.5,
       ),
       allergens: ['Glutine', 'Uova', 'Latte'],

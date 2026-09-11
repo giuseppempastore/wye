@@ -34,6 +34,7 @@ def _bounded_integer(name: str, default: int, minimum: int, maximum: int) -> int
 class MobileFacadeSettings:
     enabled: bool
     session_ttl_seconds: int
+    anonymous_bootstrap_enabled: bool
 
     @classmethod
     def from_env(cls) -> "MobileFacadeSettings":
@@ -44,5 +45,8 @@ class MobileFacadeSettings:
                 default=300,
                 minimum=30,
                 maximum=900,
+            ),
+            anonymous_bootstrap_enabled=_boolean(
+                "WYE_MOBILE_ANONYMOUS_BOOTSTRAP_ENABLED"
             ),
         )

@@ -76,7 +76,7 @@ class ApiClient {
           // Caso backend: prodotto non trovato nel DB
           if (jsonData['error'] == 'not_found') {
             throw ProductNotFoundException(
-              'Prodotto non trovato nel database. Prova a inserirlo manualmente nella sezione Premium.',
+              'Prodotto non trovato nel database. Usa Aggiungi prodotto.',
             );
           }
 
@@ -105,7 +105,7 @@ class ApiClient {
       } else if (response.statusCode == 404) {
         _logger.w('Product not found');
         throw ProductNotFoundException(
-            'Prodotto non trovato nel database. Prova a inserirlo manualmente nella sezione Premium.');
+            'Prodotto non trovato nel database. Usa Aggiungi prodotto.');
       } else if (response.statusCode >= 500) {
         _logger.e('❌ Server error: ${response.statusCode}');
         throw ApiException('Errore del server. Riprova tra poco.');
@@ -141,6 +141,8 @@ class ApiClient {
     required String productType,
     required String ingredients,
     Map<String, dynamic>? nutritionFacts,
+    String? nutritionBasis,
+    List<Map<String, dynamic>> labelExtractions = const [],
     String source = 'photo_submission',
     String? imageUrl,
     String? ingredientImageUrl,
@@ -159,6 +161,8 @@ class ApiClient {
         'product_type': productType.trim(),
         'ingredients': ingredients,
         'nutrition': nutritionFacts ?? {},
+        if (nutritionBasis != null) 'nutrition_basis': nutritionBasis,
+        if (labelExtractions.isNotEmpty) 'label_extractions': labelExtractions,
         'source': source,
       };
 
@@ -199,6 +203,63 @@ class ApiClient {
       _logger.e('Product creation failed');
       rethrow;
     }
+  }
+
+  Future<Map<String, dynamic>> submitPublicProductAcquisition({
+    required int productId,
+    required String barcode,
+    required String draftId,
+    required List<Map<String, dynamic>> documents,
+  }) async {
+    final validation = _barcodeValidator.validate(barcode);
+    final token = _mobileTokenProvider?.currentToken;
+    if (!validation.isValid) throw ApiException('Barcode non valido');
+    if (token == null) throw ApiException('Connessione sicura non disponibile');
+    final response = await _client
+        .post(
+          Uri.parse(
+            '${ApiConfig.baseUrl}/mobile/dev/v1/capture/product-acquisitions',
+          ),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token.authorizationHeader,
+          },
+          body: jsonEncode({
+            'product_id': productId,
+            'barcode': validation.value,
+            'draft_id': draftId,
+            'pipeline_version': 'photo_field_mapper_v3',
+            'documents': documents,
+          }),
+        )
+        .timeout(ApiConfig.connectionTimeout);
+    if (response.statusCode != 202) {
+      throw ApiException(
+        'Richiesta non accodata (${response.statusCode})',
+      );
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> getProductAcquisition(
+      String acquisitionId) async {
+    final token = _mobileTokenProvider?.currentToken;
+    if (token == null) throw ApiException('Connessione sicura non disponibile');
+    if (!RegExp(
+      r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$',
+    ).hasMatch(acquisitionId)) {
+      throw ApiException('Acquisition ID non valido');
+    }
+    final response = await _client.get(
+      Uri.parse(
+        '${ApiConfig.baseUrl}/mobile/dev/v1/capture/product-acquisitions/$acquisitionId',
+      ),
+      headers: {'Authorization': token.authorizationHeader},
+    ).timeout(ApiConfig.connectionTimeout);
+    if (response.statusCode != 200) {
+      throw ApiException('Stato acquisizione non disponibile');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
   /// Analizza ingredienti manuali (premium feature)
@@ -409,6 +470,45 @@ class ApiClient {
     return null;
   }
 
+  Future<String> submitBetaFeedback({
+    required String feedbackType,
+    required String severity,
+    required String message,
+    String? expectedBehavior,
+    String? actualBehavior,
+    bool includeTechnicalContext = false,
+  }) async {
+    final response = await _client
+        .post(
+          Uri.parse('${ApiConfig.baseUrl}/mobile/v1/beta-feedback'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'feedback_type': feedbackType,
+            'severity': severity,
+            'message': message.trim(),
+            if (expectedBehavior?.trim().isNotEmpty == true)
+              'expected_behavior': expectedBehavior!.trim(),
+            if (actualBehavior?.trim().isNotEmpty == true)
+              'actual_behavior': actualBehavior!.trim(),
+            'app_version': '1.0.0-prototype',
+            'platform': kIsWeb ? 'web' : Platform.operatingSystem,
+            'route': '/feedback',
+            if (includeTechnicalContext)
+              'sanitized_context': {
+                'route': '/feedback',
+                'app_version': '1.0.0-prototype',
+                'platform': kIsWeb ? 'web' : Platform.operatingSystem,
+              },
+          }),
+        )
+        .timeout(ApiConfig.connectionTimeout);
+    if (response.statusCode != 201) {
+      throw ApiException('Feedback non inviato. Riprova.');
+    }
+    final payload = jsonDecode(response.body) as Map<String, dynamic>;
+    return payload['id']?.toString() ?? '';
+  }
+
   /// Health check del backend
   Future<bool> healthCheck() async {
     try {
@@ -481,6 +581,9 @@ Product _mapDbProductResponse(
     productName: productData['product_name']?.toString() ?? 'Prodotto',
     brand: productData['brand_name']?.toString() ?? 'N/A',
     category: productData['category']?.toString() ?? 'food',
+    productType: productData['product_type']?.toString(),
+    validationStatus: productData['status']?.toString() ?? 'needs_review',
+    dataVerified: productData['verified'] == true,
     scoreView: scoreData is Map
         ? ProductScoreView.fromJson(Map<String, dynamic>.from(scoreData))
         : ProductScoreView.unavailable(),
@@ -490,13 +593,15 @@ Product _mapDbProductResponse(
     nutritionFacts: nutritionData is Map
         ? NutritionFacts.fromJson({
             'serving_size': nutritionData['serving_size'],
+            'energy_kj': nutritionData['energy_kj'],
             'energy_kcal': nutritionData['energy_kcal'],
             'protein': nutritionData['protein_g'],
             'carbs': nutritionData['carbs_g'],
             'sugar': nutritionData['sugar_g'],
             'fat': nutritionData['fat_g'],
             'saturated_fat': nutritionData['saturated_fat_g'],
-            'sodium': nutritionData['sodium_mg'],
+            'sodium_mg': nutritionData['sodium_mg'],
+            'salt_g': nutritionData['salt_g'],
             'fiber': nutritionData['fiber_g'],
           })
         : null,

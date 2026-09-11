@@ -18,6 +18,18 @@ def _positive_int(name: str, default: int) -> int:
     return value
 
 
+def _strict_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    value = raw.strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    raise RuntimeError(f"{name} must be a boolean")
+
+
 @dataclass(frozen=True)
 class ExtractionSettings:
     provider: str
@@ -25,6 +37,9 @@ class ExtractionSettings:
     model: str
     timeout_seconds: int
     runtime_environment: str = "production"
+    text_fallback_enabled: bool = False
+    text_max_characters: int = 12000
+    text_cache_entries: int = 512
 
     @classmethod
     def from_env(cls):
@@ -61,4 +76,13 @@ class ExtractionSettings:
             ),
             timeout_seconds=_positive_int("WYE_EXTRACTION_TIMEOUT_SECONDS", 90),
             runtime_environment=runtime_environment,
+            text_fallback_enabled=_strict_bool(
+                "WYE_TEXT_NORMALIZATION_FALLBACK_ENABLED", False
+            ),
+            text_max_characters=_positive_int(
+                "WYE_TEXT_NORMALIZATION_MAX_CHARACTERS", 12000
+            ),
+            text_cache_entries=_positive_int(
+                "WYE_TEXT_NORMALIZATION_CACHE_ENTRIES", 512
+            ),
         )

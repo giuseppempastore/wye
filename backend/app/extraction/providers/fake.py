@@ -1,6 +1,10 @@
 from typing import Any
-from app.extraction.models import ExtractionRequest, ProviderResult
-from .base import ExtractionProvider
+from app.extraction.models import (
+    ExtractionRequest,
+    ProviderResult,
+    TextNormalizationProviderRequest,
+)
+from .base import ExtractionProvider, TextNormalizationProvider
 
 
 class FakeExtractionProvider(ExtractionProvider):
@@ -62,4 +66,65 @@ def _local_e2e_output(document_type: str) -> dict[str, Any]:
                 },
             }
         ],
+    }
+
+
+class FakeTextNormalizationProvider(TextNormalizationProvider):
+    name = "fake"
+
+    def __init__(self, output: Any = None, error: Exception | None = None):
+        self.output = output
+        self.error = error
+        self.requests: list[TextNormalizationProviderRequest] = []
+
+    def normalize_text(
+        self, request: TextNormalizationProviderRequest
+    ) -> ProviderResult:
+        self.requests.append(request)
+        if self.error:
+            raise self.error
+        output = self.output or _conservative_text_output(request)
+        return ProviderResult(
+            output=output,
+            raw_response={"fake": True},
+            model_name=request.model,
+        )
+
+
+def _conservative_text_output(
+    request: TextNormalizationProviderRequest,
+) -> dict[str, Any]:
+    if request.document_type == "ingredients":
+        items = [
+            value.strip()
+            for value in request.raw_text.replace(";", ",").split(",")
+            if value.strip()
+        ]
+        is_english = request.source_language.split("-", 1)[0] == "en"
+        return {
+            "detected_language": request.source_language,
+            "source_segment": request.raw_text,
+            "canonical_english_items": [
+                {
+                    "source_text": value,
+                    "english_candidate": value if is_english else None,
+                    "normalized_candidate": value.lower() if is_english else None,
+                    "confidence": None,
+                    "needs_review": True,
+                    "correction_reason": None,
+                    "allergen_emphasis": False,
+                }
+                for value in items
+            ],
+            "nutrition_items": [],
+            "nutrition_basis": None,
+            "warnings": ["fake_provider_requires_review"],
+        }
+    return {
+        "detected_language": request.source_language,
+        "source_segment": request.raw_text,
+        "canonical_english_items": [],
+        "nutrition_items": [],
+        "nutrition_basis": None,
+        "warnings": ["fake_provider_requires_review"],
     }

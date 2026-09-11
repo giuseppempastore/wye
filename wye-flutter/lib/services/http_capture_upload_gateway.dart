@@ -9,8 +9,10 @@ import '../config/mobile_upload_config.dart';
 import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
+import '../models/text_normalization_models.dart';
 import 'capture_flow_logger.dart';
 import 'capture_upload_gateway.dart';
+import 'anonymous_installation_service.dart';
 
 class HttpCaptureUploadGateway implements CaptureUploadGateway {
   static const _facadePrefix = '/mobile/dev/v1/capture';
@@ -32,15 +34,18 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
   final MobileUploadConfig _config;
   final MobileUploadTokenProvider _tokenProvider;
   final CaptureFlowLogger _logger;
+  final AnonymousInstallationService? _installation;
 
   HttpCaptureUploadGateway({
     required http.Client client,
     required MobileUploadConfig config,
     required MobileUploadTokenProvider tokenProvider,
+    AnonymousInstallationService? installation,
     CaptureFlowLogger logger = const NoOpCaptureFlowLogger(),
   })  : _client = client,
         _config = config,
         _tokenProvider = tokenProvider,
+        _installation = installation,
         _logger = logger;
 
   @override
@@ -319,6 +324,54 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
     return result;
   }
 
+  @override
+  Future<TextNormalizationResult> normalizeText(
+    TextNormalizationRequestPayload request,
+  ) async {
+    if (request.rawText.isEmpty || request.rawText.length > 12000) {
+      throw const CaptureUploadException(
+        kind: CaptureUploadFailureKind.invalidInput,
+        code: 'text_fallback_input_invalid',
+        safeMessage: 'OCR text fallback input is invalid',
+        retryable: false,
+        lastStableStep: UploadFlowStep.imageSelected,
+      );
+    }
+    final started = DateTime.now();
+    final response = await _sendControlPlane(
+      uri: _facadeUri('/text-normalizations'),
+      stableStep: UploadFlowStep.imageSelected,
+      body: request.toJson(),
+    );
+    try {
+      final result = TextNormalizationResult.fromJson(
+        _decodeObject(response, UploadFlowStep.imageSelected),
+      );
+      _logger.record(
+        CaptureFlowEvent(
+          step: 'text_normalization',
+          statusClass: '${response.statusCode ~/ 100}xx',
+          requestId: response.headers['x-request-id'],
+          httpStatusCode: response.statusCode,
+          itemCount: result.ingredientCandidates.length +
+              result.nutritionCandidates.length,
+          latencyMs: DateTime.now().difference(started).inMilliseconds,
+        ),
+      );
+      return result;
+    } on CaptureUploadException {
+      rethrow;
+    } on Object {
+      throw const CaptureUploadException(
+        kind: CaptureUploadFailureKind.contract,
+        code: 'text_fallback_contract_invalid',
+        safeMessage: 'Text fallback response is invalid',
+        retryable: false,
+        lastStableStep: UploadFlowStep.imageSelected,
+      );
+    }
+  }
+
   Future<http.Response> _sendControlPlane({
     String method = 'POST',
     required Uri uri,
@@ -352,6 +405,11 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
           'Authorization': token.authorizationHeader,
           ...headers,
         });
+      if (_installation?.currentId case final installationId?) {
+        request.headers['X-WYE-Install-ID'] = installationId;
+        request.headers['X-WYE-Local-Day'] = _localDay();
+        request.headers['X-WYE-Plan'] = 'base';
+      }
       if (body != null) {
         request.headers['Content-Type'] = 'application/json';
         request.body = jsonEncode(body);
@@ -397,6 +455,13 @@ class HttpCaptureUploadGateway implements CaptureUploadGateway {
         lastStableStep: stableStep,
       );
     }
+  }
+
+  String _localDay() {
+    final now = DateTime.now();
+    return '${now.year.toString().padLeft(4, '0')}-'
+        '${now.month.toString().padLeft(2, '0')}-'
+        '${now.day.toString().padLeft(2, '0')}';
   }
 
   ExtractionResultSummary _decodeExtractionResult(http.Response response) {

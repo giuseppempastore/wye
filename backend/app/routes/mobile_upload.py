@@ -2,7 +2,7 @@ import logging
 import re
 import time
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, Response
@@ -13,11 +13,17 @@ from app.extraction.prompts import PROMPT_ID
 from app.mobile_facade_config import MobileFacadeConfigError, MobileFacadeSettings
 from app.security import require_image_api_key
 from app.services.image_uploads import ImageUploadService, UploadError
+from app.services.ai_usage_quota import AiQuotaError, AiUsageQuotaService
 from app.services.label_extractions import ExtractionError, LabelExtractionService
 from app.services.mobile_upload_sessions import (
     MobileSessionError,
     MobileSessionRecord,
     MobileUploadSessionStore,
+)
+from app.services.text_normalizations import (
+    TextNormalizationError,
+    TextNormalizationInput,
+    TextNormalizationService,
 )
 from app.storage import StorageSettings, get_storage_adapter
 
@@ -25,6 +31,9 @@ from app.storage import StorageSettings, get_storage_adapter
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/mobile/dev/v1/capture", tags=["mobile-dev-capture"])
 _session_store = MobileUploadSessionStore()
+_text_normalization_service: TextNormalizationService | None = None
+_text_normalization_signature: tuple | None = None
+_ai_quota_service = AiUsageQuotaService()
 _safe_request_id_pattern = re.compile(r"^[A-Za-z0-9._:-]{1,64}$")
 
 
@@ -120,6 +129,20 @@ class MobileExtractionResponse(BaseModel):
 
 class MobileExtractionListResponse(BaseModel):
     extractions: list[MobileExtractionRun]
+
+
+class MobileTextNormalizationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    detected_language: str
+    source_segment: str
+    canonical_english_items: list[dict[str, Any]]
+    nutrition_items: list[dict[str, Any]]
+    nutrition_basis: str | None = None
+    warnings: list[str]
+    provenance: dict[str, str | None]
+    cache_hit: bool
+    provider_invoked: bool
 
 
 def _safe_error(status: int, code: str, message: str) -> HTTPException:
@@ -346,6 +369,33 @@ def get_label_extraction_service() -> LabelExtractionService:
         ) from exc
 
 
+def get_text_normalization_service() -> TextNormalizationService:
+    global _text_normalization_service, _text_normalization_signature
+    try:
+        settings = ExtractionSettings.from_env()
+        signature = (
+            settings.provider,
+            settings.model,
+            settings.runtime_environment,
+            settings.text_fallback_enabled,
+            settings.text_max_characters,
+            settings.text_cache_entries,
+        )
+        if (
+            _text_normalization_service is None
+            or _text_normalization_signature != signature
+        ):
+            _text_normalization_service = TextNormalizationService(settings)
+            _text_normalization_signature = signature
+        return _text_normalization_service
+    except RuntimeError as exc:
+        raise _safe_error(
+            503,
+            "text_fallback_unavailable",
+            "Text normalization fallback is unavailable",
+        ) from exc
+
+
 @router.post(
     "/sessions",
     response_model=MobileSessionCreateResponse,
@@ -386,6 +436,138 @@ def create_mobile_session(
         "scopes": sorted(issued.record.scopes),
         "expires_at": issued.record.expires_at,
     }
+
+
+@router.post(
+    "/anonymous-sessions",
+    response_model=MobileSessionCreateResponse,
+    status_code=201,
+)
+def create_anonymous_mobile_session(
+    response: Response,
+    settings: MobileFacadeSettings = Depends(require_mobile_facade_enabled),
+    store: MobileUploadSessionStore = Depends(get_mobile_session_store),
+    x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
+):
+    """Issue an internal Phase 9 capability without exposing setup in the UI."""
+    if not settings.anonymous_bootstrap_enabled:
+        raise _safe_error(
+            404,
+            "anonymous_mobile_bootstrap_disabled",
+            "Anonymous mobile bootstrap is disabled",
+        )
+    started_at = time.perf_counter()
+    request_id = _request_id(x_request_id)
+    try:
+        issued = store.issue({"upload", "extraction"}, settings.session_ttl_seconds)
+    except (MobileSessionError, RuntimeError) as exc:
+        _log_transition(
+            "anonymous_session_create",
+            request_id,
+            "mobile_session_unavailable",
+            started_at,
+        )
+        raise _safe_error(
+            503,
+            "mobile_session_unavailable",
+            "Mobile session could not be issued",
+        ) from exc
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Request-ID"] = request_id
+    _log_transition(
+        "anonymous_session_create", request_id, "created", started_at, issued.record
+    )
+    return {
+        "session_id": issued.record.session_id,
+        "access_token": issued.token,
+        "scopes": sorted(issued.record.scopes),
+        "expires_at": issued.record.expires_at,
+    }
+
+
+@router.post(
+    "/text-normalizations",
+    response_model=MobileTextNormalizationResponse,
+)
+def normalize_mobile_ocr_text(
+    payload: TextNormalizationInput,
+    response: Response,
+    session: MobileSessionRecord = Depends(require_extraction_session),
+    store: MobileUploadSessionStore = Depends(get_mobile_session_store),
+    service: TextNormalizationService = Depends(get_text_normalization_service),
+    x_request_id: str | None = Header(default=None, alias="X-Request-ID"),
+    x_wye_install_id: str | None = Header(default=None, alias="X-WYE-Install-ID"),
+    x_wye_local_day: str | None = Header(default=None, alias="X-WYE-Local-Day"),
+    x_wye_plan: str | None = Header(default=None, alias="X-WYE-Plan"),
+):
+    started_at = time.perf_counter()
+    request_id = _request_id(x_request_id)
+    try:
+        store.consume(session, "text_normalization", 2)
+        def authorize_external_call(provider: str, model: str) -> None:
+            if not x_wye_install_id:
+                raise AiQuotaError(
+                    "installation_id_required",
+                    "Installation ID is required for external AI",
+                    422,
+                )
+            try:
+                local_day = date.fromisoformat(x_wye_local_day or date.today().isoformat())
+            except ValueError as exc:
+                raise AiQuotaError("invalid_local_day", "Local day is invalid", 422) from exc
+            _ai_quota_service.consume(
+                actor_id=x_wye_install_id,
+                local_day=local_day,
+                plan=AiUsageQuotaService.resolve_actor_plan(x_wye_plan),
+                operation="label_text_normalization",
+                provider=provider,
+                model=model,
+            )
+
+        result = service.normalize(
+            payload,
+            before_billable_call=authorize_external_call,
+        )
+    except MobileSessionError as exc:
+        _log_transition(
+            "text_normalization", request_id, exc.code, started_at, session
+        )
+        raise _safe_error(exc.status, exc.code, exc.message) from exc
+    except TextNormalizationError as exc:
+        _log_transition(
+            "text_normalization", request_id, exc.code, started_at, session
+        )
+        raise _safe_error(exc.status, exc.code, exc.message) from exc
+    except AiQuotaError as exc:
+        _log_transition(
+            "text_normalization", request_id, exc.code, started_at, session
+        )
+        raise _safe_error(exc.status, exc.code, exc.message) from exc
+    except Exception:
+        _log_transition(
+            "text_normalization",
+            request_id,
+            "text_fallback_failed",
+            started_at,
+            session,
+        )
+        raise _safe_error(
+            503,
+            "text_fallback_failed",
+            "Text normalization fallback failed",
+        ) from None
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Request-ID"] = request_id
+    _log_transition(
+        "text_normalization",
+        request_id,
+        "cache_hit" if result["cache_hit"] else "completed",
+        started_at,
+        session,
+    )
+    return result
 
 
 @router.post(

@@ -69,7 +69,7 @@ class ProductImage extends StatelessWidget {
   Widget _placeholder(BuildContext context, {bool loading = false}) {
     final color = Theme.of(context).colorScheme.outline;
     return ColoredBox(
-      color: color.withOpacity(0.1),
+      color: color.withValues(alpha: 0.1),
       child: Center(
         child: loading
             ? const SizedBox(

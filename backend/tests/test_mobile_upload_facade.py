@@ -11,6 +11,7 @@ from app.routes.mobile_upload import (
     get_image_upload_service,
     get_label_extraction_service,
     get_mobile_session_store,
+    get_text_normalization_service,
     router,
 )
 from app.services.mobile_upload_sessions import (
@@ -34,6 +35,7 @@ class MobileUploadFacadeTests(unittest.TestCase):
     environment_names = (
         "WYE_MOBILE_UPLOAD_FACADE_ENABLED",
         "WYE_MOBILE_UPLOAD_FACADE_SESSION_TTL_SECONDS",
+        "WYE_MOBILE_ANONYMOUS_BOOTSTRAP_ENABLED",
         "WYE_IMAGE_API_KEY",
     )
 
@@ -48,6 +50,7 @@ class MobileUploadFacadeTests(unittest.TestCase):
         self.store = MobileUploadSessionStore(clock=self.clock)
         self.upload_service = Mock()
         self.extraction_service = Mock()
+        self.text_normalization_service = Mock()
 
         app = FastAPI()
         app.include_router(router)
@@ -57,6 +60,9 @@ class MobileUploadFacadeTests(unittest.TestCase):
         )
         app.dependency_overrides[get_label_extraction_service] = (
             lambda: self.extraction_service
+        )
+        app.dependency_overrides[get_text_normalization_service] = (
+            lambda: self.text_normalization_service
         )
         self.client = TestClient(app)
 
@@ -128,6 +134,18 @@ class MobileUploadFacadeTests(unittest.TestCase):
                 "/mobile/dev/v1/capture/products/7/images/8/extractions/9",
                 headers={"Authorization": "Bearer unused"},
             ),
+            self.client.post(
+                "/mobile/dev/v1/capture/text-normalizations",
+                json={
+                    "source_language": "fi",
+                    "document_type": "ingredients",
+                    "raw_text": "Ainesosat: vesi",
+                    "target_language": "en",
+                    "schema_version": "2",
+                    "parser_version": "photo_field_mapper_v3",
+                },
+                headers={"Authorization": "Bearer unused"},
+            ),
         )
         for response in requests:
             self.assertEqual(response.status_code, 503, response.text)
@@ -139,16 +157,95 @@ class MobileUploadFacadeTests(unittest.TestCase):
         self.extraction_service.create.assert_not_called()
         self.extraction_service.list.assert_not_called()
         self.extraction_service.get.assert_not_called()
+        self.text_normalization_service.normalize.assert_not_called()
 
     def test_router_is_registered_in_main_application(self):
         from app.main import app
 
         paths = {route.path for route in app.routes}
         self.assertIn("/mobile/dev/v1/capture/sessions", paths)
+        self.assertIn("/mobile/dev/v1/capture/anonymous-sessions", paths)
         self.assertIn(
             "/mobile/dev/v1/capture/products/{product_id}/images/uploads",
             paths,
         )
+        self.assertIn("/mobile/dev/v1/capture/text-normalizations", paths)
+
+    def test_anonymous_bootstrap_is_explicitly_dev_gated(self):
+        self._enable()
+        disabled = self.client.post(
+            "/mobile/dev/v1/capture/anonymous-sessions"
+        )
+        self.assertEqual(disabled.status_code, 404)
+
+        os.environ["WYE_MOBILE_ANONYMOUS_BOOTSTRAP_ENABLED"] = "true"
+        enabled = self.client.post(
+            "/mobile/dev/v1/capture/anonymous-sessions"
+        )
+        self.assertEqual(enabled.status_code, 201, enabled.text)
+        self.assertEqual(set(enabled.json()["scopes"]), {"upload", "extraction"})
+        self.assertEqual(enabled.headers["cache-control"], "no-store")
+
+    def test_text_normalization_requires_extraction_scope_and_is_sanitized(self):
+        self._enable()
+        payload = {
+            "source_language": "fi",
+            "document_type": "ingredients",
+            "raw_text": "Ainesosat: private-ocr-marker",
+            "target_language": "en",
+            "schema_version": "2",
+            "parser_version": "photo_field_mapper_v3",
+        }
+        upload_token = self._create_session(["upload"]).json()["access_token"]
+        denied = self.client.post(
+            "/mobile/dev/v1/capture/text-normalizations",
+            json=payload,
+            headers=self._bearer(upload_token),
+        )
+        self.assertEqual(denied.status_code, 403)
+        self.text_normalization_service.normalize.assert_not_called()
+
+        token = self._create_session(["extraction"]).json()["access_token"]
+        self.text_normalization_service.normalize.return_value = {
+            "detected_language": "fi",
+            "source_segment": payload["raw_text"],
+            "canonical_english_items": [
+                {
+                    "source_text": "private-ocr-marker",
+                    "english_candidate": None,
+                    "normalized_candidate": None,
+                    "confidence": None,
+                    "needs_review": True,
+                    "correction_reason": None,
+                    "allergen_emphasis": False,
+                }
+            ],
+            "nutrition_items": [],
+            "warnings": ["fake_provider_requires_review"],
+            "provenance": {
+                "provider": "fake",
+                "model_name": "wye-local-e2e-fake-v1",
+                "model_version": None,
+                "prompt_version": "label_text_normalization_v1",
+                "schema_version": "2",
+                "parser_version": "photo_field_mapper_v3",
+            },
+            "cache_hit": False,
+            "provider_invoked": True,
+        }
+        with self.assertLogs("app.routes.mobile_upload", level="INFO") as logs:
+            completed = self.client.post(
+                "/mobile/dev/v1/capture/text-normalizations",
+                json=payload,
+                headers=self._bearer(token),
+            )
+        self.assertEqual(completed.status_code, 200, completed.text)
+        sent = self.text_normalization_service.normalize.call_args.args[0]
+        self.assertEqual(sent.raw_text, payload["raw_text"])
+        self.assertNotIn(token, completed.text)
+        captured = "\n".join(logs.output)
+        self.assertNotIn(token, captured)
+        self.assertNotIn("private-ocr-marker", captured)
 
     def test_session_creation_requires_existing_server_authorization(self):
         os.environ["WYE_MOBILE_UPLOAD_FACADE_ENABLED"] = "true"

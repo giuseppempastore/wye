@@ -1,5 +1,22 @@
 # WYE — Guida Phase 9 per test e feedback sanitizzato
 
+## Test manuali Phase 9.3A.2
+
+Eseguire separatamente:
+
+1. **Registrazione pubblica:** verificare barcode solo scanner, tre foto e
+   stato `In coda`/`In elaborazione`/`Dati etichetta non verificati`.
+2. **Draft e Back:** tornare indietro, aprire Impostazioni, ruotare o mettere
+   in background e riaprire. Barcode, foto, OCR e step devono restare.
+3. **Token dev:** aggiornarlo nell'espansione tecnica senza riportarlo nel
+   feedback e senza perdere la bozza.
+4. **Worker:** osservare lo stato nello Storico e la ripresa dopo errore.
+5. **Sale/sodio:** `Sale (g)` e `Sodio (mg)` distinti; mai `Sale (mg)`.
+6. **Premium:** senza entitlement deve essere bloccato, senza score numerico.
+
+Non allegare token, barcode completo, raw OCR, immagini o signed URL. Tutti
+questi controlli restano `NOT_RUN` finché non vengono ripetuti sul device.
+
 ## 1. A chi serve e quali documenti seguire
 
 Questa guida è destinata a un operatore non sviluppatore. Per i test Phase 9 sono autorevoli, in quest'ordine: `WYE_PHASE_9_APP_ACCEPTANCE_PLAN.md`, `WYE_PHASE_9_FEATURE_ACCEPTANCE_MATRIX.md`, questa guida e `WYE_PHASE_8_TO_9_TRANSITION.md`. Il runbook e il log template Phase 8 restano riferimenti tecnici parziali per il solo percorso mobile canonico; le vecchie guide Flutter non sono procedure di accettazione Phase 9.
@@ -134,3 +151,48 @@ La Phase 9.1 deve implementare, dopo autorizzazione separata, un comando o wizar
 ## 13. Piano conservativo di riordino documentale
 
 Non esiste una cartella `docs` canonica e nessun file è stato spostato in Phase 9.2B. In una subfase separata si può creare un indice unico che colleghi i documenti Phase 7/8/9, distinguere runbook attivi da documenti storici e controllare tutti i riferimenti relativi prima di qualsiasi spostamento. Codice, migration, test, Compose e script PowerShell restano nelle posizioni attuali.
+
+## Feedback Phase 9.3A
+
+Verificare separatamente ingredienti e nutrizione e riportare soltanto esito di
+lingua, segmento, base/valori, badge non verificato, foto/lookup e stato score.
+Non condividere raw OCR, barcode, token, immagini, URL firmate o payload.
+
+### Retest Phase 9.3A.1
+
+Per ciascuna etichetta annotare soltanto: lingua mostrata (o `Lingua non
+determinata`), tipo foto, se i campi inglesi sono corretti/vuoti/da verificare,
+se percentuali e allergeni sono ancora visibili, se compare `Dati etichetta non
+verificati` e se il salvataggio termina. Provare almeno una lingua latina diversa
+da italiano/inglese/finlandese. Per uno script non installato annotare solo che è
+comparso `Sistema di scrittura non supportato`; non allegare il testo fotografato.
+Un valore tradotto non è verificato scientificamente e nessun numero score deve
+apparire per effetto dell’estrazione.
+
+## Retest UX prototipo Phase 9.3A.3
+
+1. Verificare che la Home mostri soltanto `Scansiona prodotto` e `Aggiungi
+   prodotto`, entrambe chiaramente attive; aprire lo storico dalla barra in basso.
+2. Aprire `Aggiungi prodotto` e verificare i due percorsi. L'analisi etichetta
+   deve mostrare `Analisi AI disponibili oggi: X` senza blocco Premium.
+3. Acquisire ingredienti e nutrizione: OCR/parser/cache non devono ridurre X;
+   soltanto un fallback esterno billable lo riduce. A zero, la lettura locale e
+   `Registra un nuovo prodotto` devono restare disponibili.
+4. Da Impostazioni aprire `Lascia feedback`, provare validazione e invio. Non
+   inserire immagini, barcode, OCR integrale, URL o segreti nel testo.
+5. Non deve comparire alcuna richiesta di credenziali tecniche. Il launcher e
+   l'app gestiscono automaticamente la sessione locale.
+
+## Retest navigazione feedback Phase 9.3A.5
+
+1. Da `Impostazioni` aprire `Lascia feedback`: la freccia indietro deve essere
+   visibile e deve tornare con un solo passaggio a `Impostazioni`.
+2. Ripetere con il pulsante Back di Android: il comportamento deve essere lo
+   stesso e l'app non deve chiudersi dalla schermata feedback.
+3. Con tutti i campi vuoti, uscire direttamente senza dialoghi.
+4. Inserire testo senza inviarlo e provare a uscire: scegliere `Continua a
+   scrivere` e verificare che il testo resti; riprovare e scegliere `Esci` per
+   abbandonarlo.
+5. Dopo un invio riuscito, tornare indietro senza un nuovo dialogo e senza un
+   secondo invio. Questo checkpoint automatico non sostituisce il retest sul
+   telefono e non dichiara l'intera Phase 9 accettata.

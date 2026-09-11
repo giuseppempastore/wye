@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -14,6 +16,9 @@ import 'services/image_metadata_service.dart';
 import 'services/logging_capture_upload_gateway.dart';
 import 'services/database_service.dart';
 import 'services/photo_capture_recovery_service.dart';
+import 'services/anonymous_installation_service.dart';
+import 'services/technical_session_bootstrapper.dart';
+import 'services/ai_usage_quota_service.dart';
 import 'providers/app_providers.dart';
 import 'providers/capture_upload_controller.dart';
 
@@ -21,7 +26,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await PhotoCaptureRecoveryService.shared.initialize();
   final initialLocation = PhotoCaptureRecoveryService.shared.hasRecoveredPhoto
-      ? '/add-product'
+      ? '/register-product'
       : '/';
   // Inizializza database
   final db = DatabaseService();
@@ -37,10 +42,10 @@ class WyeApp extends StatefulWidget {
   final String initialLocation;
 
   const WyeApp({
-    Key? key,
+    super.key,
     required this.databaseService,
     this.initialLocation = '/',
-  }) : super(key: key);
+  });
 
   @override
   State<WyeApp> createState() => _WyeAppState();
@@ -51,6 +56,10 @@ class _WyeAppState extends State<WyeApp> {
   late final SanitizedInMemoryCaptureFlowLogger _captureFlowLogger;
   final InMemoryMobileUploadTokenProvider _mobileTokenProvider =
       InMemoryMobileUploadTokenProvider();
+  final AnonymousInstallationService _installationService =
+      AnonymousInstallationService();
+  late final TechnicalSessionBootstrapper _sessionBootstrapper;
+  late final AiUsageQuotaService _aiUsageQuota;
   late final GoRouter _router;
 
   @override
@@ -63,12 +72,24 @@ class _WyeAppState extends State<WyeApp> {
       enabled: _mobileUploadConfig.enabled,
       capacity: 200,
     );
+    _sessionBootstrapper = TechnicalSessionBootstrapper(
+      config: _mobileUploadConfig,
+      credentialStore: _mobileTokenProvider,
+      client: http.Client(),
+    );
+    _aiUsageQuota = AiUsageQuotaService(installation: _installationService);
+    unawaited(_installationService.ensureId().then((_) async {
+      await _sessionBootstrapper.ensureReady();
+      await _aiUsageQuota.initialize();
+    }));
     _router = AppRouter.createRouter(initialLocation: widget.initialLocation);
   }
 
   @override
   void dispose() {
     _mobileTokenProvider.clear();
+    _sessionBootstrapper.close();
+    _aiUsageQuota.close();
     _captureFlowLogger.dispose();
     _router.dispose();
     widget.databaseService.close();
@@ -87,6 +108,13 @@ class _WyeAppState extends State<WyeApp> {
         ),
 
         Provider<MobileUploadConfig>.value(value: _mobileUploadConfig),
+        ChangeNotifierProvider<AiUsageQuotaService>.value(value: _aiUsageQuota),
+        Provider<AnonymousInstallationService>.value(
+          value: _installationService,
+        ),
+        Provider<TechnicalSessionBootstrapper>.value(
+          value: _sessionBootstrapper,
+        ),
         Provider<InMemoryMobileUploadTokenProvider>.value(
           value: _mobileTokenProvider,
         ),
@@ -99,6 +127,7 @@ class _WyeAppState extends State<WyeApp> {
               client: http.Client(),
               config: _mobileUploadConfig,
               tokenProvider: _mobileTokenProvider,
+              installation: _installationService,
               logger: _captureFlowLogger,
             ),
             logger: _captureFlowLogger,

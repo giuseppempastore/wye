@@ -1,5 +1,21 @@
 # WYE — Phase 9 App Acceptance Plan
 
+## Phase 9.3A.2 acquisition acceptance addendum
+
+The accepted Home surface is limited to Scan product, Register new product,
+Premium instant label analysis, History and Settings. Public registration
+requires a scanner-validated GTIN and three classified photos. Its persisted
+draft must survive navigation and recreation and must never contain session
+tokens or presigned URLs.
+
+Submission and extraction are separate acceptance points. A persistent work
+item must expose `queued`, `processing`, `extracted`, `needs_review`, failure,
+correction, rejection and admin-validation states. The Docker
+`acquisition-worker` is the explicit local scheduler; scientific batch tables
+are not reused. Premium remains production-BLOCKED until authenticated
+entitlement and an authorized published scoring protocol exist. No item is
+`ACCEPTED` before physical Android evidence.
+
 ## 1. Autorità, obiettivo e non-autorizzazioni
 
 Questo è il piano autorevole per l'accettazione sistematica, su dispositivo reale, di ogni funzione prevista o visibile dell'app WYE MVP. La Phase 8 è la baseline di implementazione/integration preparation secondo `WYE_PHASE_8_TO_9_TRANSITION.md`; non è accettazione finale.
@@ -230,3 +246,62 @@ I documenti legacy non vengono riscritti in 9.0. Ogni futura procedura deve link
 ## 7. Gate finale Phase 9
 
 Phase 9 può essere dichiarata completata soltanto con matrice tracciabile, report finale e approvazioni. Anche in quel caso il risultato autorizza al massimo la conclusione dell'accettazione locale/dev MVP: non autorizza scoring runtime, produzione, certificazione esterna, pubblicazione negli store o release.
+
+## Phase 9.3A extension
+
+The implemented photo-first runtime and its remaining physical-device gates are
+specified in `WYE_PHASE_9_PHOTO_FIRST_ACQUISITION.md`.
+
+## Phase 9.3A.1 language-agnostic correction
+
+Acceptance is not limited to Italian/English/Finnish. Parser golden cases cover
+`it`, `en`, `fi`, `es`, `fr`, `de`, `pt` and `sv`; they are examples, not an
+allowlist. Device acceptance must record detected language or `und`, script,
+whether deterministic parsing or the text-only fallback was used, preservation
+of the original label, and the non-verified badge. The installed MVP recognizer
+is Latin only. Chinese, Devanagari, Japanese and Korean must show the unsupported
+script state until their modules and device resource cost are separately
+approved. Text fallback is feature-flagged and must never send an image or start
+scoring. No item becomes `ACCEPTED` before physical-device evidence.
+
+## UX prototipo Phase 9.3A.3
+
+- Home: soltanto `Scansiona prodotto` e `Aggiungi prodotto`; storico nella
+  bottom navigation.
+- Aggiungi prodotto: analisi etichetta Base e registrazione pending validation.
+- Quota: Base 3, Premium Light 50, Premium Pro 100 al giorno; consumano solo
+  chiamate AI esterne effettive. OCR, parser e cache non consumano.
+- Nessuna credenziale tecnica è visibile o richiesta; il bootstrap locale è
+  automatico e memory-only.
+- Feedback beta persistito e sanitizzato; dati acquisiti `Da validare`; score
+  mancante sempre non numerico.
+- Senza account/subscription reali il piano autorevole è Base. I livelli
+  superiori sono contratti da integrare in futuro con identità reali.
+
+### UX prototipo Phase 9.3A.4
+
+- Home responsive con due CTA equivalenti e centrate; bottom navigation sempre
+  disponibile.
+- Freccia indietro visibile nelle schermate secondarie e back Android coerente.
+- Bozza salvata quando si lascia il wizard; back interno = passaggio precedente.
+- Crop soltanto per foto prodotto (2048 px, JPEG 88); foto ingredienti/nutrizione
+  senza crop (3072 px, JPEG 94) e con controllo qualità locale prima dell'OCR.
+- Editor ingredienti con aggiunta/modifica/eliminazione ed editor nutrizionale
+  con kJ/kcal, sale/sodio, base e validazione. Tutte le correzioni sono pending.
+- Testo OCR originale e provenienza sono conservati separatamente; nessuna
+  immagine viene inviata al provider AI.
+- AVD senza fotocamera: scanner non montato, messaggio recuperabile, nessun crash.
+
+### UX prototipo Phase 9.3A.4
+
+- Home responsive con due CTA equivalenti e centrate; bottom navigation sempre
+  disponibile.
+- Freccia indietro visibile nelle schermate secondarie e back Android coerente.
+- Bozza salvata quando si lascia il wizard; back interno = passaggio precedente.
+- Crop soltanto per foto prodotto (2048 px, JPEG 88); foto ingredienti/nutrizione
+  senza crop (3072 px, JPEG 94) e con controllo qualità locale prima dell'OCR.
+- Editor ingredienti con aggiunta/modifica/eliminazione ed editor nutrizionale
+  con kJ/kcal, sale/sodio, base e validazione. Tutte le correzioni sono pending.
+- Testo OCR originale e provenienza sono conservati separatamente; nessuna
+  immagine viene inviata al provider AI.
+- AVD senza fotocamera: scanner non montato, messaggio recuperabile, nessun crash.

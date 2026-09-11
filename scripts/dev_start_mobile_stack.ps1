@@ -24,26 +24,93 @@ function Find-DockerCommand {
     throw 'Docker CLI non trovato. Completa l installazione di Docker Desktop.'
 }
 
-function Start-DockerDesktopIfNeeded {
+function Test-DockerDaemon {
     param([string]$DockerCommand)
-    & $DockerCommand info *> $null
-    if ($LASTEXITCODE -eq 0) { return }
+
+    # Windows PowerShell 5 trasforma lo stderr di docker.exe in un errore
+    # PowerShell. Quando il daemon e spento questo e uno stato da gestire, non
+    # deve interrompere lo script prima che Docker Desktop venga avviato.
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'SilentlyContinue'
+        & $DockerCommand info *> $null
+        return ($LASTEXITCODE -eq 0)
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+
+function Start-DockerDesktopIfNeeded {
+    param(
+        [string]$DockerCommand,
+        [string]$StatusPath
+    )
+
+    if (Test-DockerDaemon -DockerCommand $DockerCommand) {
+        Set-Content -LiteralPath $StatusPath -Encoding ASCII -Value @(
+            'initial_state=ready'
+            'automatic_start=not_needed'
+            'final_state=ready'
+        )
+        return
+    }
 
     $desktopCandidates = @(
         'C:\Program Files\Docker\Docker\Docker Desktop.exe',
         (Join-Path $env:LOCALAPPDATA 'Programs\Docker Desktop\Docker Desktop.exe')
     )
     $desktop = $desktopCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
-    if (-not $desktop) { throw 'Docker Desktop non trovato.' }
+    if (-not $desktop) {
+        Set-Content -LiteralPath $StatusPath -Encoding ASCII -Value @(
+            'initial_state=not_ready'
+            'automatic_start=unavailable'
+            'final_state=not_ready'
+        )
+        throw 'Docker Desktop non trovato. Installa o ripara Docker Desktop e rilancia lo stesso comando.'
+    }
 
-    Write-Host 'Avvio Docker Desktop...'
-    Start-Process -FilePath $desktop -WindowStyle Hidden | Out-Null
+    $desktopAlreadyStarting = Get-Process -Name 'Docker Desktop' -ErrorAction SilentlyContinue
+    if ($desktopAlreadyStarting) {
+        Write-Host 'Docker Desktop si sta gia avviando. Attendo il motore Docker...'
+        $automaticStart = 'already_starting'
+    }
+    else {
+        Write-Host 'Docker Desktop non e attivo. Lo avvio automaticamente...'
+        Start-Process -FilePath $desktop -WindowStyle Hidden | Out-Null
+        $automaticStart = 'attempted'
+    }
+
+    Set-Content -LiteralPath $StatusPath -Encoding ASCII -Value @(
+        'initial_state=not_ready'
+        "automatic_start=$automaticStart"
+        'final_state=waiting'
+    )
+
     for ($attempt = 1; $attempt -le 90; $attempt++) {
         Start-Sleep -Seconds 2
-        & $DockerCommand info *> $null
-        if ($LASTEXITCODE -eq 0) { return }
+        if (Test-DockerDaemon -DockerCommand $DockerCommand) {
+            Set-Content -LiteralPath $StatusPath -Encoding ASCII -Value @(
+                'initial_state=not_ready'
+                "automatic_start=$automaticStart"
+                'final_state=ready'
+            )
+            Write-Host 'Motore Docker pronto.' -ForegroundColor Green
+            return
+        }
+        if (($attempt % 5) -eq 0) {
+            Write-Host "Attendo Docker Desktop... $($attempt * 2) secondi"
+        }
     }
-    throw 'Docker Desktop non e diventato disponibile entro 3 minuti.'
+    Set-Content -LiteralPath $StatusPath -Encoding ASCII -Value @(
+        'initial_state=not_ready'
+        "automatic_start=$automaticStart"
+        'final_state=timeout'
+    )
+    throw 'Docker Desktop e stato avviato, ma il motore non e diventato disponibile entro 3 minuti. Apri Docker Desktop una volta per verificare eventuali richieste WSL, aggiornamenti o condizioni da accettare, poi rilancia lo stesso comando.'
 }
 
 function Get-PrivateHostIp {
@@ -106,7 +173,8 @@ if (-not $values['WYE_IMAGE_API_KEY']) { $values['WYE_IMAGE_API_KEY'] = ([guid]:
 Write-LocalEnvironment -Values $values -Path $envFile
 
 $docker = Find-DockerCommand
-Start-DockerDesktopIfNeeded -DockerCommand $docker
+$dockerStartupLog = Join-Path $EvidenceDir 'docker-startup.txt'
+Start-DockerDesktopIfNeeded -DockerCommand $docker -StatusPath $dockerStartupLog
 
 $upLog = Join-Path $EvidenceDir 'compose-up.log'
 $upStdout = Join-Path $EvidenceDir 'compose-up.stdout.tmp'

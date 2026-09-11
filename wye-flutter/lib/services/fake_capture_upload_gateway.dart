@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import '../models/capture_upload_error.dart';
 import '../models/capture_upload_models.dart';
 import '../models/extraction_models.dart';
+import '../models/text_normalization_models.dart';
 import 'capture_upload_gateway.dart';
 
 class FakeCaptureUploadGateway implements CaptureUploadGateway {
@@ -16,6 +17,12 @@ class FakeCaptureUploadGateway implements CaptureUploadGateway {
       status: ExtractionStatus.succeeded,
     ),
     items: const [],
+  );
+  TextNormalizationResult textNormalizationResult =
+      const TextNormalizationResult(
+    detectedLanguage: 'und',
+    sourceSegment: 'fixture',
+    warnings: ['fake_provider_requires_review'],
   );
 
   @override
@@ -107,6 +114,15 @@ class FakeCaptureUploadGateway implements CaptureUploadGateway {
       );
     }
     return extractionResult;
+  }
+
+  @override
+  Future<TextNormalizationResult> normalizeText(
+    TextNormalizationRequestPayload request,
+  ) async {
+    calls.add('text-normalization');
+    if (failure case final error?) throw error;
+    return textNormalizationResult;
   }
 
   @override

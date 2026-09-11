@@ -6,7 +6,7 @@ import '../providers/app_providers.dart';
 import '../widgets/score_widgets.dart';
 
 class ManualAnalysisScreen extends StatefulWidget {
-  const ManualAnalysisScreen({Key? key}) : super(key: key);
+  const ManualAnalysisScreen({super.key});
 
   @override
   State<ManualAnalysisScreen> createState() => _ManualAnalysisScreenState();
@@ -100,10 +100,10 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.accent.withOpacity(0.1),
+                  color: AppColors.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppColors.accent.withOpacity(0.5),
+                    color: AppColors.accent.withValues(alpha: 0.5),
                   ),
                 ),
                 child: Row(
@@ -158,7 +158,7 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.category),
                 ),
@@ -217,7 +217,7 @@ class _ManualAnalysisScreenState extends State<ManualAnalysisScreen> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedLanguage,
+                initialValue: _selectedLanguage,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.language),
                 ),

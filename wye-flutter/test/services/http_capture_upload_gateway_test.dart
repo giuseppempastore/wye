@@ -8,6 +8,7 @@ import 'package:wye/config/mobile_upload_config.dart';
 import 'package:wye/models/capture_upload_error.dart';
 import 'package:wye/models/capture_upload_models.dart';
 import 'package:wye/models/extraction_models.dart';
+import 'package:wye/models/text_normalization_models.dart';
 import 'package:wye/services/capture_flow_logger.dart';
 import 'package:wye/services/http_capture_upload_gateway.dart';
 
@@ -472,5 +473,91 @@ void main() {
     expect(failure.toString(), contains('mobile_extraction_failed'));
     expect(failure.toString(), isNot(contains(providerSecret)));
     expect(failure.toString(), isNot(contains(tokenValue)));
+  });
+
+  test('text normalization sends only the OCR segment and safe metadata',
+      () async {
+    const raw = 'Ainesosat: private-ocr-marker';
+    late http.Request captured;
+    final logger = CollectingCaptureFlowLogger();
+    final tokenProvider = InMemoryMobileUploadTokenProvider()
+      ..setToken(
+        tokenValue,
+        expiresAt: DateTime.now().toUtc().add(const Duration(minutes: 5)),
+      );
+    final gateway = HttpCaptureUploadGateway(
+      client: MockClient((request) async {
+        captured = request;
+        return http.Response(
+          jsonEncode({
+            'detected_language': 'fi',
+            'source_segment': raw,
+            'canonical_english_items': [
+              {
+                'source_text': 'private-ocr-marker',
+                'english_candidate': 'water',
+                'normalized_candidate': 'water',
+                'confidence': 0.8,
+                'needs_review': true,
+                'correction_reason': null,
+                'allergen_emphasis': false,
+              },
+            ],
+            'nutrition_items': [],
+            'warnings': ['requires_review'],
+            'provenance': {
+              'provider': 'fake',
+              'model_name': 'wye-local-e2e-fake-v1',
+              'model_version': null,
+              'prompt_version': 'label_text_normalization_v1',
+              'schema_version': '2',
+              'parser_version': 'photo_field_mapper_v3',
+            },
+            'cache_hit': false,
+            'provider_invoked': true,
+          }),
+          200,
+        );
+      }),
+      config: MobileUploadConfig(
+        enabled: true,
+        apiBaseUri: Uri.parse('http://api.invalid:8000'),
+      ),
+      tokenProvider: tokenProvider,
+      logger: logger,
+    );
+    addTearDown(gateway.close);
+
+    final result = await gateway.normalizeText(
+      const TextNormalizationRequestPayload(
+        sourceLanguage: 'fi',
+        documentType: 'ingredients',
+        rawText: raw,
+        parserVersion: 'photo_field_mapper_v3',
+      ),
+    );
+
+    expect(captured.url.path, '/mobile/dev/v1/capture/text-normalizations');
+    expect(captured.headers['authorization'], 'Bearer $tokenValue');
+    final sent = jsonDecode(captured.body) as Map<String, dynamic>;
+    expect(
+      sent.keys.toSet(),
+      {
+        'source_language',
+        'document_type',
+        'raw_text',
+        'target_language',
+        'schema_version',
+        'parser_version',
+      },
+    );
+    expect(sent['raw_text'], raw);
+    expect(captured.body, isNot(contains('product_id')));
+    expect(captured.body, isNot(contains('barcode')));
+    expect(captured.body, isNot(contains('image')));
+    expect(result.ingredientCandidates.single.englishCandidate, 'water');
+    expect(result.provenance['provider'], 'fake');
+    expect(logger.events.join('\n'), isNot(contains(raw)));
+    expect(logger.events.join('\n'), isNot(contains(tokenValue)));
   });
 }

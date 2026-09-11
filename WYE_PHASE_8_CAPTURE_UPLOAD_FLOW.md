@@ -433,3 +433,16 @@ Expected planning verdict:
 ```text
 READY_FOR_PHASE_8_5_2_CAPTURE_UPLOAD_IMPLEMENTATION_PLAN
 ```
+
+## Phase 9.3A extension
+
+Ordinary Add Product now performs on-device OCR and deterministic parsing, then
+persists local OCR provenance with `provider_invoked=false`. It does not
+automatically invoke the image extraction provider. See
+`WYE_PHASE_9_PHOTO_FIRST_ACQUISITION.md`.
+
+Phase 9.3A.1 adds a distinct feature-flagged **text-only** normalization call for
+incomplete deterministic parses. This call is not `/analyze` or
+`/analyze-image`, carries no image or product identity, is cache- and
+session-budgeted, and persists `provider_invoked=true` only when actually used.
+The original OCR text always remains separate from canonical English candidates.
